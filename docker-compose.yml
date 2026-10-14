@@ -4,7 +4,10 @@ services:
   app:
     build: .
     ports: ["8000:8000"]
-    env_file: [.env]
+    env_file:
+      - path: .env
+        required: false   # без .env работает на дефолтах (только правила)
+    environment: [ATTRX_ROOT=/app]
     volumes: ["./outputs:/app/outputs", "./config:/app/config", "./data:/app/data"]
   ollama:
     image: ollama/ollama:latest

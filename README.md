@@ -50,6 +50,22 @@ cp .env.example .env
 
 Docker: **docker compose up** (только правила) или **docker compose --profile llm up** (плюс локальная Ollama).
 
+### Windows (PowerShell)
+
+make и && в PowerShell 5 не работают, команды по одной:
+
+~~~powershell
+Copy-Item .env.example .env          # необязательно: без .env работает на дефолтах
+docker compose up -d --build         # http://localhost:8000
+# или без Docker:
+uv venv -p 3.11 .venv
+uv pip install -p .venv\Scripts\python.exe -e ".[dev]"
+.venv\Scripts\attrx demo
+.venv\Scripts\attrx serve
+~~~
+
+Если UI отвечает {"detail":"Not Found"}, значит сервер не нашёл папку web/. Запускайте из корня репо или задайте ATTRX_ROOT=<путь к репо>.
+
 ## Когда выдадут датасет
 
 1. Положить файл в data/raw/ (в git не попадает).

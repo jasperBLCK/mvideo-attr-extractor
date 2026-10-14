@@ -4,7 +4,19 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+
+def _find_root() -> Path:
+    """Корень проекта (config/, web/, data/): ATTRX_ROOT, иначе репо рядом с пакетом, иначе текущая папка."""
+    if env := os.getenv("ATTRX_ROOT"):
+        return Path(env).resolve()
+    pkg = Path(__file__).resolve().parents[2]
+    for cand in (pkg, Path.cwd()):
+        if (cand / "config").is_dir() and (cand / "web").is_dir():
+            return cand
+    return pkg
+
+
+ROOT = _find_root()
 
 
 def _load_dotenv(path: Path) -> None:

@@ -8,6 +8,7 @@ services:
       - path: .env
         required: false   # без .env работает на дефолтах (только правила)
     environment: [ATTRX_ROOT=/app]
+    extra_hosts: ["host.docker.internal:host-gateway"]   # LLM на хосте (Ollama): LLM_BASE_URL=http://host.docker.internal:11434/v1
     volumes: ["./outputs:/app/outputs", "./config:/app/config", "./data:/app/data"]
   ollama:
     image: ollama/ollama:latest

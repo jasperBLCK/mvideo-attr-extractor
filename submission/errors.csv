@@ -1,0 +1,2 @@
+card_id,category,attribute,kind,predicted,gold,status,confidence,sources,evidence
+s9,smartphone,storage,missed,128.0,128,review,0.55,rules,4/128 гб

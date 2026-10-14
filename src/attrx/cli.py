@@ -1,4 +1,4 @@
-"""CLI: attrx extract | eval | eda | serve | learn | demo."""
+"""CLI: attrx extract | eval | eda | serve | learn | demo | train-ner | report | split | prelabel."""
 from __future__ import annotations
 
 import argparse
@@ -71,6 +71,76 @@ def cmd_demo(a):
     cmd_eval(argparse.Namespace(pred=str(out), gold=str(sample / "gold.jsonl"), out=str(out.parent / "metrics.json")))
 
 
+def cmd_train_ner(a):
+    from .extractors import ner, rules
+    from .io import load_cards, load_gold
+    from .pipeline import Extractor
+
+    if not ner.available():
+        sys.exit('Нужен extra [ml]: uv pip install -e ".[ml]"')
+    cards = load_cards(Path(a.input))
+    gold = load_gold(Path(a.gold)) if a.gold else {}
+    ex = Extractor()
+    examples, attrs = [], set()
+    for card in cards:
+        cat_name, _ = ex.tax.detect_category(card)
+        cat = ex.tax.categories[cat_name]
+        attrs |= set(cat.attributes)
+        cands = rules.extract(card, cat, ex.tax)
+        spans = ner.weak_spans(card, cands, gold.get(card.id) if gold else None, ex.tax, cat)
+        examples.append((card.full_text(), spans))
+    info = ner.train(examples, sorted(attrs), Path(a.out), base=a.base, epochs=a.epochs, lr=a.lr)
+    n_spans = sum(len(s) for _, s in examples)
+    print(f"NER обучен: {info['examples']} карточек, {n_spans} слабых спанов, loss по эпохам {info['loss']} -> {a.out}")
+
+
+def cmd_report(a):
+    from .eval.report import write_report
+    from .io import load_cards, load_gold
+    from .pipeline import Extractor
+
+    ex = Extractor()
+    res = write_report(ex, load_cards(Path(a.input)), load_gold(Path(a.gold)), ex.tax, Path(a.out), note=a.note)
+    for r in res["compare"]:
+        print(f"{r['mode']:<22} P={r['precision']:.3f} R={r['recall']:.3f} F1={r['f1']:.3f} "
+              f"coverage={r['coverage']:.3f} {r['cards_per_sec']} карт/с, LLM={r['llm_calls']}")
+    print(f"ошибок: {res['errors']} -> {a.out}/REPORT.md")
+
+
+def cmd_split(a):
+    import hashlib
+
+    lines = [x for x in Path(a.gold).read_text(encoding="utf-8").splitlines() if x.strip()] if a.gold.endswith(".jsonl") else None
+    if lines is None:
+        sys.exit("split поддерживает gold в JSONL (один объект на строку с полем id)")
+    train, hold = [], []
+    for line in lines:
+        cid = str(json.loads(line)["id"])
+        h = int(hashlib.md5(cid.encode()).hexdigest(), 16) % 1000 / 1000
+        (hold if h < a.holdout else train).append(line)
+    base = Path(a.gold)
+    for suffix, part in (("train", train), ("holdout", hold)):
+        base.with_name(f"{base.stem}_{suffix}.jsonl").write_text("\n".join(part) + "\n", encoding="utf-8")
+    print(f"train={len(train)} holdout={len(hold)} (детерминированно по hash(id); holdout не трогаем при подборе правил)")
+
+
+def cmd_prelabel(a):
+    from .io import read_predictions
+
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    n = 0
+    with out.open("w", encoding="utf-8") as f:
+        for r in read_predictions(Path(a.pred)):
+            row = {"id": r.card_id, "category": r.category,
+                   "attributes": {x.attribute: x.value for x in r.attributes if x.value is not None},
+                   "_check": {x.attribute: {"status": x.status, "confidence": x.confidence, "evidence": x.evidence}
+                              for x in r.attributes if x.status != "accepted"}}
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            n += 1
+    print(f"Черновик разметки: {n} карточек -> {out}. Человек проверяет поля из _check и удаляет _check.")
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="attrx", description="Извлечение и нормализация характеристик товаров")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -104,6 +174,32 @@ def main(argv: list[str] | None = None) -> None:
     dm = sub.add_parser("demo", help="прогон на data/sample + метрики")
     dm.add_argument("--llm", choices=["on", "off"], default=None)
     dm.set_defaults(fn=cmd_demo)
+
+    t = sub.add_parser("train-ner", help="обучить NER на слабой разметке от правил (+gold)")
+    t.add_argument("--input", "-i", required=True)
+    t.add_argument("--gold", default=None)
+    t.add_argument("--out", default=str(s.ml_model_path))
+    t.add_argument("--base", default="cointegrated/rubert-tiny2")
+    t.add_argument("--epochs", type=int, default=20)
+    t.add_argument("--lr", type=float, default=1e-4)
+    t.set_defaults(fn=cmd_train_ner)
+
+    rp = sub.add_parser("report", help="сравнение подходов + сегменты + ошибки + предсказания -> submission/")
+    rp.add_argument("--input", "-i", required=True)
+    rp.add_argument("--gold", required=True)
+    rp.add_argument("--out", default=str(ROOT / "submission"))
+    rp.add_argument("--note", default="")
+    rp.set_defaults(fn=cmd_report)
+
+    sp = sub.add_parser("split", help="gold -> gold_train + gold_holdout (честная оценка)")
+    sp.add_argument("--gold", required=True)
+    sp.add_argument("--holdout", type=float, default=0.3)
+    sp.set_defaults(fn=cmd_split)
+
+    pl = sub.add_parser("prelabel", help="predictions -> черновик gold для ручной проверки (LLM-assisted разметка)")
+    pl.add_argument("--pred", default=str(s.predictions_path))
+    pl.add_argument("--out", default=str(ROOT / "data" / "gold_draft.jsonl"))
+    pl.set_defaults(fn=cmd_prelabel)
 
     args = p.parse_args(argv)
     args.fn(args)

@@ -99,6 +99,17 @@ async function loadMetrics() {
         h("p", { class: "muted" }, "Выбираем CONFIDENCE_THRESHOLD под целевую точность бизнеса; всё ниже порога уходит модератору."))),
     h("div", { class: "c", style: "margin-top:16px" }, h("h3", {}, "По категориям"), Object.entries(m.per_category).map(([cat, attrs]) =>
       h("p", {}, h("b", {}, cat), " — ", Object.entries(attrs).map(([a, v]) => a + ": F1 " + v.f1.toFixed(2)).join(" · ")))));
+  let rep = {};
+  try { rep = await api("/api/report"); } catch { return; }
+  const f3 = (x) => x.toFixed(3);
+  const table = (title, cols, rows) => h("div", { class: "c", style: "margin-top:16px" }, h("h3", {}, title),
+    h("table", { class: "t" }, h("tr", {}, cols.map((c) => h("th", {}, c))), rows));
+  if (rep.compare) root.append(table("Сравнение подходов (attrx report)", ["Режим", "Precision", "Recall", "F1", "Coverage", "Карточек/с", "LLM-вызовов"],
+    rep.compare.map((r) => h("tr", {}, h("td", {}, h("b", {}, r.mode)), h("td", {}, f3(r.precision)), h("td", {}, f3(r.recall)),
+      h("td", {}, f3(r.f1)), h("td", {}, f3(r.coverage)), h("td", {}, String(r.cards_per_sec)), h("td", {}, String(r.llm_calls))))));
+  if (rep.segments) root.append(table("Качество по сегментам карточек", ["Сегмент", "Карточек", "Precision", "Recall", "F1", "Coverage"],
+    Object.entries(rep.segments).map(([k, v]) => h("tr", {}, h("td", {}, k), h("td", {}, String(v.n_cards)), h("td", {}, f3(v.precision)),
+      h("td", {}, f3(v.recall)), h("td", {}, f3(v.f1)), h("td", {}, f3(v.coverage))))));
 }
 
 (async () => {

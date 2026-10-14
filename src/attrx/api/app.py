@@ -125,6 +125,13 @@ def metrics():
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+@app.get("/api/report")
+def report():
+    """Сравнение подходов и сегменты из последнего attrx report (submission/)."""
+    d = ROOT / "submission"
+    return {k: json.loads((d / f"{k}.json").read_text(encoding="utf-8")) for k in ("compare", "segments") if (d / f"{k}.json").exists()}
+
+
 @app.get("/api/samples")
 def samples():
     path = ROOT / "data" / "sample" / "cards.jsonl"

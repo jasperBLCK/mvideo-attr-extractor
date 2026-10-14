@@ -1,0 +1,370 @@
+{
+  "micro": {
+    "precision": 1.0,
+    "recall": 0.9904,
+    "f1": 0.9952,
+    "tp": 103,
+    "fp": 0,
+    "fn": 1
+  },
+  "macro_f1": 0.9964,
+  "traffic_weighted_f1": 0.9962,
+  "traffic_weighted_precision": 1.0,
+  "coverage": 0.9196,
+  "review_rate": 0.0179,
+  "per_attribute": {
+    "brand": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 20,
+      "fp": 0,
+      "fn": 0
+    },
+    "model": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 10,
+      "fp": 0,
+      "fn": 0
+    },
+    "storage": {
+      "precision": 1.0,
+      "recall": 0.9444,
+      "f1": 0.9714,
+      "tp": 17,
+      "fp": 0,
+      "fn": 1
+    },
+    "screen": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 16,
+      "fp": 0,
+      "fn": 0
+    },
+    "battery": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 8,
+      "fp": 0,
+      "fn": 0
+    },
+    "color": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 16,
+      "fp": 0,
+      "fn": 0
+    },
+    "cpu": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 8,
+      "fp": 0,
+      "fn": 0
+    },
+    "ram": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 8,
+      "fp": 0,
+      "fn": 0
+    }
+  },
+  "per_category": {
+    "smartphone": {
+      "brand": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      },
+      "model": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      },
+      "storage": {
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1": 0.9474,
+        "tp": 9,
+        "fp": 0,
+        "fn": 1
+      },
+      "screen": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      },
+      "battery": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      },
+      "color": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 7,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "laptop": {
+      "brand": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      },
+      "cpu": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      },
+      "ram": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      },
+      "storage": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      },
+      "screen": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      },
+      "color": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 7,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "headphones": {
+      "brand": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      "color": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "generic": {
+      "brand": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      },
+      "color": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      }
+    }
+  },
+  "n_cards": 20,
+  "threshold_sweep": [
+    {
+      "threshold": 0.0,
+      "precision": 0.9905,
+      "recall": 1.0,
+      "f1": 0.9952,
+      "coverage": 0.9375
+    },
+    {
+      "threshold": 0.05,
+      "precision": 0.9905,
+      "recall": 1.0,
+      "f1": 0.9952,
+      "coverage": 0.9375
+    },
+    {
+      "threshold": 0.1,
+      "precision": 0.9905,
+      "recall": 1.0,
+      "f1": 0.9952,
+      "coverage": 0.9375
+    },
+    {
+      "threshold": 0.15,
+      "precision": 0.9905,
+      "recall": 1.0,
+      "f1": 0.9952,
+      "coverage": 0.9375
+    },
+    {
+      "threshold": 0.2,
+      "precision": 0.9905,
+      "recall": 1.0,
+      "f1": 0.9952,
+      "coverage": 0.9375
+    },
+    {
+      "threshold": 0.25,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "coverage": 0.9286
+    },
+    {
+      "threshold": 0.3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "coverage": 0.9286
+    },
+    {
+      "threshold": 0.35,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "coverage": 0.9286
+    },
+    {
+      "threshold": 0.4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "coverage": 0.9286
+    },
+    {
+      "threshold": 0.45,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "coverage": 0.9286
+    },
+    {
+      "threshold": 0.5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "coverage": 0.9286
+    },
+    {
+      "threshold": 0.55,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "coverage": 0.9286
+    },
+    {
+      "threshold": 0.6,
+      "precision": 1.0,
+      "recall": 0.9904,
+      "f1": 0.9952,
+      "coverage": 0.9196
+    },
+    {
+      "threshold": 0.65,
+      "precision": 1.0,
+      "recall": 0.9904,
+      "f1": 0.9952,
+      "coverage": 0.9196
+    },
+    {
+      "threshold": 0.7,
+      "precision": 1.0,
+      "recall": 0.9904,
+      "f1": 0.9952,
+      "coverage": 0.9196
+    },
+    {
+      "threshold": 0.75,
+      "precision": 1.0,
+      "recall": 0.8942,
+      "f1": 0.9442,
+      "coverage": 0.8304
+    },
+    {
+      "threshold": 0.8,
+      "precision": 1.0,
+      "recall": 0.8462,
+      "f1": 0.9167,
+      "coverage": 0.7857
+    },
+    {
+      "threshold": 0.85,
+      "precision": 1.0,
+      "recall": 0.7404,
+      "f1": 0.8508,
+      "coverage": 0.6875
+    },
+    {
+      "threshold": 0.9,
+      "precision": 1.0,
+      "recall": 0.5192,
+      "f1": 0.6835,
+      "coverage": 0.4821
+    },
+    {
+      "threshold": 0.95,
+      "precision": 1.0,
+      "recall": 0.2692,
+      "f1": 0.4242,
+      "coverage": 0.25
+    },
+    {
+      "threshold": 1.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "coverage": 0.0
+    }
+  ],
+  "mode": "продавец + правила"
+}

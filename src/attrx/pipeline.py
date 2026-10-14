@@ -6,12 +6,14 @@ from collections.abc import Iterable, Iterator
 from .confidence import aggregate
 from .config import Settings, get_settings
 from .extractors import llm as llm_extractor
-from .extractors import rules, seller
+from .extractors import ner, rules, seller
 from .llm.client import LLMClient, get_client
 from .normalize import display
 from .schema import AttributeValue, Card, ExtractionResult
 from .taxonomy import Taxonomy, load_taxonomy
 from .verify import grounded
+
+ALL_SOURCES = frozenset({"seller", "rules", "ml", "llm"})
 
 
 class Extractor:
@@ -19,22 +21,38 @@ class Extractor:
         self.s = settings or get_settings()
         self.tax = taxonomy or load_taxonomy(str(self.s.taxonomy_path))
         self.client = client or get_client()
+        self.ml = ner.NerExtractor.load(self.s.ml_model_path) if self.s.ml_enabled else None
 
-    def extract(self, card: Card, use_llm: bool | None = None) -> ExtractionResult:
+    def extract(self, card: Card, use_llm: bool | None = None, sources: set[str] | None = None) -> ExtractionResult:
+        """sources — какие источники включить (seller, rules, ml, llm); по умолчанию все доступные."""
+        src = sources or ALL_SOURCES
         cat_name, cat_conf = self.tax.detect_category(card)
         category = self.tax.categories[cat_name]
         warnings: list[str] = []
-        cands = seller.extract(card, category, self.tax) + rules.extract(card, category, self.tax)
+        cands = []
+        if "seller" in src:
+            cands += seller.extract(card, category, self.tax)
+        if "rules" in src:
+            cands += rules.extract(card, category, self.tax)
 
         def resolve():
             by_attr = {a: [c for c in cands if c.attribute == a] for a in category.attributes}
             return {a: aggregate(cs) for a, cs in by_attr.items()}
 
         agg = resolve()
+
+        def weak_attrs() -> list[str]:
+            return [a for a, (v, conf, _, conflict) in agg.items() if v is None or conf < self.s.llm_route_threshold or conflict]
+
+        # модели — только для хвоста: атрибутов, которые продавец и правила не закрыли уверенно
+        if "ml" in src and self.ml is not None and (weak := set(weak_attrs())):
+            cands += [c for c in self.ml.extract(card, category, self.tax)
+                      if c.attribute in weak and grounded(c, card, category.attributes[c.attribute], self.tax.dictionaries)]
+            agg = resolve()
         llm_used = False
-        want_llm = self.client.enabled if use_llm is None else (use_llm and self.client.enabled)
+        want_llm = "llm" in src and (self.client.enabled if use_llm is None else (use_llm and self.client.enabled))
         if want_llm:
-            weak = [a for a, (v, conf, _, conflict) in agg.items() if v is None or conf < self.s.llm_route_threshold or conflict]
+            weak = weak_attrs()
             if weak:
                 new, warn = llm_extractor.extract(card, category, self.tax, weak, self.client)
                 warnings += warn
@@ -68,6 +86,7 @@ class Extractor:
         return ExtractionResult(card_id=card.id, category=cat_name, category_confidence=round(cat_conf, 3),
                                 attributes=attrs, llm_used=llm_used, warnings=warnings)
 
-    def extract_many(self, cards: Iterable[Card], use_llm: bool | None = None) -> Iterator[ExtractionResult]:
+    def extract_many(self, cards: Iterable[Card], use_llm: bool | None = None,
+                     sources: set[str] | None = None) -> Iterator[ExtractionResult]:
         for card in cards:
-            yield self.extract(card, use_llm=use_llm)
+            yield self.extract(card, use_llm=use_llm, sources=sources)

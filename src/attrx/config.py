@@ -41,6 +41,8 @@ class Settings:
     llm_max_calls: int = field(default_factory=lambda: int(os.getenv("LLM_MAX_CALLS", "5000")))
     confidence_threshold: float = field(default_factory=lambda: float(os.getenv("CONFIDENCE_THRESHOLD", "0.7")))
     llm_route_threshold: float = field(default_factory=lambda: float(os.getenv("LLM_ROUTE_THRESHOLD", "0.6")))
+    ml_enabled: bool = field(default_factory=lambda: _bool("ML_ENABLED", True))
+    ml_model_path: Path = field(default_factory=lambda: _path("ML_MODEL_PATH", "models/ner"))
     taxonomy_path: Path = field(default_factory=lambda: _path("TAXONOMY_PATH", "config/taxonomy.yaml"))
     dataset_config: Path = field(default_factory=lambda: _path("DATASET_CONFIG", "config/dataset.yaml"))
     cache_path: Path = field(default_factory=lambda: _path("CACHE_PATH", "outputs/llm_cache.sqlite"))

@@ -15,7 +15,8 @@
 | Нормализация | Единицы (ТБ→ГБ, см→дюймы, Ач→мА·ч), справочники синонимов с падежами/родами (config/dictionaries) |
 | Уверенность | Агрегация источников (noisy-OR), штраф за конфликты; порог подбирается по кривой precision/coverage |
 | Ручная проверка | Статусы accepted / review / missing, очередь проверки в UI, правки → feedback.jsonl → новые синонимы |
-| Правила + ML + LLM | Сначала дешёвые правила, LLM только для непокрытых атрибутов, с кэшем и лимитом вызовов |
+| Правила → ML → LLM | Сначала дешёвые правила, затем NER на ruBERT-tiny2 (BIO-теги, слабая разметка от правил), LLM только для того, что осталось непокрытым. Есть кэш и лимит вызовов |
+| Честная оценка | attrx report: таблица «правила / +продавец / +ML / +LLM», качество по сегментам продавцов, разбор ошибок; attrx split — holdout из gold |
 | Метрики | P/R/F1 по атрибутам, coverage, traffic-weighted F1, разрез по категориям, gold-набор |
 | Внедрение в М.Видео | Любой OpenAI-совместимый endpoint (GigaChat, YandexGPT, vLLM/Ollama on-prem). Без LLM всё работает на правилах. VPN и прокси не нужны |
 
@@ -58,6 +59,22 @@ Docker: **docker compose up** (только правила) или **docker comp
 5. **attrx extract -i data/raw/test.csv** → outputs/predictions.jsonl и .csv.
 6. **attrx eval --gold data/raw/gold.jsonl** → метрики и кривая порога.
 
+## ML-слой (NER) и отчёт для сдачи
+
+~~~bash
+uv pip install -p .venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu
+uv pip install -p .venv/bin/python -e ".[ml]"
+attrx split --gold data/raw/gold.jsonl                      # gold_train + gold_holdout (holdout не трогаем)
+attrx train-ner -i data/raw/train.csv --gold data/raw/gold_train.jsonl   # -> models/ner (в git не идёт)
+attrx report -i data/raw/holdout.csv --gold data/raw/gold_holdout.jsonl  # -> submission/
+attrx prelabel                                              # черновик gold из предсказаний для ручной разметки
+~~~
+
+NER учится на **слабой разметке**: спаны значений, которые нашли правила, а при наличии gold остаются только те, что с ним совпали.
+В пайплайне NER работает только на «хвосте»: атрибутах, которые продавец и правила не закрыли уверенно. Поэтому слабая модель не портит то, что правила уже сделали хорошо.
+
+submission/ — артефакт для сдачи: predictions.jsonl/.csv, metrics.json, compare.json (сравнение подходов), segments.json (coverage по сегментам), errors.csv, REPORT.md.
+
 ## LLM-провайдер (.env)
 
 | Провайдер | LLM_BASE_URL | Примечание |
@@ -85,17 +102,18 @@ LLM_RESPONSE_FORMAT: json_schema → json_object → none. Если провай
 ~~~
 config/            taxonomy.yaml, dataset.yaml, dictionaries/*.yaml (+ learned.yaml из фидбэка)
 src/attrx/
-  extractors/      seller.py, rules.py, llm.py
+  extractors/      seller.py, rules.py, ner.py (ML), llm.py
   normalize.py     единицы, числа, справочники, процессоры
   verify.py        проверка заземления (анти-галлюцинации)
   confidence.py    агрегация источников
   pipeline.py      оркестратор
   llm/             OpenAI-совместимый клиент + SQLite-кэш
   genui/           схема компонентов и композитор UI
-  eval/            метрики, EDA
+  eval/            метрики, EDA, report.py (сравнение подходов, сегменты, ошибки)
   api/app.py       FastAPI
-  cli.py           attrx extract | eval | eda | serve | learn | demo
+  cli.py           attrx extract | eval | eda | serve | learn | demo | train-ner | report | split | prelabel
 web/               UI модератора (без сборки, vanilla JS, стиль М.Видео)
+submission/        предсказания + отчёт (обязательный артефакт сдачи)
 data/sample/       20 синтетических карточек + gold (smoke-тест, не настоящая оценка)
 notebooks/         EDA
 docs/              план, архитектура, внедрение, риски, презентация

@@ -36,7 +36,10 @@ class LLMClient:
         if self._client is None:
             from openai import OpenAI
 
-            self._client = OpenAI(base_url=self.s.llm_base_url, api_key=self.s.llm_api_key, timeout=self.s.llm_timeout)
+            self._client = OpenAI(
+                base_url=self.s.llm_base_url, api_key=self.s.llm_api_key,
+                timeout=self.s.llm_timeout, max_retries=self.s.llm_max_retries,
+            )
         return self._client
 
     def complete_json(self, system: str, user: str, schema: dict, name: str = "result") -> dict:
@@ -49,6 +52,8 @@ class LLMClient:
                 raise LLMUnavailable("Превышен лимит LLM_MAX_CALLS")
             self.calls += 1
         kwargs: dict = {}
+        if self.s.llm_reasoning_effort:  # "none" отключает «размышления» у qwen3.x в Ollama — иначе ответ в разы дольше
+            kwargs["reasoning_effort"] = self.s.llm_reasoning_effort
         fmt = self.s.llm_response_format
         if fmt == "json_schema":
             kwargs["response_format"] = {"type": "json_schema", "json_schema": {"name": name, "schema": schema, "strict": True}}
@@ -58,13 +63,18 @@ class LLMClient:
         try:
             resp = self._openai().chat.completions.create(model=self.s.llm_model, messages=messages, temperature=0, **kwargs)
         except Exception as e:  # провайдеры по-разному поддерживают response_format — откатываемся на текст
-            if _is_connection_error(e):
+            if _is_error(e, "APITimeoutError"):
+                raise LLMUnavailable(
+                    f"LLM не ответила за {self.s.llm_timeout:g} с — увеличьте LLM_TIMEOUT или возьмите модель полегче"
+                ) from e
+            if _is_error(e, "APIConnectionError"):
                 raise LLMUnavailable(f"нет соединения с LLM по адресу {self.s.llm_base_url} ({e})") from e
             if fmt == "none":
                 raise LLMUnavailable(str(e)) from e
             log.warning("response_format=%s не поддержан (%s), повтор без него", fmt, e)
             try:
-                resp = self._openai().chat.completions.create(model=self.s.llm_model, messages=messages, temperature=0)
+                kwargs.pop("response_format", None)
+                resp = self._openai().chat.completions.create(model=self.s.llm_model, messages=messages, temperature=0, **kwargs)
             except Exception as e2:
                 raise LLMUnavailable(str(e2)) from e2
         data = parse_json(resp.choices[0].message.content or "")
@@ -72,9 +82,9 @@ class LLMClient:
         return data
 
 
-def _is_connection_error(e: Exception) -> bool:
-    """Сеть/таймаут (openai.APIConnectionError и наследники): повтор без response_format не поможет."""
-    return any(c.__name__ == "APIConnectionError" for c in type(e).__mro__)
+def _is_error(e: Exception, name: str) -> bool:
+    """Сеть/таймаут (openai.APIConnectionError, APITimeoutError): повтор без response_format не поможет."""
+    return any(c.__name__ == name for c in type(e).__mro__)
 
 
 def parse_json(text: str) -> dict:

@@ -50,6 +50,8 @@ class Settings:
     llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "qwen2.5:7b-instruct"))
     llm_response_format: str = field(default_factory=lambda: os.getenv("LLM_RESPONSE_FORMAT", "json_schema"))
     llm_timeout: float = field(default_factory=lambda: float(os.getenv("LLM_TIMEOUT", "60")))
+    llm_max_retries: int = field(default_factory=lambda: int(os.getenv("LLM_MAX_RETRIES", "0")))
+    llm_reasoning_effort: str = field(default_factory=lambda: os.getenv("LLM_REASONING_EFFORT", ""))
     llm_max_calls: int = field(default_factory=lambda: int(os.getenv("LLM_MAX_CALLS", "5000")))
     confidence_threshold: float = field(default_factory=lambda: float(os.getenv("CONFIDENCE_THRESHOLD", "0.7")))
     llm_route_threshold: float = field(default_factory=lambda: float(os.getenv("LLM_ROUTE_THRESHOLD", "0.6")))

@@ -61,5 +61,7 @@ def compose_llm(r: ExtractionResult, intent: str, client: LLMClient) -> tuple[UI
         data = client.complete_json(SYSTEM, json.dumps(payload, ensure_ascii=False), UISPEC_JSON_SCHEMA, "ui_spec")
         spec = UISpec.model_validate({**data, "generated_by": "llm"})
         return sanitize(spec, r), None
-    except (LLMUnavailable, ValidationError, TypeError, ValueError) as e:
+    except LLMUnavailable as e:
+        return compose_default(r), f"LLM недоступна, показан шаблон: {str(e)[:160]}"
+    except (ValidationError, TypeError, ValueError) as e:
         return compose_default(r), f"LLM вернула невалидный UI, показан шаблон: {str(e)[:120]}"

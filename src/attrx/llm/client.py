@@ -58,6 +58,8 @@ class LLMClient:
         try:
             resp = self._openai().chat.completions.create(model=self.s.llm_model, messages=messages, temperature=0, **kwargs)
         except Exception as e:  # провайдеры по-разному поддерживают response_format — откатываемся на текст
+            if _is_connection_error(e):
+                raise LLMUnavailable(f"нет соединения с LLM по адресу {self.s.llm_base_url} ({e})") from e
             if fmt == "none":
                 raise LLMUnavailable(str(e)) from e
             log.warning("response_format=%s не поддержан (%s), повтор без него", fmt, e)
@@ -68,6 +70,11 @@ class LLMClient:
         data = parse_json(resp.choices[0].message.content or "")
         self.cache.set(key, data)
         return data
+
+
+def _is_connection_error(e: Exception) -> bool:
+    """Сеть/таймаут (openai.APIConnectionError и наследники): повтор без response_format не поможет."""
+    return any(c.__name__ == "APIConnectionError" for c in type(e).__mro__)
 
 
 def parse_json(text: str) -> dict:

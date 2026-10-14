@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+outputs/*
+!outputs/.gitkeep
+data/raw/
+data/*.csv
+data/*.parquet
+!data/sample/
+web/node_modules/
+web/dist/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store

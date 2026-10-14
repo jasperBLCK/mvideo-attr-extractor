@@ -1,0 +1,15 @@
+# Базовый запуск: только правила (LLM_ENABLED=false) — работает в закрытом контуре без интернета.
+# С локальной LLM: docker compose --profile llm up  (Ollama рядом, данные не покидают сервер)
+services:
+  app:
+    build: .
+    ports: ["8000:8000"]
+    env_file: [.env]
+    volumes: ["./outputs:/app/outputs", "./config:/app/config", "./data:/app/data"]
+  ollama:
+    image: ollama/ollama:latest
+    profiles: [llm]
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+volumes:
+  ollama: {}

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Автозаполнение характеристик</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar__row">
+      <div class="brandmark"><span class="brandmark__plate">attrx</span><span class="brandmark__sub">Контент-фабрика каталога</span></div>
+      <form id="intent-form" class="search">
+        <input id="intent" placeholder="Что показать? Например: «только то, что нужно проверить, с цитатами»" />
+        <button type="submit" class="search__btn" title="Сгенерировать интерфейс">Собрать экран</button>
+      </form>
+      <div id="health" class="health"></div>
+    </div>
+    <nav class="wrap tabs">
+      <button class="tab is-active" data-tab="card">Карточка</button>
+      <button class="tab" data-tab="review">Очередь проверки</button>
+      <button class="tab" data-tab="metrics">Метрики</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section id="tab-card" class="tabpane is-active grid2">
+      <form id="card-form" class="panel">
+        <h2>Карточка товара</h2>
+        <label>Пример из датасета
+          <select id="sample"><option value="">— выбрать —</option></select>
+        </label>
+        <label>Название <input id="title" required /></label>
+        <label>Описание <textarea id="description" rows="5"></textarea></label>
+        <label>Данные продавца <small>по строке: ключ: значение</small>
+          <textarea id="seller" rows="4" placeholder="Цвет: черный&#10;Встроенная память: 256 ГБ"></textarea></label>
+        <label>Категория <small>можно не указывать — определим сами</small> <input id="category" /></label>
+        <label class="check"><input type="checkbox" id="use-llm" /> Использовать LLM для непокрытых атрибутов</label>
+        <button class="btn btn--primary" type="submit">Заполнить характеристики</button>
+      </form>
+      <div>
+        <div id="ui-warning" class="note" hidden></div>
+        <div id="ui-root" class="ui-root"><div class="empty">Выберите пример или вставьте карточку — интерфейс соберётся по результату.</div></div>
+      </div>
+    </section>
+
+    <section id="tab-review" class="tabpane">
+      <div class="panel"><h2>Очередь ручной проверки</h2><p class="muted">Значения с низкой уверенностью или конфликтом источников. Исправления уходят в feedback.jsonl и пополняют словари (attrx learn).</p>
+        <div id="review-root"></div></div>
+    </section>
+
+    <section id="tab-metrics" class="tabpane">
+      <div id="metrics-root"></div>
+    </section>
+  </main>
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

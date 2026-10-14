@@ -1,0 +1,20 @@
+{"id": "s1", "title": "Смартфон Apple iPhone 15 128 ГБ черный", "description": "Экран 6,1\" Super Retina XDR, аккумулятор 3349 мАч.", "seller_attrs": {"Бренд": "Apple", "Цвет": "черный"}, "category": "Смартфоны"}
+{"id": "s2", "title": "Смартфон Samsung Galaxy A55 8/256 ГБ голубой", "description": "Дисплей 6.6 дюйма, батарея 5000 mAh, 8 ГБ RAM.", "seller_attrs": {"Производитель": "Samsung"}, "category": "Смартфоны"}
+{"id": "s3", "title": "Xiaomi Redmi Note 13 Pro 12+512GB Midnight Black", "description": "AMOLED 6.67\", 5100 мАч, быстрая зарядка 67 Вт.", "seller_attrs": {}, "category": "Смартфоны"}
+{"id": "s4", "title": "Смартфон HONOR X8b 8/128Gb Титановый серебристый", "description": "Диагональ экрана 6,7 дюйма. Емкость аккумулятора — 4500 мА·ч.", "seller_attrs": {"Цвет корпуса": "серебристый"}, "category": "Смартфоны"}
+{"id": "s5", "title": "Смартфон Самсунг Galaxy S24 Ultra 12/1 ТБ", "description": "Корпус из титана, экран 6.8\", 5000 мАч. Доступные расцветки: черный, серый, фиолетовый.", "seller_attrs": {"Встроенная память": "1 ТБ"}, "category": "Смартфоны"}
+{"id": "s6", "title": "realme C67 6/128 ГБ зеленый", "description": "Смартфон с экраном 6,72 дюйма и батареей 5000 мАч.", "seller_attrs": {"Бренд": "realme", "Цвет": "зелёный"}, "category": null}
+{"id": "s7", "title": "Смартфон TECNO Spark 20 Pro 8/256GB", "description": "Отличный выбор для повседневных задач.", "seller_attrs": {"Цвет": "Moonlit Black"}, "category": "Смартфоны"}
+{"id": "s8", "title": "Смартфон Google Pixel 8 128 ГБ Hazel", "description": "Экран 6.2 дюйма. Аккумулятор 4575 мАч.", "seller_attrs": {"Цвет": "Hazel"}, "category": "Смартфоны"}
+{"id": "s9", "title": "Смартфон Infinix HOT 40i 4/128 ГБ", "description": "Экран 6,56\". Аккумулятор 5000 мАч. Цвет: золотистый.", "seller_attrs": {"Объем памяти": "256 ГБ"}, "category": "Смартфоны"}
+{"id": "s10", "title": "Смартфон vivo Y36 8/256 ГБ", "description": "", "seller_attrs": {}, "category": "Смартфоны"}
+{"id": "l1", "title": "Ноутбук ASUS Vivobook 15 X1504ZA-BQ1143 15.6\" Intel Core i5-1235U 16 ГБ SSD 512 ГБ серебристый", "description": "IPS экран Full HD, без ОС.", "seller_attrs": {"Оперативная память": "16 ГБ"}, "category": "Ноутбуки"}
+{"id": "l2", "title": "Ноутбук Lenovo IdeaPad Slim 3 15IRH8 i7-13620H/16/1TB SSD/15.6\" серый", "description": "Процессор Intel Core i7-13620H, 16 ГБ ОЗУ DDR5, SSD 1 ТБ.", "seller_attrs": {"Бренд": "Lenovo"}, "category": "Ноутбуки"}
+{"id": "l3", "title": "Apple MacBook Air 13 M2 8/256 ГБ Space Gray", "description": "Экран Liquid Retina 13,6 дюйма. Чип Apple M2.", "seller_attrs": {"Объем оперативной памяти": "8 ГБ", "Объем SSD": "256 ГБ"}, "category": "Ноутбуки"}
+{"id": "l4", "title": "Ноутбук HP 250 G9 15,6\" Intel Celeron N4500 8 ГБ 256 ГБ SSD", "description": "Лёгкий ноутбук для учёбы, цвет темно-серебристый.", "seller_attrs": {"Цвет": "серебристый"}, "category": "Ноутбуки"}
+{"id": "l5", "title": "Игровой ноутбук MSI Thin GF63 12VE-466XRU", "description": "Экран 15,6 дюйма 144 Гц, Intel Core i5-12450H, RAM 16 ГБ, SSD 512 ГБ, видеокарта RTX 4050.", "seller_attrs": {"Цвет": "черный"}, "category": "Ноутбуки"}
+{"id": "l6", "title": "Ноутбук Acer Aspire 3 A315-44P AMD Ryzen 7 5700U 16/512 ГБ", "description": "Диагональ 15.6\". Цвет корпуса серебристый.", "seller_attrs": {}, "category": "Ноутбуки"}
+{"id": "l7", "title": "Ноутбук HUAWEI MateBook D 16 i5-12450H 16 ГБ 512 ГБ", "description": "Экран 16 дюймов, металлический корпус цвета «космический серый».", "seller_attrs": {"Производитель": "HUAWEI"}, "category": "Ноутбуки"}
+{"id": "l8", "title": "Ноутбук MAIBENBEN P415", "description": "Для офиса и учёбы.", "seller_attrs": {"Процессор": "Intel Core i3-1215U", "Оперативная память": "8 ГБ", "Накопитель": "512 ГБ SSD", "Диагональ": "14\""}, "category": "Ноутбуки"}
+{"id": "g1", "title": "Беспроводные наушники Xiaomi Redmi Buds 5 белые", "description": "Активное шумоподавление, до 40 часов работы.", "seller_attrs": {}, "category": null}
+{"id": "g2", "title": "Умная колонка Яндекс Станция Мини", "description": "Голосовой помощник Алиса. Цвет: розовый", "seller_attrs": {"Бренд": "Яндекс"}, "category": null}

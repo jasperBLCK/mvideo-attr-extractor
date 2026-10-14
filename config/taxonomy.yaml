@@ -1,0 +1,44 @@
+# Таксономия: категории -> обязательные атрибуты.
+# type: enum (значение из справочника), number (число + единица), string (свободная строка, напр. модель)
+# aliases: как этот атрибут называют продавцы в своих полях
+# traffic_weight: насколько часто по атрибуту фильтруют (для trafic-weighted метрик). Заглушка до данных от М.Видео.
+# ВНИМАНИЕ: точный перечень обязательных полей придёт с датасетом — обновить здесь.
+
+categories:
+  smartphone:
+    title: Смартфоны
+    keywords: [смартфон, smartphone, телефон, iphone, galaxy, redmi, poco, pixel]
+    attributes:
+      brand:    {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand, manufacturer], traffic_weight: 1.0}
+      model:    {title: Модель, type: string, aliases: [модель, model, серия], traffic_weight: 0.6}
+      storage:  {title: Объём встроенной памяти, type: number, unit: ГБ, kind: memory, aliases: [встроенная память, объем памяти, объём памяти, память, rom, storage, внутренняя память], traffic_weight: 0.9}
+      screen:   {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, aliases: [диагональ, диагональ экрана, экран, screen, display], traffic_weight: 0.7}
+      battery:  {title: Ёмкость аккумулятора, type: number, unit: мА·ч, kind: battery, aliases: [аккумулятор, емкость аккумулятора, ёмкость аккумулятора, батарея, battery], traffic_weight: 0.5}
+      color:    {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color, colour, цвет корпуса], traffic_weight: 0.8}
+
+  laptop:
+    title: Ноутбуки
+    keywords: [ноутбук, laptop, notebook, macbook, ультрабук, vivobook, ideapad, thinkpad, zenbook]
+    attributes:
+      brand:    {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      cpu:      {title: Процессор, type: string, kind: cpu, aliases: [процессор, cpu, модель процессора, processor], traffic_weight: 0.8}
+      ram:      {title: Объём оперативной памяти, type: number, unit: ГБ, kind: ram, aliases: [оперативная память, озу, ram, объем оперативной памяти, объём оперативной памяти], traffic_weight: 0.9}
+      storage:  {title: Накопитель, type: number, unit: ГБ, kind: storage_drive, aliases: [накопитель, ssd, объем ssd, объём ssd, жесткий диск, storage], traffic_weight: 0.8}
+      screen:   {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, aliases: [диагональ, диагональ экрана, экран, screen], traffic_weight: 0.7}
+      color:    {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color, цвет корпуса], traffic_weight: 0.5}
+
+  headphones:
+    title: Наушники
+    keywords: [наушники, гарнитура, buds, airpods, earbuds, headphones, tws]
+    attributes:
+      brand: {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      color: {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color], traffic_weight: 0.6}
+
+  # Фолбэк для категорий, которых нет в таксономии (cold start): только универсальные атрибуты,
+  # остальное — LLM-предложения со статусом "на проверку".
+  generic:
+    title: Прочее
+    keywords: []
+    attributes:
+      brand: {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      color: {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color], traffic_weight: 0.5}

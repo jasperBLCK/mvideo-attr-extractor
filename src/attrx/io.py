@@ -1,0 +1,106 @@
+"""Чтение датасета организаторов (CSV/JSON/JSONL/Parquet/XLSX) через маппинг config/dataset.yaml и экспорт предсказаний."""
+from __future__ import annotations
+
+import csv
+import json
+from collections.abc import Iterable, Iterator
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+import yaml
+
+from .config import get_settings
+from .schema import Card, ExtractionResult
+
+
+def read_table(path: Path) -> pd.DataFrame:
+    suf = path.suffix.lower()
+    if suf == ".csv":
+        return pd.read_csv(path, dtype=str, keep_default_na=False)
+    if suf == ".jsonl":
+        return pd.read_json(path, lines=True, dtype=False)
+    if suf == ".json":
+        return pd.read_json(path, dtype=False)
+    if suf == ".parquet":
+        return pd.read_parquet(path)
+    if suf in {".xlsx", ".xls"}:
+        return pd.read_excel(path, dtype=str)
+    raise ValueError(f"Неизвестный формат: {path}")
+
+
+def _as_dict(v: Any) -> dict:
+    if isinstance(v, dict):
+        return v
+    if isinstance(v, list):  # [{"name": .., "value": ..}] — частый формат маркетплейсов
+        return {str(x.get("name") or x.get("key")): x.get("value") for x in v if isinstance(x, dict)}
+    if isinstance(v, str) and v.strip().startswith(("{", "[")):
+        try:
+            return _as_dict(json.loads(v))
+        except json.JSONDecodeError:
+            return {}
+    return {}
+
+
+def load_mapping(path: Path | None = None) -> dict:
+    return yaml.safe_load((path or get_settings().dataset_config).read_text(encoding="utf-8"))
+
+
+def row_to_card(row: dict, m: dict) -> Card:
+    seller: dict = {}
+    if m.get("seller_attrs") and m["seller_attrs"] in row:
+        seller = _as_dict(row[m["seller_attrs"]])
+    if m.get("seller_attrs_prefix"):
+        pre = m["seller_attrs_prefix"]
+        seller |= {k[len(pre):]: v for k, v in row.items() if k.startswith(pre) and v not in (None, "")}
+
+    def get(name: str) -> str:
+        col = m.get(name)
+        v = row.get(col) if col else None
+        return "" if v is None or (isinstance(v, float) and pd.isna(v)) else str(v)
+
+    return Card(id=get("id"), title=get("title"), description=get("description"), seller_attrs=seller,
+                category=get("category") or None)
+
+
+def load_cards(path: Path, mapping: dict | None = None) -> list[Card]:
+    m = mapping or load_mapping()
+    df = read_table(path)
+    return [row_to_card(r, m) for r in df.to_dict(orient="records")]
+
+
+def load_gold(path: Path, mapping: dict | None = None) -> dict[str, dict[str, Any]]:
+    """Эталон: JSONL {"id":..., "attributes": {...}} или колонка gold в таблице датасета."""
+    m = mapping or load_mapping()
+    if path.suffix == ".jsonl":
+        out = {}
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                r = json.loads(line)
+                out[str(r["id"])] = r.get("attributes") or {}
+        return out
+    df = read_table(path)
+    return {str(r[m["id"]]): _as_dict(r.get(m.get("gold", "gold"))) for r in df.to_dict(orient="records")}
+
+
+def write_predictions(results: Iterable[ExtractionResult], path: Path) -> list[ExtractionResult]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    results = list(results)
+    with path.open("w", encoding="utf-8") as f:
+        for r in results:
+            f.write(r.model_dump_json() + "\n")
+    # плоский CSV — удобно открыть в Excel и сдать как «файл предсказаний»
+    with path.with_suffix(".csv").open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["id", "category", "attribute", "value", "unit", "confidence", "status", "sources", "evidence"])
+        for r in results:
+            for a in r.attributes:
+                w.writerow([r.card_id, r.category, a.attribute, "" if a.value is None else a.value, a.unit or "",
+                            a.confidence, a.status, "|".join(a.sources), a.evidence or ""])
+    return results
+
+
+def read_predictions(path: Path) -> Iterator[ExtractionResult]:
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            yield ExtractionResult.model_validate_json(line)

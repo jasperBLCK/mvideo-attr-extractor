@@ -1,0 +1,11 @@
+# Маппинг колонок датасета организаторов на внутреннюю схему Card.
+# Как только выдадут датасет — поправить имена колонок здесь, код трогать не нужно.
+id: id
+title: title
+description: description
+category: category
+# seller_attrs: колонка с JSON/dict ИЛИ префикс колонок (например "attr_")
+seller_attrs: seller_attrs
+seller_attrs_prefix: null
+# Колонка/файл с эталонной разметкой (если разметка лежит в той же таблице)
+gold: gold

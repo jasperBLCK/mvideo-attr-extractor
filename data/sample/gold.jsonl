@@ -1,0 +1,20 @@
+{"id": "s1", "attributes": {"brand": "Apple", "model": "iPhone 15", "storage": 128, "screen": 6.1, "battery": 3349, "color": "чёрный"}}
+{"id": "s2", "attributes": {"brand": "Samsung", "model": "Galaxy A55", "storage": 256, "screen": 6.6, "battery": 5000, "color": "синий"}}
+{"id": "s3", "attributes": {"brand": "Xiaomi", "model": "Redmi Note 13 Pro", "storage": 512, "screen": 6.67, "battery": 5100, "color": "чёрный"}}
+{"id": "s4", "attributes": {"brand": "HONOR", "model": "X8b", "storage": 128, "screen": 6.7, "battery": 4500, "color": "серебристый"}}
+{"id": "s5", "attributes": {"brand": "Samsung", "model": "Galaxy S24 Ultra", "storage": 1024, "screen": 6.8, "battery": 5000}}
+{"id": "s6", "attributes": {"brand": "realme", "model": "C67", "storage": 128, "screen": 6.72, "battery": 5000, "color": "зелёный"}}
+{"id": "s7", "attributes": {"brand": "TECNO", "model": "Spark 20 Pro", "storage": 256, "color": "чёрный"}}
+{"id": "s8", "attributes": {"brand": "Google", "model": "Pixel 8", "storage": 128, "screen": 6.2, "battery": 4575}}
+{"id": "s9", "attributes": {"brand": "Infinix", "model": "HOT 40i", "storage": 128, "screen": 6.56, "battery": 5000, "color": "золотой"}}
+{"id": "s10", "attributes": {"brand": "vivo", "model": "Y36", "storage": 256}}
+{"id": "l1", "attributes": {"brand": "ASUS", "cpu": "Intel Core i5-1235U", "ram": 16, "storage": 512, "screen": 15.6, "color": "серебристый"}}
+{"id": "l2", "attributes": {"brand": "Lenovo", "cpu": "Intel Core i7-13620H", "ram": 16, "storage": 1024, "screen": 15.6, "color": "серый"}}
+{"id": "l3", "attributes": {"brand": "Apple", "cpu": "Apple M2", "ram": 8, "storage": 256, "screen": 13.6, "color": "серый"}}
+{"id": "l4", "attributes": {"brand": "HP", "cpu": "Intel Celeron N4500", "ram": 8, "storage": 256, "screen": 15.6, "color": "серебристый"}}
+{"id": "l5", "attributes": {"brand": "MSI", "cpu": "Intel Core i5-12450H", "ram": 16, "storage": 512, "screen": 15.6, "color": "чёрный"}}
+{"id": "l6", "attributes": {"brand": "Acer", "cpu": "AMD Ryzen 7 5700U", "ram": 16, "storage": 512, "screen": 15.6, "color": "серебристый"}}
+{"id": "l7", "attributes": {"brand": "HUAWEI", "cpu": "Intel Core i5-12450H", "ram": 16, "storage": 512, "screen": 16, "color": "серый"}}
+{"id": "l8", "attributes": {"brand": "MAIBENBEN", "cpu": "Intel Core i3-1215U", "ram": 8, "storage": 512, "screen": 14}}
+{"id": "g1", "attributes": {"brand": "Xiaomi", "color": "белый"}}
+{"id": "g2", "attributes": {"brand": "Яндекс", "color": "розовый"}}

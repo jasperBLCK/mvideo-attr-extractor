@@ -4,7 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Автозаполнение характеристик</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" />
+  <link rel="stylesheet" href="/static/styles.css?v=2" />
 </head>
 <body>
   <header class="topbar">
@@ -39,6 +42,14 @@
         <button class="btn btn--primary" type="submit">Заполнить характеристики</button>
       </form>
       <div>
+        <div class="presets" id="presets">
+          <span class="muted">Попробуйте:</span>
+          <button type="button" data-intent="только то, что нужно проверить модератору, с цитатами из текста">для модератора</button>
+          <button type="button" data-intent="сводка для менеджера: сколько заполнено, сколько на проверку, чего нет">для менеджера</button>
+          <button type="button" data-intent="покажи конфликты продавца и текста, сверху самые сомнительные">конфликты</button>
+          <button type="button" data-intent="график уверенности по атрибутам">уверенность</button>
+          <button type="button" data-intent="покажи все характеристики плитками">все плитками</button>
+        </div>
         <div id="ui-warning" class="note" hidden></div>
         <div id="ui-root" class="ui-root"><div class="empty">Выберите пример или вставьте карточку — интерфейс соберётся по результату.</div></div>
       </div>
@@ -53,6 +64,6 @@
       <div id="metrics-root"></div>
     </section>
   </main>
-  <script type="module" src="/static/app.js"></script>
+  <script type="module" src="/static/app.js?v=2"></script>
 </body>
 </html>

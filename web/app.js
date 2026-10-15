@@ -1,4 +1,4 @@
-import { h, render, reviewRow } from "./components.js";
+import { h, render, reviewRow } from "./components.js?v=2";
 
 const $ = (s) => document.querySelector(s);
 const api = async (path, body) => {
@@ -6,7 +6,7 @@ const api = async (path, body) => {
   if (!r.ok) throw new Error(r.status + " " + (await r.text()));
   return r.json();
 };
-const ctx = { feedback: (fb) => api("/api/feedback", fb) };
+const ctx = { feedback: (fb) => api("/api/feedback", fb), card: null };
 let lastResult = null;
 let samples = [];
 
@@ -28,6 +28,22 @@ function readCard() {
            seller_attrs: seller, category: $("#category").value || null };
 }
 
+// Состояние «собираем экран»: скелет вместо контента, кнопка с индикатором
+function busy(on, label) {
+  const btn = $(".search__btn");
+  btn.disabled = on; btn.classList.toggle("is-busy", on);
+  $("#card-form button[type=submit]").disabled = on;
+  if (on) $("#ui-root").replaceChildren(h("div", { class: "skeleton" }, h("div", { class: "spinner" }), h("p", {}, label || "Собираем экран…"),
+    h("div", { class: "sk sk--w" }), h("div", { class: "sk" }), h("div", { class: "sk sk--tall" })));
+}
+
+async function run(label, call) {
+  busy(true, label);
+  try { show(await call()); }
+  catch (e) { $("#ui-root").replaceChildren(h("div", { class: "alert alert--danger" }, "Ошибка: " + e.message)); }
+  finally { busy(false); }
+}
+
 function show(resp) {
   lastResult = resp.result;
   $("#ui-warning").hidden = !resp.ui_warning;
@@ -38,14 +54,22 @@ function show(resp) {
 $("#card-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const intent = $("#intent").value.trim() || null;
-  show(await api("/api/extract", { card: readCard(), use_llm: $("#use-llm").checked, intent }));
+  ctx.card = readCard();
+  run("Извлекаем характеристики…", () => api("/api/extract", { card: ctx.card, use_llm: $("#use-llm").checked, intent }));
 });
 
 $("#intent-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   document.querySelector('[data-tab="card"]').click();
   if (!lastResult) return $("#card-form").requestSubmit();
-  show(await api("/api/ui", { result: lastResult, intent: $("#intent").value }));
+  run("LLM собирает экран под запрос…", () => api("/api/ui", { result: lastResult, intent: $("#intent").value }));
+});
+
+$("#presets").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-intent]");
+  if (!b) return;
+  $("#intent").value = b.dataset.intent;
+  $("#intent-form").requestSubmit();
 });
 
 $("#sample").addEventListener("change", () => {

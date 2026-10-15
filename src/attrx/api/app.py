@@ -144,4 +144,4 @@ if WEB.exists():
 
     @app.get("/")
     def index() -> FileResponse:
-        return FileResponse(Path(WEB) / "index.html")
+        return FileResponse(Path(WEB) / "index.html", headers={"Cache-Control": "no-cache"})

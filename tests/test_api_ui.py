@@ -1,5 +1,7 @@
 """API интерфейса модератора: примеры карточек, разметка текста для подсветки цитат, очередь проверки
 с приоритетом, решения и их отмена, сводка отчёта, справочники, статика без сборки."""
+import json
+
 from fastapi.testclient import TestClient
 
 from attrx.api import app as api
@@ -36,6 +38,38 @@ def test_examples_list_filter_and_lookup():
     card = data["items"][0]
     assert client.get(f"/api/examples/{card['id']}").json()["id"] == card["id"]
     assert client.get("/api/examples/__nope__").status_code == 404
+
+
+def test_examples_demo_pseudo_category_first(tmp_path, monkeypatch):
+    monkeypatch.setattr(api, "DEMO_CARDS", tmp_path / "absent.jsonl")
+    real = client.get("/api/examples?limit=1").json()
+    card = real["items"][0]
+    demo = tmp_path / "demo_cards.jsonl"
+    rows = [{**card, "description": "Демо-текст", "demo_note": "Хвост дозаполняет LLM"},
+            {"id": "demo-only", "title": "Наушники Hoco RT1", "category": "Наушники", "demo_note": "NER и LLM"}]
+    demo.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    monkeypatch.setattr(api, "DEMO_CARDS", demo)
+
+    data = client.get("/api/examples?limit=1").json()
+    first = data["categories"][0]
+    assert first == {"name": api.DEMO_CATEGORY, "count": 2, "demo": True}
+    assert data["categories"][1:] == real["categories"]  # обычные категории и их порядок не меняются
+    assert all(not c.get("demo") for c in data["items"])  # без фильтра витрина в список не подмешивается
+    only = client.get("/api/examples", params={"category": api.DEMO_CATEGORY}).json()
+    assert only["total"] == 2 and only["demo"] is True
+    assert [c["demo_note"] for c in only["items"]] == ["Хвост дозаполняет LLM", "NER и LLM"]
+    assert all(c["demo"] for c in only["items"])
+    # тот же id, что у реальной карточки: по умолчанию — реальная, demo=true — из витрины
+    assert "demo" not in client.get(f"/api/examples/{card['id']}").json()
+    assert client.get(f"/api/examples/{card['id']}", params={"demo": True}).json()["description"] == "Демо-текст"
+    assert client.get("/api/examples/demo-only").json()["demo_note"] == "NER и LLM"
+
+
+def test_examples_without_demo_file_have_no_pseudo_category(tmp_path, monkeypatch):
+    monkeypatch.setattr(api, "DEMO_CARDS", tmp_path / "absent.jsonl")
+    data = client.get("/api/examples?limit=1").json()
+    assert data["categories"] and all(c["name"] != api.DEMO_CATEGORY for c in data["categories"])
+    assert client.get("/api/examples", params={"category": api.DEMO_CATEGORY}).json()["total"] == 0
 
 
 def test_card_text_blocks_point_into_full_text():

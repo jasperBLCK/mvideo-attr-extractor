@@ -73,7 +73,8 @@ mvideo-attr-extractor/
 │   ├── components.js            реестр компонентов generative UI
 │   ├── tokens.css, styles.css   дизайн-токены (светлая и тёмная тема) и компоненты
 │   ├── js/                      api, dom, copy (подписи), evidence (подсветка цитат), attrs, workbench («Карточка»),
-│   │                            review («Очередь»), quality («Качество»), charts (SVG), palette (⌘K), help, ui
+│   │                            review («Очередь»), quality («Качество»), charts (SVG), palette (⌘K), help, ui,
+│   │                            cache (кэш извлечения и собранных экранов на клиенте)
 │   └── assets/                  шрифты Onest и Literata, иконки Phosphor, favicon, лицензии, CREDITS.md
 ├── config/
 │   ├── taxonomy.yaml            12 категорий + generic: атрибуты, aliases, gold, keywords

@@ -119,6 +119,9 @@ def sanitize(spec: UISpec, r: ExtractionResult) -> UISpec:
     return spec
 
 
+UISPEC_MAX_TOKENS = 1600
+
+
 def compose_llm(r: ExtractionResult, intent: str, client: LLMClient) -> tuple[UISpec, str | None]:
     """Возвращает (spec, предупреждение). Без LLM или при невалидном ответе — сборка по ключевым словам."""
     if not client.enabled:
@@ -131,7 +134,9 @@ def compose_llm(r: ExtractionResult, intent: str, client: LLMClient) -> tuple[UI
         "warnings": r.warnings[:10],
     }
     try:
-        data = client.complete_json(SYSTEM, json.dumps(payload, ensure_ascii=False), UISPEC_JSON_SCHEMA, "ui_spec")
+        # UISpec длиннее ответа извлечения: на 700 токенах (LLM_MAX_TOKENS по умолчанию) он обрезался
+        data = client.complete_json(SYSTEM, json.dumps(payload, ensure_ascii=False), UISPEC_JSON_SCHEMA, "ui_spec",
+                                    max_tokens=max(UISPEC_MAX_TOKENS, client.s.llm_max_tokens))
         spec = UISpec.model_validate({**data, "generated_by": "llm"})
         return sanitize(spec, r), None
     except LLMUnavailable as e:

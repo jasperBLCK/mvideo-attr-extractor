@@ -231,6 +231,44 @@ main { max-width: 1440px; margin: 0 auto;
 .skel--table { height: 240px; }
 .skel-block { display: grid; }
 .skel-row { display: grid; grid-template-columns: 1.3fr 1fr 80px; gap: var(--s-4); align-items: center; padding: 15px 12px; }
+.skel--line { height: 6px; width: 100%; border-radius: 3px; }
+.skel--pill { height: 22px; width: 112px; border-radius: var(--r-md); }
+.skel--chip { height: 18px; width: 56px; border-radius: var(--r-xs); }
+.skel-sum { display: grid; gap: 12px; margin-bottom: var(--s-6); }
+.skel-sum__row { display: flex; gap: var(--s-3); }
+.skel-ahead { color: var(--ink-4); }
+.skel-arow { min-height: 44px; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+.skel-arow:last-child { border-bottom: 0; }
+
+/* ход запроса: что сейчас делает сервер, сколько прошло, отмена */
+.busy {
+  display: grid; gap: 10px; margin-bottom: var(--s-6); padding: 14px 16px;
+  border-radius: var(--r-lg); background: var(--sheet); box-shadow: var(--shadow-sheet);
+}
+.busy__head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.busy__title { margin: 0; min-width: 0; font-weight: 600; }
+.busy__time { margin-left: auto; font-size: var(--fs-13); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.busy__head .btn { flex: none; margin-right: -6px; }
+.busy__steps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin: 0; padding: 0; list-style: none; font-size: var(--fs-13); }
+.busy__step { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 0; color: var(--ink-4); }
+.busy__step + .busy__step { padding-left: 18px; background: no-repeat left center / 8px 8px
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath d='M2 1l3 3-3 3' fill='none' stroke='%238b9099' stroke-width='1.2'/%3E%3C/svg%3E"); }
+.busy__mark { display: inline-grid; place-items: center; width: 12px; height: 12px; flex: none; }
+.busy__mark:empty::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--rule-3); }
+.busy__step.is-done { color: var(--ink-2); }
+.busy__step.is-done .i { color: var(--accepted); }
+.busy__step.is-active { color: var(--ink); font-weight: 600; }
+.busy__hint { margin: 0; max-width: 72ch; font-size: var(--fs-12); line-height: 1.45; color: var(--ink-3); }
+.spin {
+  display: inline-block; width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 2px solid var(--rule-2); border-top-color: var(--ink); animation: spin 0.8s linear infinite;
+}
+.spin--sm { width: 13px; height: 13px; border-width: 1.5px; }
+.spin--xs { width: 11px; height: 11px; border-width: 1.5px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn.is-busy { cursor: progress; }
+.btn.is-busy:disabled { opacity: 0.85; }
+.icon-btn.is-busy .i { animation: spin 0.9s linear infinite; }
 
 /* ============ рабочее место «Карточка» ============ */
 .bench { display: grid; grid-template-columns: minmax(360px, 540px) minmax(0, 1fr); gap: var(--s-8); align-items: start; }
@@ -241,7 +279,7 @@ main { max-width: 1440px; margin: 0 auto;
 }
 .srcbar { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
 .srcbar > .btn { margin-left: auto; }
-.srcbar .select__control { max-width: 210px; }
+.srcbar .select__control { max-width: 240px; }
 .pager { display: inline-flex; align-items: center; gap: 2px; }
 .pager__pos { min-width: 68px; text-align: center; font-size: var(--fs-13); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -278,6 +316,12 @@ main { max-width: 1440px; margin: 0 auto;
 .kv__v { margin: 0; overflow-wrap: anywhere; }
 .doc__plain { margin: 0; font-family: var(--font-doc); white-space: pre-wrap; }
 .doc__note { display: flex; gap: 6px; align-items: flex-start; margin: var(--s-6) 0 0; font-size: var(--fs-12); color: var(--ink-3); }
+.doc__demo {
+  display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--s-4); padding: 8px 12px;
+  border-radius: var(--r-md); background: var(--selected); font-size: var(--fs-13); line-height: 1.45; color: var(--ink-2);
+}
+.doc__demo .i { margin-top: 2px; color: var(--ink); }
+.doc__demo strong { color: var(--ink); font-weight: 600; }
 .doc__note .i { margin-top: 2px; }
 
 /* цитаты: маркер графитом, активная — красной ручкой */
@@ -329,6 +373,7 @@ mark.ev.is-flash { animation: flash 0.9s var(--ease-out); }
 .trace__stage--used .trace__label { color: var(--ink); }
 .trace__stage--used .trace__val { color: var(--accepted); font-weight: 500; }
 .trace__stage--off .trace__label, .trace__stage--off .trace__val { color: var(--ink-4); }
+.trace__plus { font-weight: 600; }
 .meta { display: inline-flex; align-items: center; gap: 6px; }
 .meta .i { color: var(--ink-4); }
 .meta__part + .meta__part { margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--rule-2); }
@@ -342,6 +387,8 @@ mark.ev.is-flash { animation: flash 0.9s var(--ease-out); }
 .genbar__text { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
 .genbar__text > .i { margin-top: 2px; color: var(--pen); }
 .genbar__how { display: block; font-size: var(--fs-12); color: var(--ink-3); }
+.genbar__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; flex: none; }
+.genbar--error { background: var(--pen-wash); }
 
 .rbody { display: grid; gap: var(--s-8); container: result / inline-size; }
 .rbody--grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
@@ -402,7 +449,7 @@ mark.ev.is-flash { animation: flash 0.9s var(--ease-out); }
 .tag[data-src="human"] { background: var(--accepted-wash); color: var(--accepted); }
 
 /* таблица характеристик */
-.ahead, .arow__main {
+.ahead, .arow__main, .skel-arow {
   display: grid; align-items: center; column-gap: var(--s-4);
   grid-template-columns: minmax(150px, 1.25fr) minmax(110px, 1fr) 112px 124px minmax(96px, 0.85fr);
 }
@@ -797,6 +844,9 @@ dialog::backdrop { background: rgb(16 17 20 / 0.36); }
   .arow__src { grid-area: src; justify-self: end; }
   .cbar { grid-template-columns: 120px minmax(0, 1fr) 40px; }
   .cbars__axis { margin: 0 calc(40px + 12px) 0 calc(120px + 12px); }
+  .skel-arow { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 72px; }
+  .skel-arow > :nth-child(n + 4) { display: none; }
+  .skel-sum__row > :nth-child(3) { display: none; }
 }
 @container result (max-width: 460px) {
   .arow__main { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name name" "val status" "conf src"; row-gap: 4px; }
@@ -878,6 +928,8 @@ dialog::backdrop { background: rgb(16 17 20 / 0.36); }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .skel { background: var(--selected); }
   .doc.is-loading::before { background: var(--pen); opacity: 0.35; }
+  /* без вращения: ход запроса передают текст этапов и счётчик секунд */
+  .spin { border-color: var(--rule-3); }
 }
 
 @media (forced-colors: active) {

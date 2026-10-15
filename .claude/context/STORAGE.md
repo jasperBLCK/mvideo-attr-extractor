@@ -58,6 +58,7 @@
 | `gold.jsonl` | 20 | руками | юнит-тесты |
 | `real_cards.jsonl` | 400 | `attrx prepare --steps sample` — карточки **holdout** (60 смартфонов, 60 ноутбуков, остальные из 22 топ-категорий) | `attrx demo` (и CI), `/api/examples` (витрина UI), `attrx llm-bench`, `tests/test_eval_gold.py`, `tests/test_demo.py` |
 | `real_params.jsonl` | 400 | тот же шаг: параметры оффера | эталон `llm-bench` |
+| `demo_cards.jsonl` | 3 | руками: копии карточек из `real_cards.jsonl` + `demo_note` (что там дозаполняет ИИ) | `/api/examples` — первая псевдокатегория «★ Демо: ИИ дозаполняет»; нет файла — её нет |
 | `real_gold.jsonl` | 400 | `attrx build-gold` | `attrx demo` (метрики как у `eval-real`), тесты |
 
 ## config — конфиги вместо кода

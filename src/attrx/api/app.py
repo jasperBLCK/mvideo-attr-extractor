@@ -49,6 +49,9 @@ _extractor: Extractor | None = None
 SAMPLE_DIR = ROOT / "data" / "sample"
 REAL_CARDS = SAMPLE_DIR / "real_cards.jsonl"  # реальный сэмпл карточек М.Видео (готовит поток данных)
 SYNTH_CARDS = SAMPLE_DIR / "cards.jsonl"  # синтетический smoke-набор
+# витрина для показа: карточки, где хвост дозаполняют ML и LLM; demo_note — одна строка, что именно там видно
+DEMO_CARDS = SAMPLE_DIR / "demo_cards.jsonl"
+DEMO_CATEGORY = "★ Демо: ИИ дозаполняет"
 SUBMISSION = ROOT / "submission"
 REPORT_FILES = ("metrics", "compare", "segments", "calibration", "threshold", "cost", "traffic")
 NO_CATEGORY = "Без категории"
@@ -216,12 +219,19 @@ def _load_examples(path: Path) -> list[dict]:
         except (json.JSONDecodeError, ValidationError):
             continue
         item = card.model_dump()
-        for extra in ("category_path", "url"):
+        for extra in ("category_path", "url", "demo_note"):
             if extra in raw:
                 item[extra] = raw[extra]
         out.append(item)
     _cards_cache[path] = (mtime, out)
     return out
+
+
+def _demo_cards() -> list[dict]:
+    """Карточки витрины (data/sample/demo_cards.jsonl) с пометкой demo; файла нет — пусто."""
+    if not DEMO_CARDS.exists():
+        return []
+    return [{**c, "demo": True} for c in _load_examples(DEMO_CARDS)]
 
 
 def _card_index() -> dict[str, dict]:
@@ -453,12 +463,19 @@ def samples():
 @app.get("/api/examples")
 def examples(category: str | None = None, q: str | None = None,
              limit: int = Query(50, ge=1, le=1000), offset: int = Query(0, ge=0)):
-    """Примеры для витрины: реальный сэмпл (data/sample/real_cards.jsonl), если есть, иначе синтетический."""
+    """Примеры для витрины: реальный сэмпл (data/sample/real_cards.jsonl), если есть, иначе синтетический.
+
+    Если есть data/sample/demo_cards.jsonl, его карточки идут первой псевдокатегорией DEMO_CATEGORY
+    (у каждой demo=true и demo_note — что там дозаполняет ИИ). Без фильтра по ней в items и поиске их нет."""
     path, synthetic = _examples_file()
+    demo = _demo_cards()
+    demo_cat = [{"name": DEMO_CATEGORY, "count": len(demo), "demo": True}] if demo else []
+    if category == DEMO_CATEGORY and demo:
+        return {"source": _rel(DEMO_CARDS), "synthetic": False, "demo": True, "total": len(demo),
+                "categories": demo_cat + _example_categories(path), "items": demo[offset:offset + limit]}
     if path is None:
-        return {"source": None, "synthetic": True, "total": 0, "categories": [], "items": []}
+        return {"source": None, "synthetic": True, "total": 0, "categories": demo_cat, "items": []}
     cards = _load_examples(path)
-    cats = Counter(c.get("category") or NO_CATEGORY for c in cards)
     items = cards
     if category:
         items = [c for c in items if (c.get("category") or NO_CATEGORY) == category]
@@ -466,13 +483,21 @@ def examples(category: str | None = None, q: str | None = None,
         ql = q.casefold()
         items = [c for c in items if ql in str(c.get("title", "")).casefold() or ql in str(c["id"]).casefold()]
     return {"source": _rel(path), "synthetic": synthetic, "total": len(items),
-            "categories": [{"name": k, "count": v} for k, v in cats.most_common()],
-            "items": items[offset:offset + limit]}
+            "categories": demo_cat + _example_categories(path), "items": items[offset:offset + limit]}
+
+
+def _example_categories(path: Path | None) -> list[dict]:
+    if path is None:
+        return []
+    cats = Counter(c.get("category") or NO_CATEGORY for c in _load_examples(path))
+    return [{"name": k, "count": v} for k, v in cats.most_common()]
 
 
 @app.get("/api/examples/{card_id}")
-def example(card_id: str):
-    card = _card_index().get(card_id)
+def example(card_id: str, demo: bool = False):
+    """Карточка по id. Демо-карточки часто копируют реальные (тот же id): demo=true — сначала витрина."""
+    demo_card = next((c for c in _demo_cards() if str(c["id"]) == card_id), None)
+    card = demo_card if demo and demo_card else _card_index().get(card_id) or demo_card
     if card is None:
         raise HTTPException(404, f"Карточка {card_id} не найдена в data/sample")
     return card

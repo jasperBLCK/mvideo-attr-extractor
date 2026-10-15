@@ -32,3 +32,6 @@ prepare: ; $(PY)/attrx prepare
 traffic: ; $(PY)/attrx traffic
 eda-real: ; $(PY)/attrx eda-real
 eda-nb: ; $(PY)/jupyter nbconvert --to notebook --execute --inplace notebooks/01_eda.ipynb
+
+.PHONY: docker
+docker: ; docker compose up --build   # на машине без группы docker: sudo make docker; порт: ATTRX_PORT=8001

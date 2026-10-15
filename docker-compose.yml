@@ -5,7 +5,8 @@
 services:
   app:
     build: .
-    ports: ["8000:8000"]
+    # порт на хосте: ATTRX_PORT=8001 docker compose up — если 8000 занят (например, локальным стендом attrx serve)
+    ports: ["${ATTRX_PORT:-8000}:8000"]
     env_file:
       - path: .env
         required: false   # без .env работает на дефолтах

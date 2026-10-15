@@ -19,7 +19,7 @@ class FakeLLM:
     def __init__(self, response):
         self.response, self.calls = response, []
 
-    def complete_json(self, system, user, schema, name="result"):
+    def complete_json(self, system, user, schema, name="result", *, max_tokens=None):
         self.calls.append((system, user, schema))
         return self.response
 

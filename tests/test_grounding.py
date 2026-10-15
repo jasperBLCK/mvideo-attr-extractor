@@ -62,7 +62,7 @@ class FakeLLM:
     def __init__(self, response):
         self.response, self.calls = response, 0
 
-    def complete_json(self, system, user, schema, name="result"):
+    def complete_json(self, system, user, schema, name="result", *, max_tokens=None):
         self.calls += 1
         return self.response
 

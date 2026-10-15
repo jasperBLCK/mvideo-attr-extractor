@@ -15,7 +15,7 @@ class FakeLLM:
         self.calls = 0
         self.prompts = []
 
-    def complete_json(self, system, user, schema, name="result"):
+    def complete_json(self, system, user, schema, name="result", *, max_tokens=None):
         self.calls += 1
         self.prompts.append((user, schema))
         return self.response
@@ -129,7 +129,7 @@ def test_extract_many_runs_llm_for_pack_in_parallel_with_same_results():
             super().__init__({})
             self.lock, self.threads, self.mapped = threading.Lock(), set(), 0
 
-        def complete_json(self, system, user, schema, name="result"):
+        def complete_json(self, system, user, schema, name="result", *, max_tokens=None):
             with self.lock:
                 self.calls += 1
                 self.threads.add(threading.get_ident())

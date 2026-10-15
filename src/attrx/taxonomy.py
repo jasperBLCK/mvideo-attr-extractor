@@ -11,6 +11,13 @@ import yaml
 from .config import get_settings
 from .schema import Card
 
+YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)  # C-загрузчик в ~10 раз быстрее (300 КБ трафик-весов)
+
+
+def yaml_load(text: str):
+    """yaml.safe_load через C-загрузчик, если libyaml есть, иначе чистый Python."""
+    return yaml.load(text, Loader=YAML_LOADER)  # noqa: S506 — SafeLoader/CSafeLoader
+
 
 def norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.lower().replace("ё", "е")).strip()
@@ -244,7 +251,7 @@ DICTIONARY_CLASSES: dict[str, type[Dictionary]] = {"brands": BrandDictionary}
 
 
 def load_dictionary(path: Path) -> Dictionary:
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    data = yaml_load(path.read_text(encoding="utf-8")) or {}
     meta = {str(k)[1:]: data.pop(k) for k in list(data) if str(k).startswith("_")}
     return DICTIONARY_CLASSES.get(path.stem, Dictionary)(path.stem, data, meta)
 
@@ -269,7 +276,7 @@ class CategoryDecision:
 
 class Taxonomy:
     def __init__(self, path: Path):
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        data = yaml_load(path.read_text(encoding="utf-8"))
         self.categories: dict[str, CategorySpec] = {}
         self.by_category_id: dict[str, str] = {}  # id категории YML -> имя категории таксономии
         for cname, c in data["categories"].items():
@@ -290,7 +297,7 @@ class Taxonomy:
             self.dictionaries[f.stem] = load_dictionary(f)
         learned = ddir / "learned.yaml"
         if learned.exists():
-            for dname, pairs in (yaml.safe_load(learned.read_text(encoding="utf-8")) or {}).items():
+            for dname, pairs in (yaml_load(learned.read_text(encoding="utf-8")) or {}).items():
                 for syn, canon in (pairs or {}).items():
                     self.dictionaries.setdefault(dname, Dictionary(dname, {})).add(syn, canon)
         self.category_hook: CategoryHook | None = None
@@ -413,7 +420,7 @@ def _traffic_weights(path: str) -> dict[str, dict[str, float]]:
     p = Path(path)
     if not p.exists():
         return {}
-    raw = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    raw = yaml_load(p.read_text(encoding="utf-8")) or {}
     raw = raw.get("weights", raw) if isinstance(raw, dict) else {}
     return {str(k): v for k, v in raw.items() if not str(k).startswith("_") and isinstance(v, dict)}
 

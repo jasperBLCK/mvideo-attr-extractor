@@ -275,10 +275,31 @@ def model_core(raw: str, brand: str | None = None, colors: Dictionary | None = N
     return re.sub(r"\s+", " ", s).strip(" -–—,.;:/")
 
 
+# единицы-слова, которые согласуются с числом (сокращения «ГБ», «мА·ч», «Вт», «кг» не склоняются)
+UNIT_FORMS: dict[str, tuple[str, str, str]] = {"дюйм": ("дюйм", "дюйма", "дюймов")}
+
+
+def unit_form(x: float, unit: str) -> str:
+    """Согласование с числом: 1 дюйм, 2–4 дюйма, 5–20 дюймов, 21 дюйм; дробное — родительный падеж ед. ч.
+    (6,1 дюйма, 15,6 дюйма)."""
+    forms = UNIT_FORMS.get(unit)
+    if not forms:
+        return unit
+    if not float(x).is_integer():
+        return forms[1]
+    n = abs(int(x))
+    if n % 10 == 1 and n % 100 != 11:
+        return forms[0]
+    if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
+        return forms[1]
+    return forms[2]
+
+
 def display(value: str | float | None, spec: AttrSpec) -> str | None:
+    """Значение для показа: «6,1 дюйма», «55 дюймов», «256 ГБ» (только вид — сравнение и метрики не затрагивает)."""
     if value is None:
         return None
     if isinstance(value, float):
         v = int(value) if value.is_integer() else str(value).replace(".", ",")
-        return f"{v} {spec.unit}" if spec.unit else str(v)
+        return f"{v} {unit_form(value, spec.unit)}" if spec.unit else str(v)
     return str(value)

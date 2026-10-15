@@ -204,8 +204,36 @@ CATEGORY_LEAD = re.compile(
     r"true\s+wireless)\s+")
 
 
+# «число + единица» — характеристика, а не код модели: «20W», «12 В», «2 Ач», «5000 мАч», «1,7 л»
+SPEC_TOKEN = re.compile(r"(?<![\w.,])\d+(?:[.,]\d+)?\s*(?:в|v|ач|ah|а·ч|мач|mah|вт|w|квт|kw|а|a|л|мл|кг|г|мм|см|м|гб|gb|"
+                        r"тб|tb|мб|mb|гц|hz|\"|''|”|″|дюйм\w*|шт)(?![a-zа-яё0-9])", re.I)
+# слово совместимости перед брендом устройства: после него — модель чужого устройства («Baseus 20W для iPhone 15»);
+# «для» без бренда после него — часть названия модели в каталоге («365home Штора для ванной 180х180см»)
+COMPAT_CUT = re.compile(r"(?<![\w-])(?:для|for|под|к|ко|совместим\w*|compatible|with|с|c|со)(?![\w-])")
+
+
+def compat_cut_pos(ctx: Ctx, tax: Taxonomy, start: int) -> int:
+    """Где в названии (от start) начинается «для/for/совместим с + бренд устройства»: модель товара — до этого места."""
+    brands = tax.dictionaries.get("brands")
+    if not isinstance(brands, BrandDictionary):
+        return ctx.te
+    for m in brands.mentions(ctx.low, start, ctx.te):
+        if m.compat:
+            words = list(COMPAT_CUT.finditer(ctx.low, start, m.start))
+            if words:
+                w = words[-1]
+                if w.group(0) in ("с", "c", "со", "with") and len(words) > 1:
+                    w = words[-2]  # «совместим с Samsung» — режем перед «совместим»
+                return w.start()
+    return ctx.te
+
+
 def _model_shape_score(value: str) -> float:
-    """Похоже ли на модель: буквы+цифры > латиница > кириллица с цифрами > описательные слова."""
+    """Похоже ли на модель: буквы+цифры > латиница > кириллица с цифрами > описательные слова. Характеристики
+    вместо модели («20W», «12 В 2 Ач») — низкая оценка: такое значение уходит на проверку."""
+    specs = SPEC_TOKEN.findall(value)
+    if specs and not re.search(r"[^\W_]", SPEC_TOKEN.sub(" ", value)):
+        return 0.3  # только характеристики, кода модели нет
     has_d = bool(re.search(r"\d", value))
     has_lat = bool(re.search(r"[A-Za-z]", value))
     has_cyr = bool(re.search(r"[А-Яа-яЁё]", value))
@@ -224,6 +252,8 @@ def _model_shape_score(value: str) -> float:
         s = min(s, 0.3)
     if len(value) > 40 or len(words) > 5:
         s -= 0.15
+    if len(specs) >= 2:  # «GSR 120-LI 12 В 2 Ач» — в «модель» попал хвост характеристик
+        s = min(s, 0.5)
     return s
 
 
@@ -289,7 +319,7 @@ def extract_model(ctx: Ctx, attr: str, tax: Taxonomy, pick: Mention | None,
             for m in brands.mentions(ctx.low, pick.end, ctx.te):
                 if compact_key(ctx.text[m.start:m.end]) == same:
                     start = m.end
-        res = _model_from(ctx, start, ctx.te, colors)
+        res = _model_from(ctx, start, compat_cut_pos(ctx, tax, start), colors)
         if res is None:
             return []
         s, e, value = res
@@ -297,12 +327,14 @@ def extract_model(ctx: Ctx, attr: str, tax: Taxonomy, pick: Mention | None,
         if style:  # точность «после бренда» именно у этого бренда (train) важнее общей формы строки
             score = min(score, 0.3 + 0.67 * style["after"]) if style["after"] < 0.5 else 0.3 + 0.67 * style["after"]
         return [_cand(ctx, attr, value, s, e, score, raw=ctx.text[s:e])]
-    # бренда нет: первый токен «буквы+цифры» (TWK8611P, KT-1809) — код модели
-    for m in re.finditer(r"(?<![\w-])(?=[\w-]*\d)(?=[\w-]*[a-zа-я])[a-zа-я0-9][\w-]{2,}", ctx.low[:ctx.te]):
+    # бренда нет: первый токен «буквы+цифры» (TWK8611P, KT-1809) — код модели, но только ДО «для + бренд устройства»:
+    # в «Чехол для Samsung Galaxy A55» A55 — модель телефона, а не чехла
+    limit = compat_cut_pos(ctx, tax, 0)
+    for m in re.finditer(r"(?<![\w-])(?=[\w-]*\d)(?=[\w-]*[a-zа-я])[a-zа-я0-9][\w-]{2,}", ctx.low[:limit]):
         tok = m.group(0)
         if re.fullmatch(r"\d+(?:[.,]\d+)?(?:гб|gb|тб|tb|мм|см|л|кг|вт|w|мач|mah|гц|hz|шт|g|k|к|x\d+|х\d+)?", tok):
             continue
-        res = _model_from(ctx, m.start(), ctx.te, colors)
+        res = _model_from(ctx, m.start(), limit, colors)
         if res is None:
             return []
         s, e, value = res
@@ -678,6 +710,56 @@ def extract_cpu(ctx: Ctx, attr: str, brand: str | None) -> list[Candidate]:
     return out
 
 
+# ------------------------------------------------------------------ название против описания -----------------------
+# Название против описания в числе: значение из названия побеждает, слот — на проверку («review»). На dev варианты
+# off / boost / review / drop не отличаются больше чем на 0,0002 точности (расхождение редкое); «review» выполняет
+# обещание «конфликт -> проверка» и не принимает число, которому противоречит другая часть карточки.
+TITLE_DESC_POLICY = "review"
+
+
+def _same_num(a, b) -> bool:
+    return abs(float(a) - float(b)) <= 0.01 * max(abs(float(b)), 1e-9)
+
+
+def title_desc_conflicts(card: Card, cands: list[Candidate], category: CategorySpec) -> set[str]:
+    """Числовые атрибуты, где правила нашли в НАЗВАНИИ одно значение, а в ОПИСАНИИ — другое («256 ГБ» в названии,
+    «128 ГБ» в описании): название приоритетнее, но расхождение решает модератор."""
+    te = len(card.title or "")
+    out = set()
+    for attr, spec in category.attributes.items():
+        if spec.type != "number":
+            continue
+        cs = [c for c in cands if c.attribute == attr and c.source == "rules" and c.span]
+        title = [c for c in cs if c.span[1] <= te]
+        desc = [c for c in cs if c.span[0] > te]
+        if title and any(not any(_same_num(d.value, t.value) for t in title) for d in desc):
+            out.add(attr)
+    return out
+
+
+def _prefer_title(card: Card, out: list[Candidate], category: CategorySpec) -> list[Candidate]:
+    if TITLE_DESC_POLICY == "off":
+        return out
+    te = len(card.title or "")
+    conflicts = title_desc_conflicts(card, out, category)
+    if not conflicts:
+        return out
+    keep = []
+    for attr in conflicts:
+        cs = [c for c in out if c.attribute == attr and c.span]
+        title = [c for c in cs if c.span[1] <= te]
+        top = max(c.score for c in cs)
+        for c in title:  # значение из названия побеждает значение из описания
+            c.score = round(min(0.99, max(c.score, top + 0.02)), 3)
+    for c in out:
+        if (TITLE_DESC_POLICY == "drop" and c.attribute in conflicts and c.span and c.span[0] > te
+                and not any(_same_num(c.value, t.value) for t in out
+                            if t.attribute == c.attribute and t.span and t.span[1] <= te)):
+            continue
+        keep.append(c)
+    return keep
+
+
 # ------------------------------------------------------------------ точка входа ------------------------------------
 def extract(card: Card, category: CategorySpec, tax: Taxonomy, emaps: dict | None = None) -> list[Candidate]:
     """Кандидаты правил для всех атрибутов категории. emaps — {attr: выученное соответствие справочника} (см. extract_enum)."""
@@ -714,4 +796,4 @@ def extract(card: Card, category: CategorySpec, tax: Taxonomy, emaps: dict | Non
             out += extract_bool(ctx, attr, spec)
         elif spec.kind == "cpu":
             out += extract_cpu(ctx, attr, pick.canon if pick else None)
-    return out
+    return _prefer_title(card, out, category)

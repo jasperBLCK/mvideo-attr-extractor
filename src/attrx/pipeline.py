@@ -164,12 +164,15 @@ class Extractor:
         """Калибровка -> статус -> результат. wall_clock=False (пачка) — total = сумма этапов этой карточки."""
         t = time.perf_counter()
         decision, category, cat_name = st.decision, st.category, st.decision.name
+        title_desc = rules.title_desc_conflicts(st.card, st.cands, category)
         attrs = []
         for a, spec in category.attributes.items():
             x = st.agg[a]
             conf, status = self._finalize(x, spec, cat_name, a)
             if decision.review and status == "accepted":
                 status = "review"  # категория не уверена — набор атрибутов мог быть не тот: всё на проверку
+            if a in title_desc and status == "accepted" and rules.TITLE_DESC_POLICY == "review":
+                status = "review"  # название и описание расходятся в числе — побеждает название, решает модератор
             if x.conflict and x.value is not None:
                 alts = ", ".join(str(alt["value"]) for alt in x.alternatives)
                 st.warnings.append(f"{a}: конфликт значений, альтернативы: {alts}")

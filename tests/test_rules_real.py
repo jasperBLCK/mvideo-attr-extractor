@@ -293,3 +293,38 @@ def test_label_at_description_start(tax):
     spec = tax.categories["generic"].attributes["color"]
     eh = rules.enum_hits(rules.Ctx.of(card, "generic"), spec, tax.dictionaries["colors"], [])
     assert eh.loc == "label" and eh.canons == ["розовый"]
+
+
+@pytest.mark.parametrize("value,expected", [(6.1, "6,1 дюйма"), (55.0, "55 дюймов"), (1.0, "1 дюйм"), (21.0, "21 дюйм"),
+                                            (43.0, "43 дюйма"), (11.0, "11 дюймов"), (15.6, "15,6 дюйма")])
+def test_display_inches_agree_with_number(tax, value, expected):
+    from attrx.normalize import display
+
+    assert display(value, tax.categories["tv"].attributes["screen"]) == expected
+    assert display(256.0, tax.categories["smartphone"].attributes["storage"]) == "256 ГБ"  # сокращения не склоняются
+
+
+def test_accessory_models_are_not_taken_from_compatibility(tax):
+    _, cs = cands(tax, "generic", "Зарядное устройство Baseus 20W для iPhone 15")
+    m = best(cs, "model")
+    assert m is None or ("iphone" not in m.value.lower() and m.score <= 0.5)  # «20W» — характеристика, не модель
+    _, cs = cands(tax, "generic", "Шуруповерт аккумуляторный Bosch GSR 120-LI 12 В 2 Ач")
+    assert best(cs, "model").score <= 0.5  # в модель попал хвост характеристик «12 В 2 Ач»
+    _, cs = cands(tax, "generic", "Чехол для Samsung Galaxy A55 силиконовый прозрачный")
+    assert best(cs, "model") is None  # A55 — модель телефона, а не чехла
+    _, cs = cands(tax, "generic", "Чехол Deppa для Samsung Galaxy A55")
+    assert best(cs, "brand").value == "Deppa" and best(cs, "model") is None
+
+
+def test_title_beats_description_on_numeric_disagreement(tax):
+    from attrx.config import Settings
+    from attrx.pipeline import Extractor
+
+    card = Card(id="td", title="Смартфон Samsung Galaxy A55 256 ГБ", description="Встроенная память 128 ГБ.")
+    r = Extractor(settings=Settings(llm_enabled=False, ml_enabled=False)).extract(card)
+    st = next(a for a in r.attributes if a.attribute == "storage")
+    assert st.value == 256 and st.status == "review" and st.alternatives[0]["value"] == 128
+    card = Card(id="td2", title="Смартфон Samsung Galaxy A55 256 ГБ", description="Встроенная память 256 ГБ.")
+    st = next(a for a in Extractor(settings=Settings(llm_enabled=False, ml_enabled=False)).extract(card).attributes
+              if a.attribute == "storage")
+    assert st.value == 256 and st.status == "accepted"  # согласие названия и описания — не конфликт

@@ -1,14 +1,14 @@
 {
- "note": "Свой стенд (GTX 1060 6 ГБ, Ollama qwen3:4b-instruct): 2.93 ₽/ч = амортизация 35 000 ₽ за 3 года 24/7 + 0,2 кВт × 8 ₽/кВт·ч (config/llm_prices.yaml); стоимость режима = ₽/ч × время пайплайна на карточку (LLM на той же машине, последовательно, LLM_CONCURRENCY=1). Режимы без LLM — время CPU/GPU того же стенда. API-провайдеры (GigaChat, YandexGPT) — по тарифам с НДС на 14.10.2026 и токенам этого замера; «LLM на каждую карточку» — по бенчмарку attrx llm-bench (все атрибуты категории, 1102 + 199 токенов, 6,9 с на карточку на свободном стенде). Гибрид зовёт LLM только для слабых атрибутов и только если они упомянуты в тексте (префильтр); значение от одной LLM всё равно уходит на проверку модератору.",
+ "note": "Свой стенд (GTX 1060 6 ГБ, Ollama qwen3:4b-instruct): 2,93 ₽/ч = амортизация 35 000 ₽ за 3 года 24/7 + 0,2 кВт × 8 ₽/кВт·ч (config/llm_prices.yaml); стоимость режима = ₽/ч × время пайплайна на карточку (LLM на той же машине, последовательно, LLM_CONCURRENCY=1). Режимы без LLM — время CPU/GPU того же стенда. API-провайдеры (GigaChat, YandexGPT) — по тарифам с НДС на 14.10.2026 и токенам этого замера; «LLM на каждую карточку» — по бенчмарку attrx llm-bench (все атрибуты категории, 1102 + 199 токенов, 6,9 с на карточку на свободном стенде). Гибрид зовёт LLM только для слабых атрибутов и только если они упомянуты в тексте (префильтр); значение от одной LLM всё равно уходит на проверку модератору.",
  "rub_per_hour_stand": 2.932,
  "modes": [
   {
    "mode": "правила",
    "basis": "замер",
    "provider": "свой стенд (GTX 1060)",
-   "cost_per_1000": 0.0009,
-   "ms_per_card": 1.06,
-   "cards_per_sec": 939.4,
+   "cost_per_1000": 0.0005,
+   "ms_per_card": 0.66,
+   "cards_per_sec": 1516.0,
    "llm_share": 0.0,
    "llm_calls_per_1000": 0.0
   },
@@ -17,8 +17,8 @@
    "basis": "замер",
    "provider": "свой стенд (GTX 1060)",
    "cost_per_1000": 0.0006,
-   "ms_per_card": 0.79,
-   "cards_per_sec": 1268.1,
+   "ms_per_card": 0.69,
+   "cards_per_sec": 1453.9,
    "llm_share": 0.0,
    "llm_calls_per_1000": 0.0
   },
@@ -26,9 +26,9 @@
    "mode": "+ NER",
    "basis": "замер",
    "provider": "свой стенд (GTX 1060)",
-   "cost_per_1000": 0.0021,
-   "ms_per_card": 2.54,
-   "cards_per_sec": 393.4,
+   "cost_per_1000": 0.0019,
+   "ms_per_card": 2.37,
+   "cards_per_sec": 421.1,
    "llm_share": 0.0,
    "llm_calls_per_1000": 0.0
   },
@@ -36,8 +36,8 @@
    "mode": "+ LLM · подвыборка LLM",
    "basis": "замер",
    "provider": "свой стенд (GTX 1060)",
-   "cost_per_1000": 0.8301,
-   "ms_per_card": 1019.33,
+   "cost_per_1000": 0.8342,
+   "ms_per_card": 1024.37,
    "cards_per_sec": 1.0,
    "llm_share": 0.3097,
    "llm_calls_per_1000": 309.7
@@ -46,7 +46,7 @@
    "mode": "+ LLM через GigaChat Lite (оценка)",
    "basis": "оценка по токенам замера",
    "provider": "GigaChat Lite (Сбер)",
-   "cost_per_1000": 20.53,
+   "cost_per_1000": 20.55,
    "llm_share": 0.3097,
    "llm_calls_per_1000": 309.7
   },
@@ -54,7 +54,7 @@
    "mode": "+ LLM через GigaChat Pro (оценка)",
    "basis": "оценка по токенам замера",
    "provider": "GigaChat Pro (Сбер)",
-   "cost_per_1000": 157.96,
+   "cost_per_1000": 158.11,
    "llm_share": 0.3097,
    "llm_calls_per_1000": 309.7
   },
@@ -62,7 +62,7 @@
    "mode": "+ LLM через YandexGPT Lite (оценка)",
    "basis": "оценка по токенам замера",
    "provider": "YandexGPT Lite (Yandex AI Studio)",
-   "cost_per_1000": 63.18,
+   "cost_per_1000": 63.24,
    "llm_share": 0.3097,
    "llm_calls_per_1000": 309.7
   },
@@ -70,7 +70,7 @@
    "mode": "+ LLM через YandexGPT Pro 5.1 (оценка)",
    "basis": "оценка по токенам замера",
    "provider": "YandexGPT Pro 5.1 (Yandex AI Studio)",
-   "cost_per_1000": 252.73,
+   "cost_per_1000": 252.97,
    "llm_share": 0.3097,
    "llm_calls_per_1000": 309.7
   },

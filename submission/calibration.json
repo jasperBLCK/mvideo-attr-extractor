@@ -1,74 +1,211 @@
 {
  "mode": "+ NER",
  "split": "holdout",
- "threshold": 0.69,
- "ece": 0.0124,
- "n": 8474,
+ "set": "full_holdout",
+ "threshold": 0.7,
+ "ece": 0.0193,
+ "n": 52134,
  "bins": [
   {
    "lo": 0.1,
    "hi": 0.2,
-   "confidence": 0.1913,
-   "accuracy": 0.3103,
-   "n": 58
+   "confidence": 0.1862,
+   "accuracy": 0.3479,
+   "n": 983
   },
   {
    "lo": 0.2,
    "hi": 0.3,
-   "confidence": 0.2768,
-   "accuracy": 0.1667,
-   "n": 12
+   "confidence": 0.238,
+   "accuracy": 0.5,
+   "n": 2
   },
   {
    "lo": 0.3,
    "hi": 0.4,
-   "confidence": 0.3237,
-   "accuracy": 0.4,
-   "n": 10
+   "confidence": 0.3112,
+   "accuracy": 0.2069,
+   "n": 29
   },
   {
    "lo": 0.4,
    "hi": 0.5,
-   "confidence": 0.4374,
-   "accuracy": 0.5221,
-   "n": 113
+   "confidence": 0.425,
+   "accuracy": 0.4599,
+   "n": 1285
   },
   {
    "lo": 0.5,
    "hi": 0.6,
-   "confidence": 0.5513,
-   "accuracy": 0.544,
-   "n": 125
+   "confidence": 0.55,
+   "accuracy": 0.5426,
+   "n": 129
   },
   {
    "lo": 0.6,
    "hi": 0.7,
-   "confidence": 0.6678,
-   "accuracy": 0.6441,
-   "n": 177
+   "confidence": 0.6379,
+   "accuracy": 0.5801,
+   "n": 674
   },
   {
    "lo": 0.7,
    "hi": 0.8,
-   "confidence": 0.7454,
-   "accuracy": 0.6481,
-   "n": 287
+   "confidence": 0.7512,
+   "accuracy": 0.5717,
+   "n": 2022
   },
   {
    "lo": 0.8,
    "hi": 0.9,
-   "confidence": 0.8401,
-   "accuracy": 0.8668,
-   "n": 578
+   "confidence": 0.8238,
+   "accuracy": 0.8155,
+   "n": 3306
   },
   {
    "lo": 0.9,
    "hi": 1.0,
-   "confidence": 0.986,
-   "accuracy": 0.9807,
-   "n": 7114
+   "confidence": 0.9903,
+   "accuracy": 0.9818,
+   "n": 43704
   }
  ],
+ "accepted_band": {
+  "lo": 0.7,
+  "hi": 0.8,
+  "n": 2008,
+  "precision": 0.5692,
+  "mean_confidence": 0.7512,
+  "lower95": 0.5475,
+  "share_of_accepted": 0.041,
+  "wrong": 865,
+  "wrong_accepted_total": 2270,
+  "generic_share": 0.9148,
+  "top_cells": [
+   {
+    "cell": "generic/color/rules",
+    "n": 1050,
+    "precision": 0.5533
+   },
+   {
+    "cell": "generic/model/rules",
+    "n": 746,
+    "precision": 0.5456
+   },
+   {
+    "cell": "generic/color/ml+rules",
+    "n": 36,
+    "precision": 0.8889
+   },
+   {
+    "cell": "smartwatch/color/rules",
+    "n": 31,
+    "precision": 0.7419
+   }
+  ]
+ },
+ "stratified": {
+  "ece": 0.0122,
+  "bins": [
+   {
+    "lo": 0.1,
+    "hi": 0.2,
+    "confidence": 0.186,
+    "accuracy": 0.3158,
+    "n": 57
+   },
+   {
+    "lo": 0.2,
+    "hi": 0.3,
+    "confidence": 0.238,
+    "accuracy": 0.5,
+    "n": 2
+   },
+   {
+    "lo": 0.3,
+    "hi": 0.4,
+    "confidence": 0.3128,
+    "accuracy": 0.2105,
+    "n": 19
+   },
+   {
+    "lo": 0.4,
+    "hi": 0.5,
+    "confidence": 0.4376,
+    "accuracy": 0.5217,
+    "n": 115
+   },
+   {
+    "lo": 0.5,
+    "hi": 0.6,
+    "confidence": 0.5498,
+    "accuracy": 0.544,
+    "n": 125
+   },
+   {
+    "lo": 0.6,
+    "hi": 0.7,
+    "confidence": 0.66,
+    "accuracy": 0.6432,
+    "n": 185
+   },
+   {
+    "lo": 0.7,
+    "hi": 0.8,
+    "confidence": 0.7454,
+    "accuracy": 0.6522,
+    "n": 276
+   },
+   {
+    "lo": 0.8,
+    "hi": 0.9,
+    "confidence": 0.8399,
+    "accuracy": 0.8666,
+    "n": 577
+   },
+   {
+    "lo": 0.9,
+    "hi": 1.0,
+    "confidence": 0.9857,
+    "accuracy": 0.9802,
+    "n": 7118
+   }
+  ],
+  "accepted_band": {
+   "lo": 0.7,
+   "hi": 0.8,
+   "n": 273,
+   "precision": 0.6484,
+   "mean_confidence": 0.7452,
+   "lower95": 0.59,
+   "share_of_accepted": 0.0343,
+   "wrong": 96,
+   "wrong_accepted_total": 314,
+   "generic_share": 0.3736,
+   "top_cells": [
+    {
+     "cell": "generic/color/rules",
+     "n": 57,
+     "precision": 0.4737
+    },
+    {
+     "cell": "generic/model/rules",
+     "n": 40,
+     "precision": 0.625
+    },
+    {
+     "cell": "smartwatch/color/rules",
+     "n": 31,
+     "precision": 0.7419
+    },
+    {
+     "cell": "fridge/no_frost/rules",
+     "n": 21,
+     "precision": 0.619
+    }
+   ]
+  }
+ },
  "fit": {
   "fit_split": "dev",
   "method": "isotonic (PAV) по группам «категория/атрибут/источники» -> «источники|тип атрибута» -> «*|тип», блоки сглажены к точности родительской группы (вес 3); группа — от 80 точек",
@@ -76,154 +213,154 @@
   "cross_fit": {
    "folds": 2,
    "points": 9294,
-   "precision_at_threshold": 0.9669,
-   "precision_lower95_at_threshold": 0.9629,
+   "precision_at_threshold": 0.967,
+   "precision_lower95_at_threshold": 0.963,
    "worst_cell_at_threshold": [
     "vacuum/battery_time/rules",
     0.75
    ],
-   "coverage_at_threshold": 0.9365,
-   "ece": 0.0113,
-   "raw_precision_at_same_threshold": 0.9601,
-   "raw_coverage_at_same_threshold": 0.9339,
+   "coverage_at_threshold": 0.9353,
+   "ece": 0.0124,
+   "raw_precision_at_same_threshold": 0.9604,
+   "raw_coverage_at_same_threshold": 0.933,
    "sweep": [
     {
      "threshold": 0.3,
-     "precision": 0.9485,
-     "coverage": 0.9801,
-     "accepted": 9109,
-     "tp": 8640,
+     "precision": 0.9483,
+     "coverage": 0.98,
+     "accepted": 9108,
+     "tp": 8637,
      "worst_cell": "headphones/battery_life/rules",
      "worst_cell_precision": 0.4706
     },
     {
      "threshold": 0.35,
-     "precision": 0.9485,
-     "coverage": 0.9798,
-     "accepted": 9106,
-     "tp": 8637,
+     "precision": 0.9483,
+     "coverage": 0.9797,
+     "accepted": 9105,
+     "tp": 8634,
      "worst_cell": "headphones/battery_life/rules",
      "worst_cell_precision": 0.4706
     },
     {
      "threshold": 0.4,
      "precision": 0.9512,
-     "coverage": 0.9748,
-     "accepted": 9060,
-     "tp": 8618,
+     "coverage": 0.9743,
+     "accepted": 9055,
+     "tp": 8613,
      "worst_cell": "headphones/battery_life/rules",
      "worst_cell_precision": 0.4468
     },
     {
      "threshold": 0.45,
-     "precision": 0.9526,
-     "coverage": 0.9709,
-     "accepted": 9024,
-     "tp": 8596,
+     "precision": 0.9523,
+     "coverage": 0.9708,
+     "accepted": 9023,
+     "tp": 8593,
      "worst_cell": "headphones/battery_life/rules",
      "worst_cell_precision": 0.3793
     },
     {
      "threshold": 0.5,
-     "precision": 0.9536,
-     "coverage": 0.9685,
-     "accepted": 9001,
-     "tp": 8583,
+     "precision": 0.9533,
+     "coverage": 0.9684,
+     "accepted": 9000,
+     "tp": 8580,
      "worst_cell": "headphones/battery_life/rules",
      "worst_cell_precision": 0.3793
     },
     {
      "threshold": 0.55,
-     "precision": 0.9553,
-     "coverage": 0.9631,
-     "accepted": 8951,
-     "tp": 8551,
+     "precision": 0.9551,
+     "coverage": 0.963,
+     "accepted": 8950,
+     "tp": 8548,
      "worst_cell": "headphones/battery_life/rules",
      "worst_cell_precision": 0.3793
     },
     {
      "threshold": 0.6,
-     "precision": 0.9597,
-     "coverage": 0.9528,
-     "accepted": 8855,
-     "tp": 8498,
+     "precision": 0.9594,
+     "coverage": 0.9526,
+     "accepted": 8853,
+     "tp": 8494,
      "worst_cell": "fridge/total_volume/rules",
      "worst_cell_precision": 0.7308
     },
     {
      "threshold": 0.65,
-     "precision": 0.9628,
-     "coverage": 0.945,
-     "accepted": 8783,
-     "tp": 8456,
+     "precision": 0.9623,
+     "coverage": 0.9456,
+     "accepted": 8788,
+     "tp": 8457,
      "worst_cell": "fridge/total_volume/rules",
      "worst_cell_precision": 0.6389
     },
     {
      "threshold": 0.7,
-     "precision": 0.9671,
-     "coverage": 0.9359,
-     "accepted": 8698,
-     "tp": 8412,
+     "precision": 0.967,
+     "coverage": 0.9353,
+     "accepted": 8693,
+     "tp": 8406,
      "worst_cell": "vacuum/battery_time/rules",
      "worst_cell_precision": 0.75
     },
     {
      "threshold": 0.75,
-     "precision": 0.9697,
+     "precision": 0.9694,
      "coverage": 0.9279,
      "accepted": 8624,
-     "tp": 8363,
+     "tp": 8360,
      "worst_cell": "vacuum/battery_time/rules",
      "worst_cell_precision": 0.75
     },
     {
      "threshold": 0.8,
-     "precision": 0.9741,
-     "coverage": 0.9066,
-     "accepted": 8426,
-     "tp": 8208,
+     "precision": 0.9743,
+     "coverage": 0.9055,
+     "accepted": 8416,
+     "tp": 8200,
      "worst_cell": "vacuum/battery_time/rules",
      "worst_cell_precision": 0.75
     },
     {
      "threshold": 0.85,
-     "precision": 0.9792,
-     "coverage": 0.871,
-     "accepted": 8095,
-     "tp": 7927,
+     "precision": 0.979,
+     "coverage": 0.8709,
+     "accepted": 8094,
+     "tp": 7924,
      "worst_cell": "vacuum/battery_time/rules",
      "worst_cell_precision": 0.8095
     },
     {
      "threshold": 0.9,
-     "precision": 0.9822,
-     "coverage": 0.8329,
-     "accepted": 7741,
-     "tp": 7603,
+     "precision": 0.9819,
+     "coverage": 0.8328,
+     "accepted": 7740,
+     "tp": 7600,
      "worst_cell": "vacuum/battery_time/rules",
      "worst_cell_precision": 0.8
     },
     {
      "threshold": 0.95,
-     "precision": 0.9871,
-     "coverage": 0.7607,
-     "accepted": 7070,
-     "tp": 6979,
+     "precision": 0.987,
+     "coverage": 0.7592,
+     "accepted": 7056,
+     "tp": 6964,
      "worst_cell": "generic/model/ml+rules",
      "worst_cell_precision": 0.8276
     },
     {
-     "threshold": 0.69,
-     "precision": 0.9669,
-     "coverage": 0.9365,
-     "accepted": 8704,
-     "tp": 8416,
+     "threshold": 0.7,
+     "precision": 0.967,
+     "coverage": 0.9353,
+     "accepted": 8693,
+     "tp": 8406,
      "worst_cell": "vacuum/battery_time/rules",
      "worst_cell_precision": 0.75
     }
    ]
   }
  },
- "note": "уверенность пайплайна (калибровка выучена на dev) против доли верных на holdout; значения с эталоном, любой статус"
+ "note": "уверенность пайплайна (калибровка выучена на dev) против доли верных на holdout; значения с эталоном, любой статус. accepted_band — точность принятых значений с уверенностью в [порог; 0,8)"
 }

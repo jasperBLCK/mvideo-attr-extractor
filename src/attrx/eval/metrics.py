@@ -154,16 +154,23 @@ def _meta_clicks(raw: Any) -> dict[str, float]:
     return out
 
 
+@lru_cache(maxsize=4)
+def _traffic_yaml(path: str, mtime: float) -> dict:
+    """Разобранный traffic_weights.yaml (кэш по пути и времени изменения: в отчёте веса нужны десятки раз)."""
+    from ..taxonomy import yaml_load
+
+    p = Path(path)
+    return (yaml_load(p.read_text(encoding="utf-8")) or {}) if p.exists() else {}
+
+
 def load_traffic_weights(tax: Taxonomy, root: Path | None = None) -> dict[tuple[str, str], float]:
     """config/traffic_weights.yaml (поток EDA) + клики по категориям: data/processed/clicks_by_category.parquet, если
     есть, иначе _meta.categories того же YAML (свежий клон, CI, attrx demo — те же веса без data/processed)."""
-    import yaml
-
     from ..config import ROOT
 
     root = root or ROOT
     p = root / "config" / "traffic_weights.yaml"
-    raw = yaml.safe_load(p.read_text(encoding="utf-8")) if p.exists() else {}
+    raw = _traffic_yaml(str(p), p.stat().st_mtime if p.exists() else 0.0)
     w = {str(k): v for k, v in (raw.get("weights", raw) if isinstance(raw, dict) else {}).items() if isinstance(v, dict)}
     clicks = _clicks_by_category(str(root / "data" / "processed")) or _meta_clicks(raw)
     return traffic_weights(tax, w, clicks)

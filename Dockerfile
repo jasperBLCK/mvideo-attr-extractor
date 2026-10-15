@@ -12,4 +12,5 @@ COPY submission ./submission
 COPY models/category ./models/category
 RUN mkdir -p outputs
 EXPOSE 8000
-CMD ["attrx", "serve", "--port", "8000"]
+# attrx serve по умолчанию слушает только 127.0.0.1; в контейнере — все интерфейсы, иначе порт 8000 не пробросить
+CMD ["attrx", "serve", "--host", "0.0.0.0", "--port", "8000"]

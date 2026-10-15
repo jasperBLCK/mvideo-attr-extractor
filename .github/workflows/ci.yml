@@ -7,7 +7,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install -e ".[dev]"
-      - run: ruff check .
-      - run: pytest -q
-      - run: attrx demo
+      - uses: astral-sh/setup-uv@v6
+        with: { enable-cache: true }
+      # зависимости строго по uv.lock (воспроизводимо); extra [ml] (torch) в CI не нужен — NER и LLM выключены
+      - run: uv sync --frozen --extra dev --python 3.11
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen pytest -q
+      # 400 реальных карточек holdout из data/sample: метрики офлайн, без data/processed, torch и LLM
+      - run: uv run --frozen attrx demo
+      # цифры submission/compare.json («правила», «продавец + правила») пересчитываются на закоммиченном holdout
+      - run: uv run --frozen attrx verify
+      # мониторинг дрейфа: предсказания демо против итоговых на holdout (алерты не валят сборку)
+      - run: uv run --frozen attrx monitor -i outputs/predictions.jsonl --ref submission/predictions.jsonl

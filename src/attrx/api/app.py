@@ -2,22 +2,29 @@
 
 Кроме извлечения здесь же живут эндпоинты для интерфейса модератора (web/):
 примеры карточек, очередь проверки с приоритетом, сводка метрик из submission/ и справочник категорий.
+
+Безопасность по умолчанию: `attrx serve` слушает 127.0.0.1 (наружу — явно `--host 0.0.0.0`, так в Docker и на ВМ).
+Если задан ATTRX_TOKEN, запись решений модератора (POST /api/feedback, /api/feedback/undo) требует заголовок
+X-Attrx-Token с этим значением: из журнала правок `attrx learn` учит справочники, его нельзя писать анонимно.
+Без ATTRX_TOKEN (по умолчанию) всё работает как раньше — интерфейс модератора токен не шлёт.
 """
 from __future__ import annotations
 
 import csv
+import hmac
 import json
 import mimetypes
+import os
 import re
 import threading
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
 
@@ -46,6 +53,28 @@ SUBMISSION = ROOT / "submission"
 REPORT_FILES = ("metrics", "compare", "segments", "calibration", "threshold", "cost", "traffic")
 NO_CATEGORY = "Без категории"
 _feedback_lock = threading.Lock()
+
+TOKEN_ENV = "ATTRX_TOKEN"
+TOKEN_HEADER = "X-Attrx-Token"
+# use_llm=true, а LLM не настроена: извлечение не падает, но клиент должен об этом узнать
+LLM_OFF_WARNING = "LLM не настроена — использованы правила и NER"
+LLM_OFF_NO_NER_WARNING = "LLM не настроена — использованы правила и словари (NER не загружен)"
+
+
+def write_token() -> str | None:
+    """Токен на запись (ATTRX_TOKEN; читается при каждом запросе, .env подхватывается config.py) или None."""
+    return (os.getenv(TOKEN_ENV) or "").strip() or None
+
+
+def require_write_token(token: Annotated[str | None, Header(
+        alias=TOKEN_HEADER, description="нужен, только если на сервере задан ATTRX_TOKEN")] = None) -> None:
+    """Зависимость эндпоинтов, которые пишут в журнал решений: без ATTRX_TOKEN — открыты (по умолчанию)."""
+    expected = write_token()
+    if expected is None:
+        return
+    if not token or not hmac.compare_digest(token.encode("utf-8"), expected.encode("utf-8")):
+        raise HTTPException(401, f"Запись решений защищена токеном: передайте заголовок {TOKEN_HEADER} "
+                                 f"со значением {TOKEN_ENV} сервера")
 
 
 def extractor() -> Extractor:
@@ -86,8 +115,9 @@ class CardText(BaseModel):
 
 
 class ExtractRequest(BaseModel):
-    card: Card
-    use_llm: bool | None = None
+    card: Card = Field(description="карточка; id необязателен — без него генерируется по тексту (auto-…)")
+    use_llm: bool | None = Field(None, description="LLM для хвоста: null — по настройке сервера; true без настроенной "
+                                                   "LLM — работает на правилах и NER, в result.warnings предупреждение")
     intent: str | None = None
 
 
@@ -333,7 +363,9 @@ def health():
             "category_threshold": clf.threshold if clf is not None else None,
             "confidence_threshold": s.confidence_threshold, "llm_route_threshold": s.llm_route_threshold,
             "examples": {"source": _rel(path) if path else None, "synthetic": synthetic},
-            "predictions": _rel(pred) if pred else None}
+            "predictions": _rel(pred) if pred else None,
+            # запись решений модератора требует заголовок X-Attrx-Token (задан ATTRX_TOKEN); сам токен не отдаётся
+            "auth": {"write_token_required": write_token() is not None, "header": TOKEN_HEADER}}
 
 
 @app.get("/api/taxonomy")
@@ -372,11 +404,20 @@ def dictionary(name: str, limit: int = Query(1000, ge=1, le=10000)):
 
 # --------------------------------------------------------------------------- извлечение и generative UI
 
+def _llm_off_warning(ex: Extractor, use_llm: bool | None) -> str | None:
+    """Клиент явно попросил LLM, а она не настроена (нет LLM_* / OPENAI_* / LLM_LOCAL_URL или выключена)."""
+    if not use_llm or ex.client.enabled:
+        return None
+    return LLM_OFF_WARNING if ex.ml is not None else LLM_OFF_NO_NER_WARNING
+
+
 @app.post("/api/extract", response_model=ExtractResponse)
 def extract(req: ExtractRequest):
     ex = extractor()
     t0 = time.perf_counter()
     result = _enrich(ex.extract(req.card, use_llm=req.use_llm), (time.perf_counter() - t0) * 1000)
+    if warn_llm := _llm_off_warning(ex, req.use_llm):
+        result.warnings.append(warn_llm)
     if req.intent:
         ui, warn = compose_llm(result, req.intent, ex.client)
     else:
@@ -386,7 +427,12 @@ def extract(req: ExtractRequest):
 
 @app.post("/api/extract/batch", response_model=list[ExtractionResult])
 def extract_batch(req: BatchRequest):
-    return list(extractor().extract_many(req.cards, use_llm=req.use_llm))
+    ex = extractor()
+    results = list(ex.extract_many(req.cards, use_llm=req.use_llm))
+    if warn_llm := _llm_off_warning(ex, req.use_llm):
+        for r in results:
+            r.warnings.append(warn_llm)
+    return results
 
 
 @app.post("/api/ui", response_model=ExtractResponse)
@@ -501,14 +547,15 @@ def review_queue_v2(limit: int = Query(500, ge=1, le=5000), category: str | None
                       "rejected": by_action["rejected"]}}
 
 
-@app.post("/api/feedback")
+@app.post("/api/feedback", dependencies=[Depends(require_write_token)])
 def feedback(fb: Feedback):
+    """Решение модератора -> outputs/feedback.jsonl. При заданном ATTRX_TOKEN нужен заголовок X-Attrx-Token."""
     with _feedback_lock:
         rec = log_correction(fb.card_id, fb.attribute, fb.predicted, fb.corrected, fb.raw, category=fb.category)
     return {**rec, "decision": _decision(rec)}
 
 
-@app.post("/api/feedback/undo")
+@app.post("/api/feedback/undo", dependencies=[Depends(require_write_token)])
 def feedback_undo(key: FeedbackKey):
     """Отмена последнего решения по значению: удаляем последнюю запись (card_id, attribute) из feedback.jsonl."""
     p = get_settings().feedback_path
@@ -531,11 +578,18 @@ def feedback_undo(key: FeedbackKey):
 # --------------------------------------------------------------------------- метрики
 
 @app.get("/api/metrics")
-def metrics():
-    for path in (get_settings().predictions_path.parent / "metrics.json", SUBMISSION / "metrics.json"):
-        if path.exists():
-            return json.loads(path.read_text(encoding="utf-8"))
-    raise HTTPException(404, "Сначала запустите: attrx eval")
+def metrics(source: Literal["auto", "submission", "outputs"] = "auto"):
+    """Метрики качества. auto — итоговые на holdout (submission/metrics.json, make report), а если их нет —
+    последний локальный прогон (outputs/metrics.json: attrx demo / attrx eval); submission | outputs — явно.
+    Какой файл отдан — в заголовке X-Attrx-Source."""
+    files = {"submission": SUBMISSION / "metrics.json", "outputs": get_settings().predictions_path.parent / "metrics.json"}
+    order = ("submission", "outputs") if source == "auto" else (source,)
+    for name in order:
+        data = _read_json(files[name]) if files[name].exists() else None
+        if data is not None:
+            return JSONResponse(data, headers={"X-Attrx-Source": name})
+    raise HTTPException(404, "Метрик ещё нет: итоговые на holdout — make report (attrx report-real) -> "
+                             "submission/metrics.json; быстрый прогон на 400 карточках — attrx demo -> outputs/metrics.json")
 
 
 @app.get("/api/report")

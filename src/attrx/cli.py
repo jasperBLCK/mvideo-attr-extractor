@@ -1,14 +1,26 @@
-"""CLI: attrx extract | eval | eda | serve | learn | demo | train-ner | report | split | prelabel | prepare |
-llm-status | llm-bench | build-gold | eval-real | traffic | eda-real | train-category | build-dicts | calibrate |
-report-real."""
+"""CLI attrx. Команды по группам — EPILOG ниже (его же печатает `attrx --help`)."""
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from .config import ROOT, get_settings
+
+EPILOG = """\
+команды по назначению:
+  запуск и проверка     demo, serve, extract, eval, verify, monitor, learn
+  данные организаторов  prepare, build-gold, traffic, build-dicts, eda-real
+  модели и калибровка   train-category, train-ner --distant, calibrate, eval-real
+  итоговый отчёт        report-real (make report) -> submission/; сверка цифр — verify (make verify)
+  LLM                   llm-status, llm-bench
+  разметка              prelabel
+  старое (синтетика)    eda, split, report по data/sample/cards.jsonl, train-ner без --distant —
+                        инструменты первых дней на 20 придуманных карточках; цифры решения считаются
+                        на реальном каталоге (demo, eval-real, report-real)
+"""
 
 
 def cmd_extract(a):
@@ -53,21 +65,42 @@ def cmd_eda(a):
     print(eda(load_cards(Path(a.input)), Path(a.out)))
 
 
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
 def cmd_serve(a):
     import uvicorn
 
+    if a.host in LOCAL_HOSTS:
+        print(f"attrx serve: только локально, http://{a.host}:{a.port}; доступ снаружи (Docker, ВМ) — --host 0.0.0.0",
+              flush=True)
+    elif not os.getenv("ATTRX_TOKEN", "").strip():
+        print(f"attrx serve: слушаю {a.host}:{a.port}; запись решений модератора открыта — для защиты задайте "
+              f"ATTRX_TOKEN (тогда POST /api/feedback требует заголовок X-Attrx-Token)", flush=True)
     uvicorn.run("attrx.api.app:app", host=a.host, port=a.port, reload=a.reload)
 
 
 def cmd_learn(a):
-    from .feedback import learn_synonyms
+    from .feedback import learn
 
-    st: dict = {}
-    learned = learn_synonyms(stats=st)
-    print(f"Решений в журнале: {st['records']}; выучено из исправлений: {st['learned']}; справочник не учат: "
+    res = learn(min_agree=a.min_agree)
+    st, learned, cands = res["stats"], res["learned"], res["candidates"]
+
+    def rel(p: str) -> str:
+        return Path(p).relative_to(ROOT).as_posix() if Path(p).is_relative_to(ROOT) else p
+
+    print(f"Решений в журнале: {st['records']}, из них исправлений: {st['corrections']}; справочник не учат: "
           f"принято {st['accepted']}, отклонено {st['rejected']}; пропущено: нет формулировки {st['no_text']}, "
           f"нет справочника у атрибута {st['no_dictionary']}")
-    print(f"Синонимов в learned.yaml: {sum(len(v or {}) for v in learned.values())}")
+    print(f"Выучено синонимов: {st['learned']} -> {rel(res['paths']['learned'])} "
+          f"(всего {sum(len(v or {}) for v in learned.values())})")
+    print(f"Кандидатов: {st['candidates']} -> {rel(res['paths']['candidates'])} — в справочники НЕ попали: значения "
+          f"нет в справочнике и меньше {res['min_agree']} одинаковых исправлений на разных карточках, или правки "
+          f"расходятся")
+    for dname, items in cands.items():
+        for raw, c in list(items.items())[:10]:
+            hint = f"; похоже на «{c['suggest']}»" if c.get("suggest") else ""
+            print(f"  {dname}: «{raw}» -> «{c['value']}» — {c['reason']}{hint}")
 
 
 DEMO_SOURCES = {"seller": "продавец", "rules": "правила", "ml": "NER", "llm": "LLM"}
@@ -136,11 +169,17 @@ def cmd_train_ner(a):
     from .pipeline import Extractor
 
     if not ner.available() and not (a.distant and a.dry_run):
-        sys.exit('Нужен extra [ml]: uv pip install -e ".[ml]"')
+        sys.exit('attrx train-ner: нужны torch и transformers (extra [ml]): uv pip install -p .venv/bin/python -e ".[ml]" '
+                 "(GPU GTX 10xx — torch из индекса cu126, см. README). Без NER пайплайн работает на продавце, правилах "
+                 "и словарях — это не ошибка, а пропуск шага.")
     if a.distant:  # distant supervision: значения каталога (train-сплит) -> спаны в тексте карточек
         from .extractors import ner_distant
         from .taxonomy import load_taxonomy
 
+        missing = [f for f in ("cards.parquet", "gold.parquet") if not (Path(a.processed) / f).exists()]
+        if missing:
+            sys.exit(f"attrx train-ner --distant: нет {', '.join(missing)} в {a.processed} — сначала данные организаторов: "
+                     "make data -> attrx prepare -> attrx build-gold")
         info = ner_distant.run(Path(a.processed), Path(a.out), load_taxonomy(str(get_settings().taxonomy_path)),
                                n_generic=a.generic, max_examples=a.max_examples or None, epochs=a.epochs or 3,
                                lr=a.lr, batch_size=a.batch_size, device=a.device, threads=a.threads, seed=a.seed,
@@ -187,8 +226,12 @@ def cmd_report(a):
 
 
 def cmd_split(a):
+    """Устарело (синтетика первых дней): реальные сплиты — attrx.data.split_of (md5(sku_id) % 100), их пишет
+    attrx build-gold (gold_dev.jsonl, gold_holdout.jsonl). Оставлено для своих JSONL-наборов без сплита."""
     import hashlib
 
+    print("attrx split устарела: сплиты реального каталога строит attrx build-gold (md5(sku_id) % 100: train/dev/"
+          "holdout); эта команда делит только свой gold-JSONL", file=sys.stderr)
     lines = [x for x in Path(a.gold).read_text(encoding="utf-8").splitlines() if x.strip()] if a.gold.endswith(".jsonl") else None
     if lines is None:
         sys.exit("split поддерживает gold в JSONL (один объект на строку с полем id)")
@@ -367,18 +410,81 @@ def cmd_calibrate(a):
           f"{cf['raw_coverage_at_same_threshold']}) -> {a.out}")
 
 
+def cmd_verify(a):
+    """Пересчёт строк «правила» и «продавец + правила» из submission/compare.json на закоммиченном holdout."""
+    from .reproduce import VerifyError, table, verify
+
+    modes = tuple(m.strip() for m in a.modes.split(",") if m.strip())
+    try:
+        rep = verify(Path(a.cards), Path(a.gold), Path(a.compare), tol=a.tol, modes=modes, set_name=a.set_name)
+    except VerifyError as e:
+        sys.exit(f"attrx verify: {e}")
+    print(f"attrx verify: пересчёт строк {rep['compare']} на {rep['cards']} ({rep['n_cards']} карточек) + {rep['gold']} "
+          f"тем же кодом, что attrx report-real; без NER и LLM (эти режимы их не используют), порог автопринятия "
+          f"{rep['threshold']}, допуск {rep['tol']}")
+    print()
+    print(table(rep))
+    if a.out:
+        out = Path(a.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")
+    bad = [c for c in rep["checks"] if not c["ok"]]
+    print()
+    if bad:
+        print(f"РАСХОЖДЕНИЕ: {len(bad)} из {len(rep['checks'])} чисел отличаются больше чем на {rep['tol']} — "
+              f"submission/ не соответствует коду и данным (перегенерировать: make report)")
+        sys.exit(1)
+    print(f"OK: все {len(rep['checks'])} чисел совпадают с {rep['compare']} (допуск {rep['tol']})")
+
+
+def cmd_monitor(a):
+    """Дрейф по предсказаниям против эталонного прогона -> outputs/monitor.json; --fail-on-alert — код 2 при алертах."""
+    from . import monitor
+
+    try:
+        thresholds = monitor.parse_thresholds(a.threshold)
+    except ValueError as e:
+        sys.exit(f"attrx monitor: {e}")
+    inp = Path(a.input)
+    if not inp.exists():
+        sys.exit(f"attrx monitor: нет {inp} — сначала предсказания: attrx extract -i <карточки> (или attrx demo)")
+    ref = Path(a.ref) if a.ref else None
+    rep = monitor.run(inp, ref, thresholds, Path(a.feedback) if a.feedback else None)
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"attrx monitor: {rep['n_cards']} карточек из {inp}" + (f" против эталона {ref} ({rep['ref_n_cards']})"
+                                                                  if rep["reference"] else ""))
+    print(monitor.table(rep))
+    if rep["alerts"]:
+        print(f"\nАлерты ({len(rep['alerts'])}):")
+        for x in rep["alerts"]:
+            print(f"  ! {x['message']}")
+        print("Что делать:")
+        for s in rep["next_steps"]:
+            print(f"  - {s}")
+    else:
+        print("\nАлертов нет")
+    print(f"-> {out}")
+    if rep["alerts"] and a.fail_on_alert:
+        sys.exit(2)
+
+
 def cmd_report_real(a):
     from .eval.final import run_final
 
     if a.split != "holdout" and Path(a.out).resolve() == (ROOT / "submission").resolve():
         sys.exit("submission/ — только для holdout; пробный прогон на dev пишите в другую папку (--out)")
-    info = run_final(ROOT, Path(a.processed), Path(a.out), split=a.split, llm_n=a.llm_n, cold_n=a.cold_n, seed=a.seed)
-    print(f"Готово за {info['seconds']} с: {info['n_cards']} карточек ({info['split']}), режим в сдаче «{info['final']}» "
-          f"-> {a.out}/REPORT.md")
+    info = run_final(ROOT, Path(a.processed), Path(a.out), split=a.split, llm_n=a.llm_n, cold_n=a.cold_n, seed=a.seed,
+                     passes=a.passes, llm_provider=a.llm_provider, full=not a.no_full, force=a.force)
+    llm = info.get("llm") or {}
+    print(f"Готово за {info['seconds']} с: {info['n_cards']} карточек ({info['split']}, {info['primary_set']}), режим в "
+          f"сдаче «{info['final']}», LLM: {llm.get('model')} ({llm.get('choice')}, {llm.get('base_host')}) -> {a.out}/REPORT.md")
 
 
 def main(argv: list[str] | None = None) -> None:
-    p = argparse.ArgumentParser(prog="attrx", description="Извлечение и нормализация характеристик товаров")
+    p = argparse.ArgumentParser(prog="attrx", description="Извлечение и нормализация характеристик товаров",
+                                epilog=EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     s = get_settings()
 
@@ -394,18 +500,53 @@ def main(argv: list[str] | None = None) -> None:
     v.add_argument("--out", default=str(s.predictions_path.parent / "metrics.json"))
     v.set_defaults(fn=cmd_eval)
 
-    d = sub.add_parser("eda", help="EDA датасета -> outputs/eda/eda.md")
+    d = sub.add_parser("eda", help="[старое, синтетика] простой EDA списка карточек -> outputs/eda/eda.md; "
+                                   "EDA реальных данных — eda-real")
     d.add_argument("--input", "-i", required=True)
     d.add_argument("--out", default=str(ROOT / "outputs" / "eda"))
     d.set_defaults(fn=cmd_eda)
 
-    sv = sub.add_parser("serve", help="API + веб-интерфейс")
-    sv.add_argument("--host", default="0.0.0.0")
+    sv = sub.add_parser("serve", help="API + веб-интерфейс (по умолчанию только 127.0.0.1; Docker и ВМ — --host 0.0.0.0)")
+    sv.add_argument("--host", default=os.getenv("ATTRX_HOST") or "127.0.0.1",
+                    help="адрес (по умолчанию ATTRX_HOST или 127.0.0.1 — только эта машина); 0.0.0.0 — все интерфейсы")
     sv.add_argument("--port", type=int, default=8000)
     sv.add_argument("--reload", action="store_true")
     sv.set_defaults(fn=cmd_serve)
 
-    sub.add_parser("learn", help="feedback.jsonl -> config/dictionaries/learned.yaml").set_defaults(fn=cmd_learn)
+    ln = sub.add_parser("learn", help="feedback.jsonl -> синонимы в config/dictionaries/learned.yaml (значение из "
+                                      "справочника или ≥ 2 одинаковых правок), остальное — в кандидаты")
+    ln.add_argument("--min-agree", type=int, default=2,
+                    help="одинаковых исправлений на разных карточках, чтобы значение вне справочника стало каноном")
+    ln.set_defaults(fn=cmd_learn)
+
+    vf = sub.add_parser("verify", help="сверка: пересчитать строки «правила» и «продавец + правила» "
+                                       "submission/compare.json на закоммиченном holdout (офлайн); расхождение — код 1")
+    vf.add_argument("--cards", default=str(ROOT / "data" / "sample" / "holdout_eval_cards.jsonl"))
+    vf.add_argument("--gold", default=str(ROOT / "data" / "sample" / "holdout_eval_gold.jsonl"))
+    vf.add_argument("--compare", default=str(ROOT / "submission" / "compare.json"))
+    vf.add_argument("--modes", default="правила,продавец + правила", help="режимы через запятую (без NER и LLM)")
+    vf.add_argument("--set", dest="set_name", default="auto",
+                    help="набор строк compare.json (stratified | full | full_holdout); auto — с тем же числом карточек")
+    vf.add_argument("--tol", type=float, default=0.002, help="допустимое расхождение метрики")
+    vf.add_argument("--out", default="", help="сохранить сверку в JSON (по желанию)")
+    vf.set_defaults(fn=cmd_verify)
+
+    from .monitor import DEFAULT_THRESHOLDS, THRESHOLD_HELP
+
+    mo = sub.add_parser("monitor", help="дрейф по предсказаниям: review / missing / уверенность / неуверенная категория "
+                                        "/ generic / сдвиг категорий (PSI, JS) / доля LLM против эталона -> outputs/monitor.json",
+                        epilog="пороги (--threshold имя=значение):\n" + "\n".join(
+                            f"  {k:<22}{v:<7g}{THRESHOLD_HELP[k]}" for k, v in DEFAULT_THRESHOLDS.items()),
+                        formatter_class=argparse.RawDescriptionHelpFormatter)
+    mo.add_argument("--input", "-i", default=str(s.predictions_path), help="предсказания (attrx extract / demo)")
+    mo.add_argument("--ref", default=str(ROOT / "submission" / "predictions.jsonl"),
+                    help="эталонный прогон для сравнения ('' — без него)")
+    mo.add_argument("--out", default=str(ROOT / "outputs" / "monitor.json"))
+    mo.add_argument("--feedback", default=str(s.feedback_path),
+                    help="журнал решений модератора: сводка правок и кандидатов в синонимы ('' — без него)")
+    mo.add_argument("--threshold", "-t", action="append", default=[], metavar="ИМЯ=ЗНАЧЕНИЕ")
+    mo.add_argument("--fail-on-alert", action="store_true", help="код возврата 2, если есть алерты (cron, CI)")
+    mo.set_defaults(fn=cmd_monitor)
 
     dm = sub.add_parser("demo", help="400 реальных карточек holdout из data/sample + эталон каталога -> метрики "
                                      "(как eval-real), outputs/predictions.jsonl и outputs/metrics.json")
@@ -413,8 +554,9 @@ def main(argv: list[str] | None = None) -> None:
     dm.add_argument("--ml", choices=["on", "off"], default="off", help="NER (нужны extra [ml] и models/ner)")
     dm.set_defaults(fn=cmd_demo)
 
-    t = sub.add_parser("train-ner", help="обучить NER: --distant — distant supervision на эталоне каталога (train), "
-                                          "иначе слабая разметка от правил (+gold) по --input")
+    t = sub.add_parser("train-ner", help="обучить NER (extra [ml]): --distant — distant supervision на эталоне каталога "
+                                          "(train, так обучена модель решения); без --distant — [старое] слабая "
+                                          "разметка от правил по --input")
     t.add_argument("--input", "-i", default=None, help="карточки для слабой разметки от правил (без --distant)")
     t.add_argument("--gold", default=None)
     t.add_argument("--out", default=str(s.ml_model_path))
@@ -434,8 +576,8 @@ def main(argv: list[str] | None = None) -> None:
     t.add_argument("--dry-run", action="store_true", help="только разметка и её статистика, без обучения")
     t.set_defaults(fn=cmd_train_ner)
 
-    rp = sub.add_parser("report", help="сравнение подходов + сегменты + ошибки + предсказания по своему набору "
-                                       "-> outputs/report (итоговый отчёт сдачи — attrx report-real)")
+    rp = sub.add_parser("report", help="сравнение подходов + сегменты + ошибки по СВОЕМУ набору -> outputs/report "
+                                       "(make report-sample — синтетика; итоговый отчёт сдачи — report-real)")
     rp.add_argument("--input", "-i", required=True)
     rp.add_argument("--gold", required=True)
     rp.add_argument("--out", default=str(ROOT / "outputs" / "report"))
@@ -443,7 +585,8 @@ def main(argv: list[str] | None = None) -> None:
     rp.add_argument("--force", action="store_true", help="разрешить запись в submission/")
     rp.set_defaults(fn=cmd_report)
 
-    sp = sub.add_parser("split", help="gold -> gold_train + gold_holdout (честная оценка)")
+    sp = sub.add_parser("split", help="[устарело, синтетика] свой gold-JSONL -> _train + _holdout по md5(id); "
+                                      "сплиты реального каталога строит build-gold")
     sp.add_argument("--gold", required=True)
     sp.add_argument("--holdout", type=float, default=0.3)
     sp.set_defaults(fn=cmd_split)
@@ -554,6 +697,14 @@ def main(argv: list[str] | None = None) -> None:
     rr.add_argument("--llm-n", type=int, default=600, help="подвыборка для LLM (0 — без LLM); LLM_BASE_URL/LLM_MODEL")
     rr.add_argument("--cold-n", type=int, default=1000, help="карточек вне фида для покрытия на cold start (0 — нет)")
     rr.add_argument("--seed", type=int, default=0)
+    rr.add_argument("--llm-provider", default="auto", choices=["auto", "local", "env"],
+                    help="auto — задан OPENAI_BASE_URL (ВМ: шлюз организаторов) -> OPENAI_*; иначе LLM_BASE_URL -> LLM_*; "
+                         "иначе локальная Ollama (qwen3:4b-instruct); local — всегда Ollama; env — порядок настроек "
+                         "пайплайна (LLM_* -> OPENAI_*). Отчёт с другой LLM поверх прежнего не пишется без --force")
+    rr.add_argument("--passes", type=int, default=3, help="замеров скорости (медиана) для режимов без LLM")
+    rr.add_argument("--no-full", action="store_true", help="без прогона на всём holdout (только стратифицированный набор)")
+    rr.add_argument("--force", action="store_true", help="перезаписать отчёт, посчитанный с другой LLM (или с LLM, когда "
+                                                         "сейчас её нет)")
     rr.add_argument("--out", default=str(ROOT / "submission"))
     rr.set_defaults(fn=cmd_report_real)
 

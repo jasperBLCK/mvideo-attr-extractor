@@ -1,0 +1,195 @@
+{
+ "target_precision": 0.95,
+ "chosen": 0.7,
+ "mode": "+ NER",
+ "split": "holdout",
+ "set": "full_holdout",
+ "chosen_on": "dev: 2-fold кросс-фиттинг калибровки (attrx calibrate), на holdout не подбирался",
+ "at_chosen": {
+  "threshold": 0.7,
+  "precision": 0.9538,
+  "recall": 0.7795,
+  "f1": 0.8579,
+  "coverage": 0.7332,
+  "new_fills": 5488,
+  "review_rate": 0.1084,
+  "accepted_precision": {
+   "precision": 0.9537,
+   "lower95": 0.9518,
+   "accepted": 49008,
+   "predicted_with_gold": 52134,
+   "accepted_share": 0.94
+  }
+ },
+ "note": "at_chosen — рабочая точка пайплайна (статусы: порог + правила конфликтов и инвариант LLM); points — принять всё с уверенностью ≥ порога (без правил статуса), включая точку ровно на пороге",
+ "points": [
+  {
+   "threshold": 0.0,
+   "precision": 0.924,
+   "recall": 0.8033,
+   "f1": 0.8594,
+   "coverage": 0.8412,
+   "new_fills": 10387
+  },
+  {
+   "threshold": 0.05,
+   "precision": 0.924,
+   "recall": 0.8033,
+   "f1": 0.8594,
+   "coverage": 0.8412,
+   "new_fills": 10387
+  },
+  {
+   "threshold": 0.1,
+   "precision": 0.924,
+   "recall": 0.8033,
+   "f1": 0.8594,
+   "coverage": 0.8412,
+   "new_fills": 10387
+  },
+  {
+   "threshold": 0.15,
+   "precision": 0.924,
+   "recall": 0.8033,
+   "f1": 0.8594,
+   "coverage": 0.8412,
+   "new_fills": 10387
+  },
+  {
+   "threshold": 0.2,
+   "precision": 0.935,
+   "recall": 0.7976,
+   "f1": 0.8608,
+   "coverage": 0.7821,
+   "new_fills": 6974
+  },
+  {
+   "threshold": 0.25,
+   "precision": 0.935,
+   "recall": 0.7975,
+   "f1": 0.8608,
+   "coverage": 0.7821,
+   "new_fills": 6974
+  },
+  {
+   "threshold": 0.3,
+   "precision": 0.935,
+   "recall": 0.7975,
+   "f1": 0.8608,
+   "coverage": 0.782,
+   "new_fills": 6973
+  },
+  {
+   "threshold": 0.35,
+   "precision": 0.9354,
+   "recall": 0.7975,
+   "f1": 0.8609,
+   "coverage": 0.7811,
+   "new_fills": 6934
+  },
+  {
+   "threshold": 0.4,
+   "precision": 0.9354,
+   "recall": 0.7974,
+   "f1": 0.8609,
+   "coverage": 0.7811,
+   "new_fills": 6934
+  },
+  {
+   "threshold": 0.45,
+   "precision": 0.9448,
+   "recall": 0.7909,
+   "f1": 0.861,
+   "coverage": 0.7593,
+   "new_fills": 6239
+  },
+  {
+   "threshold": 0.5,
+   "precision": 0.9477,
+   "recall": 0.7876,
+   "f1": 0.8602,
+   "coverage": 0.7474,
+   "new_fills": 5713
+  },
+  {
+   "threshold": 0.55,
+   "precision": 0.9482,
+   "recall": 0.7871,
+   "f1": 0.8602,
+   "coverage": 0.7465,
+   "new_fills": 5706
+  },
+  {
+   "threshold": 0.6,
+   "precision": 0.9487,
+   "recall": 0.7864,
+   "f1": 0.86,
+   "coverage": 0.7455,
+   "new_fills": 5699
+  },
+  {
+   "threshold": 0.65,
+   "precision": 0.9529,
+   "recall": 0.7816,
+   "f1": 0.8588,
+   "coverage": 0.7358,
+   "new_fills": 5507
+  },
+  {
+   "threshold": 0.7,
+   "precision": 0.9538,
+   "recall": 0.7799,
+   "f1": 0.8581,
+   "coverage": 0.7336,
+   "new_fills": 5490
+  },
+  {
+   "threshold": 0.75,
+   "precision": 0.9633,
+   "recall": 0.7685,
+   "f1": 0.855,
+   "coverage": 0.7089,
+   "new_fills": 4846
+  },
+  {
+   "threshold": 0.8,
+   "precision": 0.9701,
+   "recall": 0.7606,
+   "f1": 0.8527,
+   "coverage": 0.6969,
+   "new_fills": 4777
+  },
+  {
+   "threshold": 0.85,
+   "precision": 0.9814,
+   "recall": 0.7224,
+   "f1": 0.8322,
+   "coverage": 0.6352,
+   "new_fills": 3067
+  },
+  {
+   "threshold": 0.9,
+   "precision": 0.9818,
+   "recall": 0.7157,
+   "f1": 0.8279,
+   "coverage": 0.6292,
+   "new_fills": 3054
+  },
+  {
+   "threshold": 0.95,
+   "precision": 0.9867,
+   "recall": 0.6842,
+   "f1": 0.8081,
+   "coverage": 0.5897,
+   "new_fills": 2241
+  },
+  {
+   "threshold": 1.0,
+   "precision": 0.9808,
+   "recall": 0.0256,
+   "f1": 0.0499,
+   "coverage": 0.0219,
+   "new_fills": 58
+  }
+ ]
+}

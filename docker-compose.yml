@@ -1,19 +1,54 @@
-# Базовый запуск: только правила (LLM_ENABLED=false) — работает в закрытом контуре без интернета.
-# С локальной LLM: docker compose --profile llm up  (Ollama рядом, данные не покидают сервер)
+# docker compose up — правила + словари + классификатор категории (NER — при установке [ml] и обученной модели); LLM подключается сама, если есть ключ (LLM_ENABLED=auto):
+#   на ВМ хакатона OPENAI_API_KEY / OPENAI_BASE_URL берутся из окружения хоста или из .env.
+# docker compose --profile llm up — рядом поднимается Ollama, модель скачивается при первом старте,
+#   приложение находит её само (LLM_LOCAL_URL); данные не покидают сервер. Подробно: docs/LLM.md
 services:
   app:
     build: .
     ports: ["8000:8000"]
     env_file:
       - path: .env
-        required: false   # без .env работает на дефолтах (только правила)
-    environment: [ATTRX_ROOT=/app]
-    extra_hosts: ["host.docker.internal:host-gateway"]   # LLM на хосте (Ollama): LLM_BASE_URL=http://host.docker.internal:11434/v1
+        required: false   # без .env работает на дефолтах
+    environment:
+      ATTRX_ROOT: /app
+      # ключ и шлюз организаторов с ВМ пробрасываются как есть (пустая строка = не заданы)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      # ключа нет — использовать локальную Ollama, если она запущена (профиль llm или Ollama на хосте)
+      LLM_LOCAL_URL: ${LLM_LOCAL_URL:-http://host.docker.internal:11434/v1}
+    extra_hosts: ["host.docker.internal:host-gateway"]
     volumes: ["./outputs:/app/outputs", "./config:/app/config", "./data:/app/data"]
+
   ollama:
     image: ollama/ollama:latest
     profiles: [llm]
     ports: ["11434:11434"]
     volumes: ["ollama:/root/.ollama"]
+    environment:
+      OLLAMA_KEEP_ALIVE: 10m          # через 10 минут простоя модель выгружается из VRAM (GPU нужна и NER)
+      OLLAMA_CONTEXT_LENGTH: "4096"   # карточка + схема помещаются с запасом
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    # GPU NVIDIA (нужен nvidia-container-toolkit) — раскомментировать:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+  ollama-pull:   # при первом старте скачивает модель в том ollama (дальше — мгновенно)
+    image: ollama/ollama:latest
+    profiles: [llm]
+    depends_on:
+      ollama: {condition: service_healthy}
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "${LLM_LOCAL_MODEL:-qwen3:4b-instruct}"]
+    restart: "no"
+
 volumes:
   ollama: {}

@@ -15,11 +15,15 @@ dependencies = [
   "fastapi>=0.110",
   "uvicorn[standard]>=0.29",
   "pandas>=2.1",
+  "pyarrow>=14",
+  "duckdb>=1.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.5", "httpx>=0.27"]
+dev = ["pytest>=8", "ruff>=0.5", "httpx>=0.27", "scikit-learn>=1.4"]  # sklearn — тест обучения классификатора категории
 ml = ["torch>=2.2", "transformers>=4.44,<5", "scikit-learn>=1.4", "jupyterlab>=4", "matplotlib>=3.8"]
+eda = ["matplotlib>=3.8", "nbformat>=5.9", "nbconvert>=7", "ipykernel>=6"]  # attrx eda-real и notebooks/01_eda.ipynb
+xlsx = ["openpyxl>=3.1"]  # attrx extract / eval по таблице .xlsx (io.read_table)
 
 [project.scripts]
 attrx = "attrx.cli:main"

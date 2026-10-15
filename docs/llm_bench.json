@@ -1,0 +1,795 @@
+{
+ "what": "Бенчмарк LLM-слоя attrx на реальных карточках М.Видео (attrx llm-bench)",
+ "hardware": "GTX 1060 6 ГБ (Pascal), Pentium Gold G5400 (4 потока, без AVX), 31 ГБ RAM; Ollama 0.33.3",
+ "cards": "30 карточек из data/sample/real_cards.jsonl: 15 смартфонов (вкл. iPhone), 15 ноутбуков",
+ "scenario": "LLM на каждую карточку: все 6 атрибутов категории, промпт как в проде, json_schema, temperature 0, без кэша, последовательно, модель заранее загружена",
+ "gold": "параметры оффера из YML-фида (vendor, model, param) по полю gold таксономии",
+ "hybrid_pipeline": {
+  "cards": 20,
+  "llm_calls_prefilter_off": 18,
+  "llm_calls_prefilter_on": 8,
+  "seconds_prefilter_off": 64,
+  "seconds_prefilter_on": 25,
+  "tokens_per_call": {
+   "prompt": 1018,
+   "completion": 49
+  },
+  "seconds_per_call": 3.14
+ },
+ "runs": [
+  {
+   "model": "qwen3:4b-instruct",
+   "n_cards": 30,
+   "errors": 0,
+   "json_valid_rate": 1.0,
+   "values_returned": 151,
+   "quote_found_rate": 0.993,
+   "grounded_rate": 0.927,
+   "coverage": 0.778,
+   "gold_precision": 0.95,
+   "gold_recall": 0.764,
+   "gold_recall_extractable": 0.929,
+   "latency_s": {
+    "avg": 6.9,
+    "p50": 7.26,
+    "p95": 10.23
+   },
+   "tokens_per_card": {
+    "prompt": 1102,
+    "completion": 199
+   },
+   "chars_per_prompt_token": 2.68,
+   "vram_mib": 3031,
+   "response_format": "json_schema",
+   "reasoning_effort": null,
+   "few_shot": false,
+   "counts": {
+    "slots": 180,
+    "json_ok": 30,
+    "returned": 151,
+    "quote_found": 150,
+    "normalized": 148,
+    "grounded": 140,
+    "gold_slots": 174,
+    "gold_returned": 140,
+    "correct": 133,
+    "gold_extractable": 140,
+    "correct_extractable": 130
+   },
+   "backend": "Vulkan",
+   "file": "vulkan/qwen3_4b-instruct.json",
+   "latency_s_this_run": {
+    "avg": 13.91,
+    "p50": 15.57,
+    "p95": 21.87
+   },
+   "rejected_by_verification": [
+    {
+     "card_id": "401256217",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "емкость батареи - 100%",
+      "value": "100%"
+     }
+    },
+    {
+     "card_id": "401256217",
+     "attribute": "color",
+     "llm": {
+      "evidence": "iPhone 12 mini выполнен в элегантном черном цвете",
+      "value": "чёрный"
+     }
+    },
+    {
+     "card_id": "400648559",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "для восполнения 50% ресурса батареи достаточно 20 минут. полного заряда хватает на срок до 30 часов при воспроизведении видео",
+      "value": "5000 мА·ч"
+     }
+    },
+    {
+     "card_id": "400536914",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "Автономная работа до 2 дней до 27 ч, непрерывное воспроизведения видео, до 108 ч воспроизведеняи музыки.",
+      "value": "27 ч"
+     }
+    },
+    {
+     "card_id": "400480539",
+     "attribute": "color",
+     "llm": {
+      "evidence": "Deep Blue",
+      "value": "чёрный"
+     }
+    },
+    {
+     "card_id": "30072638",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "восьмиъядерный процессор Intel Core i3 N305",
+      "value": "Intel Core i3 N30-5"
+     }
+    },
+    {
+     "card_id": "400233585",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "двухъядерного процессора Intel Pentium Gold 750",
+      "value": "Intel Pentium Gold 7505"
+     }
+    },
+    {
+     "card_id": "401270135",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "10-ядерный CPU с самыми быстрыми ядрами в мире",
+      "value": "M5"
+     }
+    },
+    {
+     "card_id": "30080756",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "Чип М4",
+      "value": "Apple M4"
+     }
+    },
+    {
+     "card_id": "30080756",
+     "attribute": "storage",
+     "llm": {
+      "evidence": "встроенная объемом 51-2 Гб",
+      "value": "512 ГБ"
+     }
+    }
+   ],
+   "rub_per_1000_cards_every_card": {
+    "organizers": null,
+    "gigachat-lite": 84.55,
+    "gigachat-pro": 650.38,
+    "gigachat-max": 845.5,
+    "yandexgpt-lite": 260.15,
+    "yandexgpt-pro": 1040.61,
+    "yandex-qwen3.6-35b": 280.03,
+    "openai-gpt-4o-mini": 23.89,
+    "onprem-gtx1060": 11.32,
+    "onprem-l4-vllm": 11.47
+   }
+  },
+  {
+   "model": "qwen3:4b-instruct",
+   "n_cards": 30,
+   "errors": 0,
+   "json_valid_rate": 1.0,
+   "values_returned": 151,
+   "quote_found_rate": 0.993,
+   "grounded_rate": 0.921,
+   "coverage": 0.772,
+   "gold_precision": 0.95,
+   "gold_recall": 0.759,
+   "gold_recall_extractable": 0.921,
+   "latency_s": {
+    "avg": 6.9,
+    "p50": 7.26,
+    "p95": 10.23
+   },
+   "tokens_per_card": {
+    "prompt": 1102,
+    "completion": 199
+   },
+   "chars_per_prompt_token": 2.68,
+   "vram_mib": 3031,
+   "response_format": "json_schema",
+   "reasoning_effort": null,
+   "few_shot": false,
+   "counts": {
+    "slots": 180,
+    "json_ok": 30,
+    "returned": 151,
+    "quote_found": 150,
+    "normalized": 148,
+    "grounded": 139,
+    "gold_slots": 174,
+    "gold_returned": 139,
+    "correct": 132,
+    "gold_extractable": 140,
+    "correct_extractable": 129
+   },
+   "backend": "Vulkan",
+   "file": "vulkan_schema_enum/qwen3_4b-instruct.json",
+   "latency_s_this_run": {
+    "avg": 9.29,
+    "p50": 9.03,
+    "p95": 11.91
+   },
+   "rejected_by_verification": [
+    {
+     "card_id": "401256217",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "емкость батареи - 100%",
+      "value": "100%"
+     }
+    },
+    {
+     "card_id": "401256217",
+     "attribute": "color",
+     "llm": {
+      "evidence": "iPhone 12 mini выполнен в элегантном черном цвете",
+      "value": "чёрный"
+     }
+    },
+    {
+     "card_id": "400648559",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "для восполнения 50% ресурса батареи достаточно 20 минут. полного заряда хватает на срок до 30 часов при воспроизведении видео",
+      "value": "5000 мА·ч"
+     }
+    },
+    {
+     "card_id": "400536914",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "Автономная работа до 2 дней до 27 ч, непрерывное воспроизведения видео, до 108 ч воспроизведеняи музыки.",
+      "value": "27 ч"
+     }
+    },
+    {
+     "card_id": "400480539",
+     "attribute": "color",
+     "llm": {
+      "evidence": "Deep Blue",
+      "value": "чёрный"
+     }
+    },
+    {
+     "card_id": "30072638",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "восьмиъядерный процессор Intel Core i3 N305",
+      "value": "Intel Core i3 N30-5"
+     }
+    },
+    {
+     "card_id": "400233585",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "двухъядерного процессора Intel Pentium Gold 750",
+      "value": "Intel Pentium Gold 7505"
+     }
+    },
+    {
+     "card_id": "401270135",
+     "attribute": "color",
+     "llm": {
+      "evidence": "сияющая звезда",
+      "value": "синий"
+     }
+    },
+    {
+     "card_id": "401270135",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "10-ядерный CPU с самыми быстрыми ядрами в мире",
+      "value": "M5"
+     }
+    },
+    {
+     "card_id": "30080756",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "Чип М4",
+      "value": "Apple M4"
+     }
+    },
+    {
+     "card_id": "30080756",
+     "attribute": "storage",
+     "llm": {
+      "evidence": "встроенная объемом 51-2 Гб",
+      "value": "512 ГБ"
+     }
+    }
+   ],
+   "rub_per_1000_cards_every_card": {
+    "organizers": null,
+    "gigachat-lite": 84.54,
+    "gigachat-pro": 650.33,
+    "gigachat-max": 845.43,
+    "yandexgpt-lite": 260.13,
+    "yandexgpt-pro": 1040.53,
+    "yandex-qwen3.6-35b": 280.0,
+    "openai-gpt-4o-mini": 23.89,
+    "onprem-gtx1060": 7.55,
+    "onprem-l4-vllm": 11.47
+   }
+  },
+  {
+   "model": "qwen2.5:7b-instruct",
+   "n_cards": 30,
+   "errors": 0,
+   "json_valid_rate": 1.0,
+   "values_returned": 141,
+   "quote_found_rate": 0.957,
+   "grounded_rate": 0.972,
+   "coverage": 0.761,
+   "gold_precision": 0.956,
+   "gold_recall": 0.753,
+   "gold_recall_extractable": 0.929,
+   "latency_s": {
+    "avg": 9.92,
+    "p50": 10.15,
+    "p95": 16.23
+   },
+   "tokens_per_card": {
+    "prompt": 1102,
+    "completion": 171
+   },
+   "chars_per_prompt_token": 2.68,
+   "vram_mib": 4521,
+   "response_format": "json_schema",
+   "reasoning_effort": null,
+   "few_shot": false,
+   "counts": {
+    "slots": 180,
+    "json_ok": 30,
+    "returned": 141,
+    "quote_found": 135,
+    "normalized": 141,
+    "grounded": 137,
+    "gold_slots": 174,
+    "gold_returned": 137,
+    "correct": 131,
+    "gold_extractable": 140,
+    "correct_extractable": 130
+   },
+   "backend": "Vulkan",
+   "file": "vulkan/qwen2.5_7b-instruct.json",
+   "latency_s_this_run": {
+    "avg": 11.3,
+    "p50": 12.25,
+    "p95": 17.36
+   },
+   "rejected_by_verification": [
+    {
+     "card_id": "400633953",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "ёмкость аккумулятора 6000 мА·ч",
+      "value": "6000 мА·ч"
+     }
+    },
+    {
+     "card_id": "401256217",
+     "attribute": "color",
+     "llm": {
+      "evidence": "черный",
+      "value": "чёрный"
+     }
+    },
+    {
+     "card_id": "400243733",
+     "attribute": "screen",
+     "llm": {
+      "evidence": "Устройство оборудовано Яркий матовый IPS экран 300 кд/м² с диагональю 15,6\"(39,6 см)",
+      "value": "15.6 дюйма"
+     }
+    },
+    {
+     "card_id": "400406422",
+     "attribute": "color",
+     "llm": {
+      "evidence": "ноутбук белый",
+      "value": "белый"
+     }
+    }
+   ],
+   "rub_per_1000_cards_every_card": {
+    "organizers": null,
+    "gigachat-lite": 82.75,
+    "gigachat-pro": 636.55,
+    "gigachat-max": 827.52,
+    "yandexgpt-lite": 254.62,
+    "yandexgpt-pro": 1018.48,
+    "yandex-qwen3.6-35b": 271.73,
+    "openai-gpt-4o-mini": 22.5,
+    "onprem-gtx1060": 9.19,
+    "onprem-l4-vllm": 11.47
+   }
+  },
+  {
+   "model": "qwen3.5:4b",
+   "n_cards": 30,
+   "errors": 0,
+   "json_valid_rate": 1.0,
+   "values_returned": 146,
+   "quote_found_rate": 0.986,
+   "grounded_rate": 0.973,
+   "coverage": 0.789,
+   "gold_precision": 0.887,
+   "gold_recall": 0.724,
+   "gold_recall_extractable": 0.893,
+   "latency_s": {
+    "avg": 10.83,
+    "p50": 10.93,
+    "p95": 15.72
+   },
+   "tokens_per_card": {
+    "prompt": 888,
+    "completion": 224
+   },
+   "chars_per_prompt_token": 3.19,
+   "vram_mib": 3001,
+   "response_format": "json_schema",
+   "reasoning_effort": "none",
+   "few_shot": false,
+   "counts": {
+    "slots": 180,
+    "json_ok": 30,
+    "returned": 146,
+    "quote_found": 144,
+    "normalized": 145,
+    "grounded": 142,
+    "gold_slots": 174,
+    "gold_returned": 142,
+    "correct": 126,
+    "gold_extractable": 140,
+    "correct_extractable": 125
+   },
+   "backend": "Vulkan",
+   "file": "vulkan/qwen3.5_4b.json",
+   "latency_s_this_run": {
+    "avg": 10.83,
+    "p50": 10.93,
+    "p95": 15.72
+   },
+   "rejected_by_verification": [
+    {
+     "card_id": "401256217",
+     "attribute": "color",
+     "llm": {
+      "evidence": "iPhone 12 mini выполнен в элегантном черном цвете",
+      "value": "черный"
+     }
+    },
+    {
+     "card_id": "400334954",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "Восьмиядерный процессор",
+      "value": "R7-8845HS"
+     }
+    },
+    {
+     "card_id": "400243733",
+     "attribute": "ram",
+     "llm": {
+      "evidence": "Оперативная память DDR4 ... равна 16 Гб",
+      "value": "16 ГБ"
+     }
+    }
+   ],
+   "rub_per_1000_cards_every_card": {
+    "organizers": null,
+    "gigachat-lite": 72.29,
+    "gigachat-pro": 556.1,
+    "gigachat-max": 722.93,
+    "yandexgpt-lite": 222.44,
+    "yandexgpt-pro": 889.76,
+    "yandex-qwen3.6-35b": 244.83,
+    "openai-gpt-4o-mini": 22.46,
+    "onprem-gtx1060": 8.81,
+    "onprem-l4-vllm": 11.47
+   }
+  },
+  {
+   "model": "mistral",
+   "n_cards": 30,
+   "errors": 0,
+   "json_valid_rate": 1.0,
+   "values_returned": 150,
+   "quote_found_rate": 0.947,
+   "grounded_rate": 0.913,
+   "coverage": 0.761,
+   "gold_precision": 0.942,
+   "gold_recall": 0.741,
+   "gold_recall_extractable": 0.914,
+   "latency_s": {
+    "avg": 10.72,
+    "p50": 11.66,
+    "p95": 14.4
+   },
+   "tokens_per_card": {
+    "prompt": 1280,
+    "completion": 192
+   },
+   "chars_per_prompt_token": 2.28,
+   "vram_mib": 4714,
+   "response_format": "json_schema",
+   "reasoning_effort": null,
+   "few_shot": false,
+   "counts": {
+    "slots": 180,
+    "json_ok": 30,
+    "returned": 150,
+    "quote_found": 142,
+    "normalized": 147,
+    "grounded": 137,
+    "gold_slots": 174,
+    "gold_returned": 137,
+    "correct": 129,
+    "gold_extractable": 140,
+    "correct_extractable": 128
+   },
+   "backend": "Vulkan",
+   "file": "vulkan/mistral.json",
+   "latency_s_this_run": {
+    "avg": 10.72,
+    "p50": 11.66,
+    "p95": 14.4
+   },
+   "rejected_by_verification": [
+    {
+     "card_id": "400421511",
+     "attribute": "model",
+     "llm": {
+      "evidence": "Reno 13 Pro 5G",
+      "value": "OPPO Reno 13 Pro 5G"
+     }
+    },
+    {
+     "card_id": "30096419",
+     "attribute": "model",
+     "llm": {
+      "evidence": "F7 Ultra",
+      "value": "Xiaomi F7 Ultra"
+     }
+    },
+    {
+     "card_id": "30071155",
+     "attribute": "color",
+     "llm": {
+      "evidence": null,
+      "value": "чёрный"
+     }
+    },
+    {
+     "card_id": "400648559",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "50% ресурса батареи достаточно 20 минут",
+      "value": "не указано"
+     }
+    },
+    {
+     "card_id": "400378309",
+     "attribute": "color",
+     "llm": {
+      "evidence": "Старры Blue",
+      "value": "Старры Blue"
+     }
+    },
+    {
+     "card_id": "400536914",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "Автономная работа до 2 дней до 27 ч",
+      "value": "Не указано"
+     }
+    },
+    {
+     "card_id": "400334954",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "Восьмиядерный процессор",
+      "value": "8-ядерный"
+     }
+    },
+    {
+     "card_id": "400334954",
+     "attribute": "screen",
+     "llm": {
+      "evidence": "Экран диагональю 16\"",
+      "value": "16 inches"
+     }
+    },
+    {
+     "card_id": "30086079",
+     "attribute": "brand",
+     "llm": {
+      "evidence": "FLTP",
+      "value": "MAIBENBEN"
+     }
+    },
+    {
+     "card_id": "401270135",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "10-ядерный CPU",
+      "value": "M5"
+     }
+    },
+    {
+     "card_id": "401270135",
+     "attribute": "storage",
+     "llm": {
+      "evidence": "1 ТБ SSD",
+      "value": "1000"
+     }
+    },
+    {
+     "card_id": "400243733",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "Установлена Intel Core i5 1155G7",
+      "value": "Intel Core i5 1155G7"
+     }
+    },
+    {
+     "card_id": "30080756",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "М4",
+      "value": "M4"
+     }
+    }
+   ],
+   "rub_per_1000_cards_every_card": {
+    "organizers": null,
+    "gigachat-lite": 95.68,
+    "gigachat-pro": 735.97,
+    "gigachat-max": 956.76,
+    "yandexgpt-lite": 294.39,
+    "yandexgpt-pro": 1177.55,
+    "yandex-qwen3.6-35b": 313.54,
+    "openai-gpt-4o-mini": 25.77,
+    "onprem-gtx1060": 8.72,
+    "onprem-l4-vllm": 11.47
+   }
+  },
+  {
+   "model": "qwen3:4b-instruct",
+   "n_cards": 30,
+   "errors": 0,
+   "json_valid_rate": 1.0,
+   "values_returned": 152,
+   "quote_found_rate": 0.987,
+   "grounded_rate": 0.928,
+   "coverage": 0.783,
+   "gold_precision": 0.908,
+   "gold_recall": 0.736,
+   "gold_recall_extractable": 0.893,
+   "latency_s": {
+    "avg": 8.07,
+    "p50": 8.49,
+    "p95": 10.52
+   },
+   "tokens_per_card": {
+    "prompt": 1090,
+    "completion": 206
+   },
+   "chars_per_prompt_token": 2.68,
+   "vram_mib": 3031,
+   "response_format": "json_schema",
+   "reasoning_effort": null,
+   "few_shot": false,
+   "counts": {
+    "slots": 180,
+    "json_ok": 30,
+    "returned": 152,
+    "quote_found": 150,
+    "normalized": 149,
+    "grounded": 141,
+    "gold_slots": 174,
+    "gold_returned": 141,
+    "correct": 128,
+    "gold_extractable": 140,
+    "correct_extractable": 125
+   },
+   "backend": "CUDA 12",
+   "file": "cuda/qwen3_4b-instruct.json",
+   "latency_s_this_run": {
+    "avg": 8.07,
+    "p50": 8.49,
+    "p95": 10.52
+   },
+   "rejected_by_verification": [
+    {
+     "card_id": "401256217",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "емкость батареи - 100%",
+      "value": "100%"
+     }
+    },
+    {
+     "card_id": "401256217",
+     "attribute": "color",
+     "llm": {
+      "evidence": "iPhone 12 mini выполнен в элегантном черном цвете",
+      "value": "чёрный"
+     }
+    },
+    {
+     "card_id": "400648559",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "Для восполнения 50% ресурса батареи достаточно 20 минут. Полного заряда хватает на срок до 30 часов при воспроизведении видео.",
+      "value": "5000 мА·ч"
+     }
+    },
+    {
+     "card_id": "400648559",
+     "attribute": "model",
+     "llm": {
+      "evidence": "Apple iPhone 17 25-6ГБ Белый",
+      "value": "iPhone 17"
+     }
+    },
+    {
+     "card_id": "400378309",
+     "attribute": "color",
+     "llm": {
+      "evidence": "Starry Blue",
+      "value": "жёлтый"
+     }
+    },
+    {
+     "card_id": "400536914",
+     "attribute": "battery",
+     "llm": {
+      "evidence": "Автономная работа до 2 дней до 27 ч, непрерывное воспроизведения видео, до 108 ч воспроизведеняи музыки.",
+      "value": "27 ч"
+     }
+    },
+    {
+     "card_id": "400480539",
+     "attribute": "model",
+     "llm": {
+      "evidence": "Смартфон Apple iPhone 17 Pro 25",
+      "value": "iPhone 17 Pro"
+     }
+    },
+    {
+     "card_id": "400480539",
+     "attribute": "screen",
+     "llm": {
+      "evidence": "диагональю 6,3\"",
+      "value": "6.7 дюйма"
+     }
+    },
+    {
+     "card_id": "400233585",
+     "attribute": "cpu",
+     "llm": {
+      "evidence": "двухъядерного процессора Intel Pentium Gold 750",
+      "value": "Pentium Gold 7505"
+     }
+    },
+    {
+     "card_id": "30080756",
+     "attribute": "storage",
+     "llm": {
+      "evidence": "встроенная объемом 51ной Гб",
+      "value": "512 ГБ"
+     }
+    }
+   ],
+   "rub_per_1000_cards_every_card": {
+    "organizers": null,
+    "gigachat-lite": 84.3,
+    "gigachat-pro": 648.43,
+    "gigachat-max": 842.96,
+    "yandexgpt-lite": 259.37,
+    "yandexgpt-pro": 1037.49,
+    "yandex-qwen3.6-35b": 280.01,
+    "openai-gpt-4o-mini": 24.13,
+    "onprem-gtx1060": 6.56,
+    "onprem-l4-vllm": 11.47
+   }
+  }
+ ]
+}

@@ -1,84 +1,80 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Автозаполнение характеристик</title>
-  <link rel="icon" href="data:," />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" />
-  <link rel="stylesheet" href="/static/styles.css?v=3" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>attrx: характеристики товаров</title>
+  <meta name="description" content="Консоль модератора каталога: характеристики из карточек товаров с цитатой, источником и уверенностью, очередь проверки и качество на эталоне.">
+  <meta name="theme-color" content="#f0f1f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml">
+  <script>
+    // тема до первой отрисовки, чтобы не мигало
+    try { var t = localStorage.getItem("attrx.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="preload" href="/static/assets/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/assets/fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/assets/fonts/literata-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/tokens.css">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script type="module" src="/static/app.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="wrap topbar__row">
-      <a class="brandmark" href="/"><span class="brandmark__plate">attrx</span><span class="brandmark__sub">Контент-фабрика каталога</span></a>
-      <form id="intent-form" class="search">
-        <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM5 17l.8 1.7L7.5 19.5l-1.7.8L5 22l-.8-1.7-1.7-.8 1.7-.8zM19 15l.6 1.4 1.4.6-1.4.6L19 19l-.6-1.4L17 17l1.4-.6z"/>
-        </svg>
-        <input id="intent" placeholder="Какой экран собрать? Например: «только то, что нужно проверить, с цитатами»" autocomplete="off" />
-        <button type="submit" class="search__btn" title="Сгенерировать интерфейс">Собрать экран</button>
-      </form>
-      <div id="health" class="status"><i></i><span>…</span></div>
+  <a class="skip" href="#main">К содержимому</a>
+
+  <header class="bar">
+    <div class="bar__in">
+      <a class="brand" href="#/card" aria-label="attrx, контроль характеристик: к карточке">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__name" translate="no">attrx</span>
+        <span class="brand__sub">Контроль характеристик</span>
+      </a>
+
+      <nav class="nav" aria-label="Разделы">
+        <a class="nav__link" href="#/card" data-route="card">
+          <svg class="i" width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/static/assets/icons.svg#file-text"/></svg>
+          <span>Карточка</span>
+        </a>
+        <a class="nav__link" href="#/review" data-route="review">
+          <svg class="i" width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/static/assets/icons.svg#tray"/></svg>
+          <span>Очередь<span class="nav__long"> проверки</span></span>
+          <span class="nav__count" id="queue-count" hidden></span>
+        </a>
+        <a class="nav__link" href="#/quality" data-route="quality">
+          <svg class="i" width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/static/assets/icons.svg#chart-line-up"/></svg>
+          <span>Качество</span>
+        </a>
+      </nav>
+
+      <div class="bar__tools">
+        <button class="cmdk" id="open-palette" type="button" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" aria-label="Собрать экран или найти карточку">
+          <svg class="i" width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/static/assets/icons.svg#magnifying-glass"/></svg>
+          <span class="cmdk__label">Собрать экран или найти</span>
+          <span class="cmdk__keys" aria-hidden="true"></span>
+        </button>
+        <button class="llm-status" id="llm-status" type="button" data-state="off">
+          <span class="llm-status__dot" aria-hidden="true"></span>
+          <span class="llm-status__text">LLM</span>
+        </button>
+        <button class="icon-btn" id="open-help" type="button" aria-haspopup="dialog" aria-keyshortcuts="?" aria-label="Справка: как читать экран" data-tip="Справка">
+          <svg class="i" width="18" height="18" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/static/assets/icons.svg#question"/></svg>
+        </button>
+        <button class="icon-btn" id="theme" type="button" aria-label="Тема"></button>
+      </div>
     </div>
-    <nav class="wrap tabs">
-      <button class="tab is-active" data-tab="card">Карточка</button>
-      <button class="tab" data-tab="review">Очередь проверки</button>
-      <button class="tab" data-tab="metrics">Метрики</button>
-    </nav>
   </header>
 
-  <main class="wrap">
-    <section id="tab-card" class="tabpane is-active grid2">
-      <form id="card-form" class="panel sticky">
-        <h2>Карточка товара</h2>
-        <p class="muted panel__hint">Название, описание и поля продавца — всё, что есть у контент-менеджера до заполнения.</p>
-        <label>Пример из датасета
-          <select id="sample"><option value="">— выбрать —</option></select>
-        </label>
-        <label>Название <input id="title" required /></label>
-        <label>Описание <textarea id="description" rows="5"></textarea></label>
-        <label>Данные продавца <small>по строке: ключ: значение</small>
-          <textarea id="seller" rows="4" placeholder="Цвет: черный&#10;Встроенная память: 256 ГБ"></textarea></label>
-        <label>Категория <small>можно не указывать — определим сами</small> <input id="category" /></label>
-        <label class="check"><input type="checkbox" id="use-llm" /> Использовать LLM для непокрытых атрибутов</label>
-        <button class="btn btn--primary" type="submit">Заполнить характеристики</button>
-      </form>
-      <div>
-        <div class="presets" id="presets">
-          <span class="muted">Экран под роль:</span>
-          <button type="button" data-intent="только то, что нужно проверить модератору, с цитатами из текста">модератор</button>
-          <button type="button" data-intent="сводка для менеджера: сколько заполнено, сколько на проверку, чего нет">менеджер</button>
-          <button type="button" data-intent="покажи конфликты продавца и текста, сверху самые сомнительные">конфликты</button>
-          <button type="button" data-intent="график уверенности по атрибутам">уверенность</button>
-          <button type="button" data-intent="покажи все характеристики плитками">плитки</button>
-        </div>
-        <div id="ui-warning" class="note" hidden></div>
-        <div id="ui-root" class="ui-root">
-          <div class="empty">
-            <svg viewBox="0 0 120 90" fill="none" aria-hidden="true">
-              <rect x="8" y="14" width="104" height="22" rx="8" fill="#f3f3f5"/><rect x="18" y="22" width="36" height="6" rx="3" fill="#b3b6be"/><rect x="70" y="22" width="30" height="6" rx="3" fill="#ff0a36"/>
-              <rect x="8" y="42" width="104" height="22" rx="8" fill="#f3f3f5"/><rect x="18" y="50" width="28" height="6" rx="3" fill="#b3b6be"/><rect x="70" y="50" width="22" height="6" rx="3" fill="#04a61d"/>
-              <rect x="8" y="70" width="104" height="14" rx="7" fill="#f3f3f5"/><rect x="18" y="74" width="44" height="6" rx="3" fill="#e1e1e5"/>
-            </svg>
-            <b>Выберите карточку из датасета или вставьте свою</b>
-            <p class="empty-note">Характеристики заполнятся автоматически, а экран соберётся под ваш запрос в строке сверху.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="tab-review" class="tabpane">
-      <div class="panel"><h2>Очередь ручной проверки</h2><p class="muted">Значения с низкой уверенностью или конфликтом источников. Исправления уходят в feedback.jsonl и пополняют словари (attrx learn).</p>
-        <div id="review-root"></div></div>
-    </section>
-
-    <section id="tab-metrics" class="tabpane">
-      <div id="metrics-root"></div>
-    </section>
+  <main id="main" tabindex="-1">
+    <section class="view view--bench" id="view-card" data-view="card" hidden></section>
+    <section class="view" id="view-review" data-view="review" hidden></section>
+    <section class="view view--qa" id="view-quality" data-view="quality" hidden></section>
   </main>
-  <div id="toast" class="toast" role="status"><i></i><span></span></div>
-  <script type="module" src="/static/app.js?v=3"></script>
+
+  <dialog class="palette" id="palette" aria-label="Палитра команд"></dialog>
+  <dialog class="drawer" id="help" aria-labelledby="help-title"></dialog>
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+  <div class="sr-only" id="live" aria-live="polite"></div>
+  <noscript><p class="noscript">Для работы интерфейса нужен JavaScript. API доступно на /docs.</p></noscript>
 </body>
 </html>

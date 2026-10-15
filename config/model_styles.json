@@ -1,0 +1,1062 @@
+{
+ "_meta": {
+  "source": "offers.model + cards.title (train)",
+  "min_n": 8,
+  "format": "{бренд: {n, after: точность «после бренда», article: точность «артикул»}}"
+ },
+ "1С": {
+  "n": 14,
+  "after": 0.167,
+  "article": 0.033
+ },
+ "AEL": {
+  "n": 34,
+  "after": 0.014,
+  "article": 0.014
+ },
+ "ALLMAX": {
+  "n": 10,
+  "after": 0.682,
+  "article": 0.045
+ },
+ "AMD": {
+  "n": 40,
+  "after": 0.866,
+  "article": 0.012
+ },
+ "AND": {
+  "n": 24,
+  "after": 0.86,
+  "article": 0.02
+ },
+ "AQUATON": {
+  "n": 28,
+  "after": 0.017,
+  "article": 0.017
+ },
+ "AQVIDO": {
+  "n": 42,
+  "after": 0.756,
+  "article": 0.012
+ },
+ "AUX": {
+  "n": 24,
+  "after": 0.7,
+  "article": 0.02
+ },
+ "Accesstyle": {
+  "n": 8,
+  "after": 0.833,
+  "article": 0.056
+ },
+ "Aceline": {
+  "n": 11,
+  "after": 0.208,
+  "article": 0.042
+ },
+ "Akai": {
+  "n": 10,
+  "after": 0.864,
+  "article": 0.045
+ },
+ "Akko": {
+  "n": 8,
+  "after": 0.833,
+  "article": 0.056
+ },
+ "Alpha-Tech": {
+  "n": 8,
+  "after": 0.833,
+  "article": 0.056
+ },
+ "Ambesonne": {
+  "n": 12,
+  "after": 0.423,
+  "article": 0.038
+ },
+ "Ami": {
+  "n": 125,
+  "after": 0.877,
+  "article": 0.004
+ },
+ "Anker": {
+  "n": 13,
+  "after": 0.821,
+  "article": 0.036
+ },
+ "Anycons": {
+  "n": 14,
+  "after": 0.833,
+  "article": 0.033
+ },
+ "Aquatek": {
+  "n": 8,
+  "after": 0.056,
+  "article": 0.056
+ },
+ "Arcoroc": {
+  "n": 102,
+  "after": 0.879,
+  "article": 0.005
+ },
+ "Arturia": {
+  "n": 18,
+  "after": 0.711,
+  "article": 0.026
+ },
+ "Assassin's Creed": {
+  "n": 17,
+  "after": 0.528,
+  "article": 0.028
+ },
+ "BAMBOX": {
+  "n": 27,
+  "after": 0.018,
+  "article": 0.054
+ },
+ "BAS": {
+  "n": 125,
+  "after": 0.837,
+  "article": 0.004
+ },
+ "BELZ": {
+  "n": 124,
+  "after": 0.004,
+  "article": 0.004
+ },
+ "BKD": {
+  "n": 10,
+  "after": 0.318,
+  "article": 0.045
+ },
+ "BOXSOFA": {
+  "n": 17,
+  "after": 0.861,
+  "article": 0.028
+ },
+ "BRASSON": {
+  "n": 10,
+  "after": 0.045,
+  "article": 0.045
+ },
+ "BRITA": {
+  "n": 34,
+  "after": 0.329,
+  "article": 0.014
+ },
+ "BaByliss Pro": {
+  "n": 52,
+  "after": 0.443,
+  "article": 0.009
+ },
+ "Barn&Hollis": {
+  "n": 43,
+  "after": 0.875,
+  "article": 0.011
+ },
+ "Best Room": {
+  "n": 37,
+  "after": 0.487,
+  "article": 0.013
+ },
+ "Biber": {
+  "n": 466,
+  "after": 0.77,
+  "article": 0.001
+ },
+ "BoomHouse": {
+  "n": 11,
+  "after": 0.042,
+  "article": 0.375
+ },
+ "Brabix": {
+  "n": 360,
+  "after": 0.115,
+  "article": 0.298
+ },
+ "Brauberg": {
+  "n": 3430,
+  "after": 0.03,
+  "article": 0.481
+ },
+ "Bungie": {
+  "n": 12,
+  "after": 0.885,
+  "article": 0.038
+ },
+ "Burberry": {
+  "n": 90,
+  "after": 0.885,
+  "article": 0.005
+ },
+ "CITILUX": {
+  "n": 200,
+  "after": 0.152,
+  "article": 0.002
+ },
+ "CLIV solution": {
+  "n": 10,
+  "after": 0.864,
+  "article": 0.045
+ },
+ "CROMEX": {
+  "n": 33,
+  "after": 0.044,
+  "article": 0.191
+ },
+ "CS Medica": {
+  "n": 16,
+  "after": 0.853,
+  "article": 0.029
+ },
+ "CSS": {
+  "n": 10,
+  "after": 0.136,
+  "article": 0.045
+ },
+ "Cactus": {
+  "n": 139,
+  "after": 0.325,
+  "article": 0.004
+ },
+ "Carte Noire": {
+  "n": 9,
+  "after": 0.85,
+  "article": 0.05
+ },
+ "Celebrate": {
+  "n": 8,
+  "after": 0.5,
+  "article": 0.056
+ },
+ "CheckME Smart": {
+  "n": 31,
+  "after": 0.734,
+  "article": 0.016
+ },
+ "CityHD": {
+  "n": 48,
+  "after": 0.01,
+  "article": 0.01
+ },
+ "Cougar": {
+  "n": 23,
+  "after": 0.896,
+  "article": 0.021
+ },
+ "Cristal D'Arques": {
+  "n": 12,
+  "after": 0.885,
+  "article": 0.038
+ },
+ "D&K": {
+  "n": 18,
+  "after": 0.711,
+  "article": 0.026
+ },
+ "DASWERK": {
+  "n": 147,
+  "after": 0.003,
+  "article": 0.632
+ },
+ "DEAF BONCE": {
+  "n": 21,
+  "after": 0.886,
+  "article": 0.023
+ },
+ "DEMIAND": {
+  "n": 23,
+  "after": 0.812,
+  "article": 0.021
+ },
+ "DENZEL": {
+  "n": 50,
+  "after": 0.814,
+  "article": 0.01
+ },
+ "DJI": {
+  "n": 29,
+  "after": 0.883,
+  "article": 0.017
+ },
+ "DLED": {
+  "n": 51,
+  "after": 0.433,
+  "article": 0.067
+ },
+ "DUMONT": {
+  "n": 13,
+  "after": 0.893,
+  "article": 0.036
+ },
+ "Dendy": {
+  "n": 11,
+  "after": 0.875,
+  "article": 0.042
+ },
+ "Denkirs": {
+  "n": 9,
+  "after": 0.75,
+  "article": 0.05
+ },
+ "Dewolf": {
+  "n": 12,
+  "after": 0.577,
+  "article": 0.038
+ },
+ "Digma Pro": {
+  "n": 20,
+  "after": 0.643,
+  "article": 0.024
+ },
+ "Draxter": {
+  "n": 10,
+  "after": 0.045,
+  "article": 0.045
+ },
+ "ECOTEX": {
+  "n": 168,
+  "after": 0.435,
+  "article": 0.003
+ },
+ "EMS": {
+  "n": 9,
+  "after": 0.45,
+  "article": 0.05
+ },
+ "EcoFlow": {
+  "n": 8,
+  "after": 0.833,
+  "article": 0.056
+ },
+ "Edge": {
+  "n": 8,
+  "after": 0.833,
+  "article": 0.056
+ },
+ "Elrington": {
+  "n": 160,
+  "after": 0.73,
+  "article": 0.003
+ },
+ "Ergonova": {
+  "n": 31,
+  "after": 0.297,
+  "article": 0.016
+ },
+ "Espro": {
+  "n": 10,
+  "after": 0.864,
+  "article": 0.045
+ },
+ "FIXTEC": {
+  "n": 10,
+  "after": 0.591,
+  "article": 0.045
+ },
+ "FRANDER": {
+  "n": 9,
+  "after": 0.55,
+  "article": 0.05
+ },
+ "FUNSTER": {
+  "n": 34,
+  "after": 0.014,
+  "article": 0.271
+ },
+ "Format": {
+  "n": 11,
+  "after": 0.042,
+  "article": 0.042
+ },
+ "Funai": {
+  "n": 12,
+  "after": 0.808,
+  "article": 0.038
+ },
+ "G&G": {
+  "n": 15,
+  "after": 0.719,
+  "article": 0.031
+ },
+ "GLOSSVell": {
+  "n": 19,
+  "after": 0.525,
+  "article": 0.025
+ },
+ "GOOD DOOR BAS GROUP": {
+  "n": 179,
+  "after": 0.331,
+  "article": 0.003
+ },
+ "GP": {
+  "n": 38,
+  "after": 0.859,
+  "article": 0.013
+ },
+ "Galant": {
+  "n": 49,
+  "after": 0.01,
+  "article": 0.15
+ },
+ "Galaxy LINE": {
+  "n": 195,
+  "after": 0.895,
+  "article": 0.003
+ },
+ "Gemini": {
+  "n": 9,
+  "after": 0.65,
+  "article": 0.05
+ },
+ "Genesis": {
+  "n": 17,
+  "after": 0.694,
+  "article": 0.028
+ },
+ "Gess": {
+  "n": 41,
+  "after": 0.44,
+  "article": 0.012
+ },
+ "Gezatone": {
+  "n": 57,
+  "after": 0.853,
+  "article": 0.009
+ },
+ "Giesser": {
+  "n": 8,
+  "after": 0.833,
+  "article": 0.056
+ },
+ "Gordvell": {
+  "n": 10,
+  "after": 0.773,
+  "article": 0.045
+ },
+ "Greendex": {
+  "n": 8,
+  "after": 0.611,
+  "article": 0.056
+ },
+ "Grocenberg": {
+  "n": 233,
+  "after": 0.045,
+  "article": 0.002
+ },
+ "HEIKKI": {
+  "n": 111,
+  "after": 0.004,
+  "article": 0.103
+ },
+ "HOME": {
+  "n": 12,
+  "after": 0.654,
+  "article": 0.038
+ },
+ "Haiba": {
+  "n": 22,
+  "after": 0.022,
+  "article": 0.022
+ },
+ "Hammer": {
+  "n": 12,
+  "after": 0.731,
+  "article": 0.038
+ },
+ "Harvia": {
+  "n": 83,
+  "after": 0.875,
+  "article": 0.006
+ },
+ "Hi": {
+  "n": 273,
+  "after": 0.838,
+  "article": 0.002
+ },
+ "IGP": {
+  "n": 46,
+  "after": 0.011,
+  "article": 0.011
+ },
+ "Iddis": {
+  "n": 32,
+  "after": 0.652,
+  "article": 0.015
+ },
+ "InFocus": {
+  "n": 9,
+  "after": 0.55,
+  "article": 0.05
+ },
+ "ItHelper": {
+  "n": 35,
+  "after": 0.875,
+  "article": 0.014
+ },
+ "JOYLUX": {
+  "n": 14,
+  "after": 0.033,
+  "article": 0.033
+ },
+ "JoLand": {
+  "n": 29,
+  "after": 0.817,
+  "article": 0.017
+ },
+ "Konigin": {
+  "n": 33,
+  "after": 0.838,
+  "article": 0.015
+ },
+ "Krotof": {
+  "n": 65,
+  "after": 0.811,
+  "article": 0.008
+ },
+ "LIVA": {
+  "n": 12,
+  "after": 0.269,
+  "article": 0.038
+ },
+ "Laima": {
+  "n": 459,
+  "after": 0.053,
+  "article": 0.653
+ },
+ "Lara": {
+  "n": 373,
+  "after": 0.766,
+  "article": 0.001
+ },
+ "Lego": {
+  "n": 1045,
+  "after": 0.314,
+  "article": 0.001
+ },
+ "Lonax": {
+  "n": 111,
+  "after": 0.004,
+  "article": 0.004
+ },
+ "Luxhomme": {
+  "n": 9,
+  "after": 0.75,
+  "article": 0.05
+ },
+ "MATRIX": {
+  "n": 23,
+  "after": 0.896,
+  "article": 0.062
+ },
+ "MAX": {
+  "n": 40,
+  "after": 0.524,
+  "article": 0.012
+ },
+ "MBS": {
+  "n": 22,
+  "after": 0.804,
+  "article": 0.022
+ },
+ "MGline": {
+  "n": 82,
+  "after": 0.777,
+  "article": 0.199
+ },
+ "MKSS": {
+  "n": 718,
+  "after": 0.219,
+  "article": 0.001
+ },
+ "MONTE VITA": {
+  "n": 15,
+  "after": 0.031,
+  "article": 0.844
+ },
+ "Masterprof": {
+  "n": 9,
+  "after": 0.15,
+  "article": 0.05
+ },
+ "MeLamori": {
+  "n": 362,
+  "after": 0.001,
+  "article": 0.001
+ },
+ "Miele": {
+  "n": 78,
+  "after": 0.728,
+  "article": 0.006
+ },
+ "Monofix": {
+  "n": 59,
+  "after": 0.875,
+  "article": 0.008
+ },
+ "N1": {
+  "n": 13,
+  "after": 0.893,
+  "article": 0.036
+ },
+ "NanWei": {
+  "n": 19,
+  "after": 0.725,
+  "article": 0.025
+ },
+ "Nanfu": {
+  "n": 8,
+  "after": 0.389,
+  "article": 0.056
+ },
+ "Newtonica": {
+  "n": 11,
+  "after": 0.542,
+  "article": 0.042
+ },
+ "Ninja": {
+  "n": 17,
+  "after": 0.861,
+  "article": 0.028
+ },
+ "Nisi": {
+  "n": 15,
+  "after": 0.156,
+  "article": 0.031
+ },
+ "Nivona": {
+  "n": 12,
+  "after": 0.885,
+  "article": 0.038
+ },
+ "OASIS ECO": {
+  "n": 12,
+  "after": 0.808,
+  "article": 0.038
+ },
+ "Onika": {
+  "n": 41,
+  "after": 0.202,
+  "article": 0.012
+ },
+ "Orico": {
+  "n": 8,
+  "after": 0.278,
+  "article": 0.056
+ },
+ "Oulemei": {
+  "n": 25,
+  "after": 0.75,
+  "article": 0.019
+ },
+ "PERKLIN": {
+  "n": 19,
+  "after": 0.075,
+  "article": 0.275
+ },
+ "PLASTRUM": {
+  "n": 15,
+  "after": 0.156,
+  "article": 0.031
+ },
+ "PMT": {
+  "n": 18,
+  "after": 0.026,
+  "article": 0.026
+ },
+ "PRIMILA": {
+  "n": 51,
+  "after": 0.01,
+  "article": 0.163
+ },
+ "Pitaka": {
+  "n": 12,
+  "after": 0.885,
+  "article": 0.038
+ },
+ "PlayStation": {
+  "n": 33,
+  "after": 0.809,
+  "article": 0.015
+ },
+ "Polaroid": {
+  "n": 10,
+  "after": 0.864,
+  "article": 0.045
+ },
+ "Proxima": {
+  "n": 26,
+  "after": 0.648,
+  "article": 0.019
+ },
+ "R-SAUNA": {
+  "n": 295,
+  "after": 0.887,
+  "article": 0.002
+ },
+ "RABBITEX": {
+  "n": 11,
+  "after": 0.042,
+  "article": 0.542
+ },
+ "RAMICOM": {
+  "n": 18,
+  "after": 0.868,
+  "article": 0.026
+ },
+ "Remax": {
+  "n": 84,
+  "after": 0.065,
+  "article": 0.006
+ },
+ "Revcol": {
+  "n": 15,
+  "after": 0.031,
+  "article": 0.031
+ },
+ "Ritter": {
+  "n": 24,
+  "after": 0.82,
+  "article": 0.02
+ },
+ "Roborock": {
+  "n": 27,
+  "after": 0.804,
+  "article": 0.018
+ },
+ "Routemark": {
+  "n": 96,
+  "after": 0.149,
+  "article": 0.005
+ },
+ "SAWO": {
+  "n": 153,
+  "after": 0.627,
+  "article": 0.003
+ },
+ "SHAMAANI": {
+  "n": 8,
+  "after": 0.056,
+  "article": 0.278
+ },
+ "SHEGRA": {
+  "n": 9,
+  "after": 0.05,
+  "article": 0.95
+ },
+ "SLS": {
+  "n": 8,
+  "after": 0.722,
+  "article": 0.056
+ },
+ "SOFT Мебель": {
+  "n": 46,
+  "after": 0.819,
+  "article": 0.011
+ },
+ "Santek": {
+  "n": 31,
+  "after": 0.016,
+  "article": 0.016
+ },
+ "Santeri": {
+  "n": 10,
+  "after": 0.136,
+  "article": 0.045
+ },
+ "Shevanik": {
+  "n": 641,
+  "after": 0.434,
+  "article": 0.001
+ },
+ "Sleepline": {
+  "n": 93,
+  "after": 0.005,
+  "article": 0.005
+ },
+ "Solmax": {
+  "n": 18,
+  "after": 0.237,
+  "article": 0.026
+ },
+ "Sonnen": {
+  "n": 286,
+  "after": 0.127,
+  "article": 0.19
+ },
+ "Staff": {
+  "n": 353,
+  "after": 0.01,
+  "article": 0.363
+ },
+ "SunTek": {
+  "n": 21,
+  "after": 0.705,
+  "article": 0.068
+ },
+ "Sven": {
+  "n": 69,
+  "after": 0.764,
+  "article": 0.007
+ },
+ "TENBERG": {
+  "n": 16,
+  "after": 0.265,
+  "article": 0.029
+ },
+ "TENET": {
+  "n": 66,
+  "after": 0.828,
+  "article": 0.007
+ },
+ "TFN": {
+  "n": 224,
+  "after": 0.66,
+  "article": 0.002
+ },
+ "Tabby": {
+  "n": 201,
+  "after": 0.438,
+  "article": 0.002
+ },
+ "Tesla": {
+  "n": 22,
+  "after": 0.717,
+  "article": 0.022
+ },
+ "Tion": {
+  "n": 9,
+  "after": 0.45,
+  "article": 0.05
+ },
+ "TopChairs": {
+  "n": 67,
+  "after": 0.831,
+  "article": 0.007
+ },
+ "TopDevice": {
+  "n": 36,
+  "after": 0.878,
+  "article": 0.014
+ },
+ "Treidcomputers": {
+  "n": 30,
+  "after": 0.403,
+  "article": 0.016
+ },
+ "Ulgran": {
+  "n": 29,
+  "after": 0.883,
+  "article": 0.017
+ },
+ "Ultraflash": {
+  "n": 27,
+  "after": 0.875,
+  "article": 0.018
+ },
+ "VEGARUS": {
+  "n": 50,
+  "after": 0.814,
+  "article": 0.01
+ },
+ "VINOTTI": {
+  "n": 9,
+  "after": 0.35,
+  "article": 0.05
+ },
+ "VITAFLEX": {
+  "n": 1020,
+  "after": 0.0,
+  "article": 0.0
+ },
+ "VK": {
+  "n": 10,
+  "after": 0.864,
+  "article": 0.045
+ },
+ "Valigetti": {
+  "n": 11,
+  "after": 0.875,
+  "article": 0.042
+ },
+ "WBZ": {
+  "n": 24,
+  "after": 0.02,
+  "article": 0.46
+ },
+ "WELDAY": {
+  "n": 21,
+  "after": 0.068,
+  "article": 0.295
+ },
+ "Whirlpool": {
+  "n": 8,
+  "after": 0.611,
+  "article": 0.056
+ },
+ "Wireless Controller": {
+  "n": 9,
+  "after": 0.85,
+  "article": 0.05
+ },
+ "Xbox": {
+  "n": 429,
+  "after": 0.529,
+  "article": 0.001
+ },
+ "YA-MAN": {
+  "n": 9,
+  "after": 0.85,
+  "article": 0.05
+ },
+ "ZMB": {
+  "n": 10,
+  "after": 0.409,
+  "article": 0.045
+ },
+ "Zofft": {
+  "n": 17,
+  "after": 0.417,
+  "article": 0.028
+ },
+ "buyson": {
+  "n": 53,
+  "after": 0.62,
+  "article": 0.009
+ },
+ "iCON": {
+  "n": 15,
+  "after": 0.531,
+  "article": 0.031
+ },
+ "mebelroom": {
+  "n": 127,
+  "after": 0.277,
+  "article": 0.004
+ },
+ "varna": {
+  "n": 11,
+  "after": 0.875,
+  "article": 0.042
+ },
+ "АРМЕД": {
+  "n": 48,
+  "after": 0.847,
+  "article": 0.01
+ },
+ "Аквафор": {
+  "n": 60,
+  "after": 0.893,
+  "article": 0.008
+ },
+ "БРЕНДОСС": {
+  "n": 9,
+  "after": 0.15,
+  "article": 0.05
+ },
+ "Барьер": {
+  "n": 18,
+  "after": 0.816,
+  "article": 0.026
+ },
+ "Белвар": {
+  "n": 10,
+  "after": 0.864,
+  "article": 0.045
+ },
+ "ВАРЯГ": {
+  "n": 26,
+  "after": 0.574,
+  "article": 0.019
+ },
+ "Гейзер": {
+  "n": 39,
+  "after": 0.863,
+  "article": 0.037
+ },
+ "Грандмастер": {
+  "n": 23,
+  "after": 0.312,
+  "article": 0.438
+ },
+ "Живой продукт": {
+  "n": 11,
+  "after": 0.042,
+  "article": 0.042
+ },
+ "Золотая сказка": {
+  "n": 153,
+  "after": 0.075,
+  "article": 0.419
+ },
+ "Калифорния": {
+  "n": 12,
+  "after": 0.269,
+  "article": 0.038
+ },
+ "Любаша": {
+  "n": 37,
+  "after": 0.066,
+  "article": 0.513
+ },
+ "Мерали": {
+  "n": 18,
+  "after": 0.605,
+  "article": 0.026
+ },
+ "Метта": {
+  "n": 45,
+  "after": 0.467,
+  "article": 0.011
+ },
+ "Невская палитра": {
+  "n": 158,
+  "after": 0.833,
+  "article": 0.003
+ },
+ "Остров сокровищ": {
+  "n": 110,
+  "after": 0.032,
+  "article": 0.59
+ },
+ "Пифагор": {
+  "n": 93,
+  "after": 0.176,
+  "article": 0.537
+ },
+ "Ромак": {
+  "n": 57,
+  "after": 0.647,
+  "article": 0.009
+ },
+ "СИБРТЕХ": {
+  "n": 26,
+  "after": 0.759,
+  "article": 0.056
+ },
+ "Старт": {
+  "n": 11,
+  "after": 0.625,
+  "article": 0.042
+ },
+ "СтулБержи": {
+  "n": 27,
+  "after": 0.839,
+  "article": 0.018
+ },
+ "Фея": {
+  "n": 10,
+  "after": 0.864,
+  "article": 0.136
+ },
+ "Юнландия": {
+  "n": 231,
+  "after": 0.037,
+  "article": 0.58
+ },
+ "ЯрКресла": {
+  "n": 30,
+  "after": 0.887,
+  "article": 0.016
+ }
+}

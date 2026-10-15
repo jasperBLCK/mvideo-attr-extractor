@@ -1,118 +1,114 @@
-"""Генерация интерфейса по данным: детерминированный шаблон + LLM-композиция под намерение пользователя.
+"""Генерация интерфейса по данным: шаблон, подбор по ключевым словам запроса и LLM-композиция под намерение.
 
 Идея как в Agentic OS (UI собирается на лету под задачу), но безопасно для прода:
 LLM возвращает декларативную спецификацию, мы её валидируем; при любой ошибке — детерминированный фолбэк.
-Без LLM намерение разбирается по ключевым словам, поэтому экран меняется от запроса и в офлайне.
+Без LLM запрос всё равно учитывается: compose_intent подбирает компоненты по ключевым словам.
 """
 from __future__ import annotations
 
 import json
-import re
 
 from pydantic import ValidationError
 
 from ..llm.client import LLMClient, LLMUnavailable
 from ..schema import ExtractionResult
-from .schema import CATALOG, UISPEC_JSON_SCHEMA, Component, UISpec
+from .schema import COMPONENTS, UISPEC_JSON_SCHEMA, Component, UISpec
 
 SYSTEM = (
-    "Ты продуктовый дизайнер: собираешь экран для сотрудника каталога М.Видео под его запрос. "
-    "Экран — JSON из компонентов (только из каталога ниже). Данные подставит интерфейс, поэтому в text пиши "
-    "короткие подводки или выводы, а не значения характеристик.\n\n"
-    "Каталог компонентов:\n" + "\n".join(f"- {k}: {v}" for k, v in CATALOG.items()) + "\n\n"
-    "Параметры: filter (all|accepted|review|missing|low_confidence — какие атрибуты показать), "
-    "attributes (ключи атрибутов из результата, чтобы сузить), sort (confidence_asc|confidence_desc|name), "
-    "limit (сколько строк), span (2 — на всю ширину в layout=grid), variant (compact|detailed), "
-    "level для alert.\n\n"
-    "Правила композиции:\n"
-    "- Экран должен отвечать именно на запрос: разные запросы — разный набор, порядок и раскладка компонентов. "
-    "Не добавляй всё подряд; 2–5 компонентов обычно достаточно.\n"
-    "- Модератору: сомнительное наверх (sort=confidence_asc, filter=review или low_confidence), цитаты (evidence или highlight), "
-    "review_queue или checklist для действий.\n"
-    "- Менеджеру: kpi, source_breakdown, короткий alert с выводом, без таблиц целиком.\n"
-    "- Про доверие/уверенность: confidence_chart с сортировкой, alert с интерпретацией.\n"
-    "- Про конфликты/расхождения: conflicts, затем highlight по спорным атрибутам.\n"
-    "- Про полный обзор: attribute_table или attribute_cards, layout=grid.\n"
-    "- title экрана и заголовки компонентов — по-русски, по делу, без слов «JSON» и «компонент».\n"
-    "- Используй только ключи атрибутов из результата. Ответ — строго JSON."
+    "Ты проектируешь экран для модератора каталога М.Видео. По результату извлечения характеристик "
+    "и запросу пользователя собери экран только из этих компонентов: "
+    + "; ".join(f"{k} — {v}" for k, v in COMPONENTS.items())
+    + ". filter: all|accepted|review|missing. В attributes — только ключи атрибутов из результата. "
+    "Не пересказывай значения характеристик в text — данные подставит интерфейс. "
+    "Не больше 6 компонентов. Ответ — строго JSON."
 )
 
-_TOPIC_RULES: list[tuple[str, str]] = [
-    ("manager", r"менеджер|сводк|руководител|отчёт|отчет|kpi|сколько"),
-    ("conflicts", r"конфликт|расхожд|продав[ец|ца]|противореч|сомнит"),
-    ("evidence", r"цитат|откуда|доказ|подтвержд|источник|текст"),
-    ("confidence", r"уверен|довер|график|диаграм"),
-    ("review", r"модератор|провер|очеред|подтверд|чеклист|исправ"),
-    ("missing", r"нет в тексте|отсутств|пуст|не найден|чего нет"),
-    ("overview", r"все|всё|таблиц|полн|характеристик|обзор|карточк"),
+
+def _norm(s: str) -> str:
+    return " ".join(s.lower().replace("ё", "е").split())
+
+
+def _disputed(r: ExtractionResult) -> list[str]:
+    """Атрибуты с альтернативами или конфликтом источников."""
+    keys = [a.attribute for a in r.attributes if a.alternatives]
+    keys += [w.split(":", 1)[0] for w in r.warnings if "конфликт" in w]
+    known = {a.attribute for a in r.attributes}
+    return [k for k in dict.fromkeys(keys) if k in known]
+
+
+def _has_rejected(r: ExtractionResult) -> bool:
+    return any("отброшено" in w for w in r.warnings)
+
+
+def _category_uncertain(r: ExtractionResult) -> bool:
+    """Пайплайн отправил карточку на проверку из-за категории (порог классификатора, models/category/meta.json;
+    у ключевых слов — 0.6): предупреждение пишет pipeline.Extractor, своего порога здесь нет."""
+    return any(w.startswith("категория определена неуверенно") for w in r.warnings)
+
+
+def compose_default(r: ExtractionResult) -> UISpec:
+    comps: list[Component] = []
+    if _category_uncertain(r):
+        comps.append(Component(type="alert", level="warning",
+                               text="Категория определена неуверенно: проверьте, к какой категории относится товар"))
+    comps.append(Component(type="summary"))
+    comps.append(Component(type="attribute_table", title="Характеристики", filter="all"))
+    if _disputed(r) or _has_rejected(r):
+        comps.append(Component(type="conflicts", title="Спорные и отброшенные значения"))
+    return UISpec(title=f"Карточка {r.card_id}", layout="column", components=comps, generated_by="rules")
+
+
+# Ключевые слова запроса -> компоненты. Порядок списка = порядок на экране.
+_INTENTS: list[tuple[tuple[str, ...], str]] = [
+    (("сводк", "кратк", "итог", "обзор", "менеджер", "главное"), "summary"),
+    (("провер", "сомнит", "модерац", "ручн", "review"), "review"),
+    (("конфликт", "спорн", "расход", "альтернатив", "отброш", "галлюц", "противореч", "источник"), "conflicts"),
+    (("цитат", "доказ", "откуда", "обоснов", "evidence", "подсвет"), "evidence"),
+    (("уверен", "вероятн", "график", "диаграм", "confidence", "порог"), "confidence"),
+    (("пропуск", "не найд", "нет в тексте", "незаполн", "пуст", "missing"), "missing"),
+    (("принят", "готов", "надежн", "accepted"), "accepted"),
+    (("метрик", "качеств", "точност", "полнот", "f1", "эталон"), "metrics"),
 ]
 
 
-def detect_topics(intent: str | None) -> list[str]:
-    if not intent:
-        return []
-    low = intent.lower()
-    return [t for t, rx in _TOPIC_RULES if re.search(rx, low)]
-
-
-def compose_default(r: ExtractionResult, intent: str | None = None) -> UISpec:
-    n_review = sum(a.status == "review" for a in r.attributes)
-    n_missing = sum(a.status == "missing" for a in r.attributes)
-    topics = detect_topics(intent)
+def compose_intent(r: ExtractionResult, intent: str) -> UISpec:
+    """Детерминированная сборка экрана по ключевым словам запроса (работает без LLM)."""
+    t = _norm(intent)
+    wanted = [kind for stems, kind in _INTENTS if any(s in t for s in stems)]
+    if not wanted:
+        spec = compose_default(r)
+        return spec.model_copy(update={"title": intent.strip()[:100] or spec.title})
+    review = [a.attribute for a in r.attributes if a.status == "review"]
     comps: list[Component] = []
-    title, subtitle, layout = f"Карточка {r.card_id}", None, "column"
-
-    if "manager" in topics:
-        title, subtitle, layout = "Сводка для менеджера", f"Категория: {r.category}", "grid"
-        comps += [Component(type="kpi", span=2),
-                  Component(type="alert", span=2, level="warning" if n_review or n_missing else "success",
-                            text=(f"Нужно внимание модератора: {n_review} на проверку, {n_missing} не найдено в тексте"
-                                  if n_review or n_missing else "Карточка готова к публикации без ручной проверки")),
-                  Component(type="source_breakdown", title="Откуда взяты значения"),
-                  Component(type="confidence_chart", title="Самые слабые места", sort="confidence_asc", limit=5)]
-    elif "conflicts" in topics:
-        title, subtitle = "Расхождения источников", "Продавец против текста карточки"
-        comps += [Component(type="conflicts", title="Конфликты и альтернативы"),
-                  Component(type="highlight", title="Где это в тексте", filter="low_confidence"),
-                  Component(type="review_queue", title="Решение модератора", sort="confidence_asc")]
-    elif "review" in topics or "evidence" in topics:
-        title, subtitle, layout = "Экран модератора", "Сомнительное сверху, с цитатами", "grid"
-        n_bad = n_review + n_missing
-        comps += [Component(type="alert", span=2, level="warning" if n_bad else "success",
-                            text=f"Требуют решения: {n_bad} из {len(r.attributes)} характеристик" if n_bad
-                            else "Спорных значений нет — можно только сверить цитаты")]
-        if "review" in topics:
-            comps += [Component(type="review_queue", title="Очередь проверки", sort="confidence_asc"),
-                      Component(type="evidence", title="Цитаты из текста", sort="confidence_asc")]
-        else:
-            comps += [Component(type="highlight", title="Текст карточки с цитатами", span=2),
-                      Component(type="evidence", title="Откуда взято каждое значение", sort="confidence_asc", span=2)]
-        if "missing" in topics or n_missing:
-            comps.append(Component(type="checklist", title="Чего нет в тексте", filter="missing"))
-    elif "confidence" in topics:
-        title, subtitle = "Уверенность модели", "Чем ниже бар — тем нужнее человек"
-        comps += [Component(type="confidence_chart", title="По атрибутам", sort="confidence_asc"),
-                  Component(type="alert", level="info",
-                            text="Порог принятия задаётся CONFIDENCE_THRESHOLD; всё ниже уходит модератору"),
-                  Component(type="attribute_table", title="Ниже порога", filter="low_confidence", variant="compact")]
-    elif "missing" in topics:
-        title = "Пробелы в карточке"
-        comps += [Component(type="checklist", title="Не найдено в тексте", filter="missing"),
-                  Component(type="attribute_table", title="Что уже заполнено", filter="accepted", variant="compact")]
-    elif "overview" in topics:
-        title, layout = f"Все характеристики · {r.card_id}", "grid"
-        comps += [Component(type="summary", span=2), Component(type="attribute_cards", title="Характеристики", span=2)]
-    else:
-        if n_review or n_missing or r.warnings:
-            comps.append(Component(type="alert", level="warning", text=f"На проверку: {n_review}, не найдено в тексте: {n_missing}"))
-        else:
-            comps.append(Component(type="alert", level="success", text="Все обязательные характеристики заполнены уверенно"))
-        comps.append(Component(type="summary"))
-        comps.append(Component(type="attribute_table", title="Характеристики", filter="all"))
-        if n_review:
-            comps.append(Component(type="review_queue", title="Требует подтверждения"))
-        comps.append(Component(type="confidence_chart", title="Уверенность модели"))
-    return UISpec(title=title, subtitle=subtitle, layout=layout, components=comps, generated_by="rules")
+    for kind in wanted:
+        if kind == "summary":
+            comps.append(Component(type="summary"))
+        elif kind == "review":
+            if review:
+                comps.append(Component(type="review_queue", title="Решения по значениям на проверке", filter="review"))
+                if "evidence" not in wanted:
+                    comps.append(Component(type="evidence", title="Откуда взяты значения", attributes=review))
+            else:
+                comps.append(Component(type="alert", level="success",
+                                       text="Проверять нечего: все найденные значения приняты автоматически"))
+        elif kind == "conflicts":
+            if _disputed(r) or _has_rejected(r):
+                comps.append(Component(type="conflicts", title="Спорные и отброшенные значения"))
+            else:
+                comps.append(Component(type="alert", level="info",
+                                       text="Источники не спорят: альтернатив и отброшенных значений нет"))
+        elif kind == "evidence":
+            only = review if "review" in wanted and review else None
+            comps.append(Component(type="evidence", title="Откуда взяты значения", attributes=only))
+        elif kind == "confidence":
+            comps.append(Component(type="confidence_chart", title="Уверенность относительно порога", filter="all"))
+        elif kind == "missing":
+            comps.append(Component(type="attribute_table", title="Не найдено в тексте", filter="missing"))
+        elif kind == "accepted":
+            comps.append(Component(type="attribute_table", title="Принятые значения", filter="accepted"))
+        elif kind == "metrics":
+            comps.append(Component(type="metrics", title="Качество на эталоне"))
+    return UISpec(title=intent.strip()[:100], layout="column", components=comps[:6], generated_by="rules")
 
 
 def sanitize(spec: UISpec, r: ExtractionResult) -> UISpec:
@@ -124,14 +120,14 @@ def sanitize(spec: UISpec, r: ExtractionResult) -> UISpec:
 
 
 def compose_llm(r: ExtractionResult, intent: str, client: LLMClient) -> tuple[UISpec, str | None]:
-    """Возвращает (spec, предупреждение). Без LLM или при невалидном ответе — compose_default(intent)."""
+    """Возвращает (spec, предупреждение). Без LLM или при невалидном ответе — сборка по ключевым словам."""
     if not client.enabled:
-        return compose_default(r, intent), "LLM выключена — экран собран по ключевым словам запроса"
+        return compose_intent(r, intent), "LLM не подключена: экран собран по ключевым словам запроса"
     payload = {
         "intent": intent[:500],
         "category": r.category,
         "attributes": [{"key": a.attribute, "title": a.title, "status": a.status, "confidence": a.confidence,
-                        "sources": a.sources} for a in r.attributes],
+                        "alternatives": len(a.alternatives)} for a in r.attributes],
         "warnings": r.warnings[:10],
     }
     try:
@@ -139,6 +135,6 @@ def compose_llm(r: ExtractionResult, intent: str, client: LLMClient) -> tuple[UI
         spec = UISpec.model_validate({**data, "generated_by": "llm"})
         return sanitize(spec, r), None
     except LLMUnavailable as e:
-        return compose_default(r, intent), f"LLM недоступна, показан шаблон: {str(e)[:160]}"
+        return compose_intent(r, intent), f"LLM недоступна, экран собран по ключевым словам: {str(e)[:160]}"
     except (ValidationError, TypeError, ValueError) as e:
-        return compose_default(r, intent), f"LLM вернула невалидный UI, показан шаблон: {str(e)[:120]}"
+        return compose_intent(r, intent), f"LLM вернула невалидный экран, собран по ключевым словам: {str(e)[:120]}"

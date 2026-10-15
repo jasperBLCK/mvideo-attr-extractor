@@ -1,0 +1,227 @@
+/* Дизайн-токены attrx. Метафора: стол корректора. Карточка товара лежит листом на сером столе,
+   текст продавца набран книжной гарнитурой, а красная ручка (фирменный красный М.Видео) отмечает
+   только то, что требует решения: активную цитату, порог уверенности, рабочую точку, главное действие.
+   Шрифты свои (assets/fonts, OFL), без CDN: интерфейс работает в закрытом контуре. */
+
+/* ---------- шрифты: Onest (интерфейс), Literata (текст карточки) ---------- */
+@font-face { font-family: "Onest"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url("assets/fonts/onest-cyrillic-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+@font-face { font-family: "Onest"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url("assets/fonts/onest-cyrillic-wght-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Onest"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url("assets/fonts/onest-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Onest"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url("assets/fonts/onest-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+@font-face { font-family: "Literata"; font-style: normal; font-display: swap; font-weight: 200 900;
+  src: url("assets/fonts/literata-cyrillic-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
+@font-face { font-family: "Literata"; font-style: normal; font-display: swap; font-weight: 200 900;
+  src: url("assets/fonts/literata-cyrillic-wght-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Literata"; font-style: normal; font-display: swap; font-weight: 200 900;
+  src: url("assets/fonts/literata-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Literata"; font-style: normal; font-display: swap; font-weight: 200 900;
+  src: url("assets/fonts/literata-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+/* ---------- светлая тема (по умолчанию) ---------- */
+:root {
+  color-scheme: light;
+
+  /* поверхности: стол, лист, поле ввода, всплывающий слой */
+  --paper: #f0f1f3;
+  --sheet: #ffffff;
+  --raised: #ffffff;
+  --field: rgb(22 24 28 / 0.045);
+  --field-hover: rgb(22 24 28 / 0.07);
+  --hover: rgb(22 24 28 / 0.045);
+  --selected: rgb(22 24 28 / 0.075);
+
+  /* текст: графит в четыре уровня */
+  --ink: #1b1d21;
+  --ink-2: #464b53;
+  --ink-3: #5f646d;
+  --ink-4: #8b9099;   /* только неактивное и декоративное: < 4.5:1 */
+  --on-pen: #ffffff;
+
+  /* линии */
+  --rule: rgb(22 24 28 / 0.09);
+  --rule-2: rgb(22 24 28 / 0.15);
+  --rule-3: rgb(22 24 28 / 0.28);
+
+  /* красная ручка: фирменный красный М.Видео (#E2231A, снят с презентации кейса) */
+  --pen: #e2231a;
+  --pen-strong: #c51a12;   /* красный как текст: 5.3:1 на столе */
+  --pen-press: #c41c14;
+  --pen-wash: rgb(226 35 26 / 0.09);
+  --pen-wash-2: rgb(226 35 26 / 0.16);
+
+  /* цитаты в тексте карточки: маркер графитом, активная — красной ручкой */
+  --mark: rgb(22 24 28 / 0.085);
+  --mark-line: rgb(22 24 28 / 0.32);
+  --mark-active: rgb(226 35 26 / 0.15);
+
+  /* статусы значения: всегда вместе с иконкой и подписью */
+  --accepted: #1d7a4b;
+  --accepted-wash: rgb(29 122 75 / 0.1);
+  --review: #94570a;
+  --review-fill: #c98512;
+  --review-wash: rgb(201 133 18 / 0.14);
+  --missing: #5f646d;
+  --missing-wash: rgb(22 24 28 / 0.06);
+
+  /* графики: синий = точность/качество, бирюзовый = покрытие, красный — только рабочая точка */
+  --series-1: #2a78d6;
+  --series-2: #0f8a63;
+  --grid: rgb(22 24 28 / 0.08);
+  --axis: rgb(22 24 28 / 0.22);
+  --heat-0: #f4f1f1;
+  --heat-1: #f6cfca;
+  --heat-2: #eea097;
+  --heat-3: #e2665b;
+  --heat-4: #c8281f;
+
+  /* тени: только у того, что лежит или парит над столом */
+  --shadow-sheet: 0 0 0 1px rgb(22 24 28 / 0.06), 0 1px 2px rgb(22 24 28 / 0.05);
+  --shadow-float: 0 0 0 1px rgb(22 24 28 / 0.08), 0 16px 40px -12px rgb(22 24 28 / 0.22), 0 4px 10px -6px rgb(22 24 28 / 0.12);
+
+  /* типографика: шкала ~1.2 от 14 px */
+  --font-ui: "Onest", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-doc: "Literata", "PT Serif", Georgia, "Times New Roman", serif;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-32: 32px;
+  --fs-44: 44px;
+
+  /* шаг сетки 4 px */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* скругления: метки 4, элементы списков 6, кнопки и поля 8, листы и окна 12 */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  /* движение: быстро и только в ответ на действие */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 280ms;
+
+  /* слои */
+  --z-bar: 20;
+  --z-pop: 40;
+  --z-toast: 60;
+  --z-tip: 70;
+
+  --bar-h: 56px;
+}
+
+/* ---------- тёмная тема: стол ночью, та же иерархия ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #121316;
+    --sheet: #1b1d21;
+    --raised: #24272c;
+    --field: rgb(0 0 0 / 0.28);
+    --field-hover: rgb(0 0 0 / 0.38);
+    --hover: rgb(255 255 255 / 0.045);
+    --selected: rgb(255 255 255 / 0.08);
+    --ink: #ecedef;
+    --ink-2: #b4b8bf;
+    --ink-3: #8f949c;
+    --ink-4: #646972;
+    --rule: rgb(255 255 255 / 0.08);
+    --rule-2: rgb(255 255 255 / 0.13);
+    --rule-3: rgb(255 255 255 / 0.26);
+    --pen: #ff4a3f;
+    --pen-strong: #ff6b61;
+    --pen-wash: rgb(255 74 63 / 0.12);
+    --pen-wash-2: rgb(255 74 63 / 0.2);
+    --mark: rgb(255 255 255 / 0.07);
+    --mark-line: rgb(255 255 255 / 0.34);
+    --mark-active: rgb(255 74 63 / 0.22);
+    --accepted: #4dc08a;
+    --accepted-wash: rgb(77 192 138 / 0.12);
+    --review: #e7ae4a;
+    --review-fill: #e7ae4a;
+    --review-wash: rgb(231 174 74 / 0.14);
+    --missing: #8f949c;
+    --missing-wash: rgb(255 255 255 / 0.06);
+    --series-1: #3987e5;
+    --series-2: #199e70;
+    --grid: rgb(255 255 255 / 0.07);
+    --axis: rgb(255 255 255 / 0.22);
+    --heat-0: #24211f;
+    --heat-1: #4a2623;
+    --heat-2: #7a2f29;
+    --heat-3: #b33a31;
+    --heat-4: #ff5a4f;
+    --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.07);
+    --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.1), 0 20px 48px -12px rgb(0 0 0 / 0.6);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #121316;
+  --sheet: #1b1d21;
+  --raised: #24272c;
+  --field: rgb(0 0 0 / 0.28);
+  --field-hover: rgb(0 0 0 / 0.38);
+  --hover: rgb(255 255 255 / 0.045);
+  --selected: rgb(255 255 255 / 0.08);
+  --ink: #ecedef;
+  --ink-2: #b4b8bf;
+  --ink-3: #8f949c;
+  --ink-4: #646972;
+  --rule: rgb(255 255 255 / 0.08);
+  --rule-2: rgb(255 255 255 / 0.13);
+  --rule-3: rgb(255 255 255 / 0.26);
+  --pen: #ff4a3f;
+  --pen-strong: #ff6b61;
+  --pen-wash: rgb(255 74 63 / 0.12);
+  --pen-wash-2: rgb(255 74 63 / 0.2);
+  --mark: rgb(255 255 255 / 0.07);
+  --mark-line: rgb(255 255 255 / 0.34);
+  --mark-active: rgb(255 74 63 / 0.22);
+  --accepted: #4dc08a;
+  --accepted-wash: rgb(77 192 138 / 0.12);
+  --review: #e7ae4a;
+  --review-fill: #e7ae4a;
+  --review-wash: rgb(231 174 74 / 0.14);
+  --missing: #8f949c;
+  --missing-wash: rgb(255 255 255 / 0.06);
+  --series-1: #3987e5;
+  --series-2: #199e70;
+  --grid: rgb(255 255 255 / 0.07);
+  --axis: rgb(255 255 255 / 0.22);
+  --heat-0: #24211f;
+  --heat-1: #4a2623;
+  --heat-2: #7a2f29;
+  --heat-3: #b33a31;
+  --heat-4: #ff5a4f;
+  --shadow-sheet: 0 0 0 1px rgb(255 255 255 / 0.07);
+  --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.1), 0 20px 48px -12px rgb(0 0 0 / 0.6);
+}

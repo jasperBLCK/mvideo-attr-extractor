@@ -5,6 +5,7 @@ __pycache__/
 outputs/*
 !outputs/.gitkeep
 data/raw/
+data/processed/
 data/*.csv
 data/*.parquet
 !data/sample/
@@ -15,4 +16,7 @@ web/dist/
 .ruff_cache/
 *.egg-info/
 .DS_Store
-models/
+models/*
+# классификатор категории (~8 МБ, npz + JSON без pickle) — в репозитории, чтобы работал без data/processed
+!models/category/
+models/category/*.tmp

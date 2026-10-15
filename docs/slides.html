@@ -1,13 +1,961 @@
-<!doctype html><html lang=ru><meta charset=utf-8><title>attrx — М.Видео кейс 3</title><style>@page{size:1280px 720px;margin:0}*{box-sizing:border-box}body{margin:0;font-family:'TT Commons Pro',Inter,'Segoe UI',Roboto,Arial,sans-serif;color:#1e1e1e}
-section{width:1280px;height:720px;padding:56px 72px;position:relative;page-break-after:always;overflow:hidden;background:#fff}
-section::before{content:'';position:absolute;left:0;top:0;right:0;height:14px;background:#e30613}
-h1{font-size:52px;line-height:1.1;margin:0 0 24px}h2{font-size:40px;margin:16px 0 28px}
-.tag{position:absolute;right:72px;top:40px;background:#e30613;color:#fff;font-weight:800;padding:4px 14px;border-radius:8px;transform:skewX(-10deg)}
-ul{font-size:26px;line-height:1.45;padding-left:28px}li{margin-bottom:10px}
-.lead{font-size:28px}.muted{color:#6b6b76;font-size:20px}.warn{background:#fff4c2;padding:10px 16px;border-radius:10px;font-size:17px}
-.plate{display:inline-block;background:#ffd600;font-weight:800;font-size:24px;padding:10px 22px;border-radius:10px;transform:skewX(-10deg);margin-top:16px}
-.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:20px;margin-bottom:24px}.flow span{background:#f4f4f6;padding:8px 12px;border-radius:10px;font-weight:600}.flow .y{background:#ffd600}
-table{border-collapse:collapse;width:100%;font-size:19px;margin-bottom:14px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #e6e6ea}th{color:#6b6b76}
-.two{display:grid;grid-template-columns:1.2fr 1fr;gap:32px;font-size:22px}.two img{width:100%;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.12)}
-section.cover{background:#e30613;color:#fff}section.cover::before{display:none}section.cover .tag{background:#fff;color:#e30613;font-size:32px;left:72px;right:auto;top:72px}section.cover h1{margin-top:180px;font-size:60px}section.cover .muted{color:#ffd6d6}
-.num{position:absolute;right:72px;bottom:32px;color:#6b6b76;font-size:16px}</style><body><section class="cover"><span class=tag>attrx</span><h1>ИИ для автоматического заполнения характеристик товаров</h1><p class=lead>Гибридный пайплайн «правила → ML → LLM» с уверенностью, цитатами и generative UI для модератора</p><p class=muted>Кейс М.Видео №3 · NLP и e-commerce · команда jasperBLCK + Makhkets</p><span class=num>1</span></section><section class=""><span class=tag>attrx</span><h2>Проблема</h2><ul><li>Карточки от продавцов шумные: характеристики в свободном тексте, разные единицы и синонимы</li><li>Не заполнен атрибут → товара нет в фильтре → ниже CTR и конверсия</li><li>Ручное заполнение медленное и дорогое, а ошибки попадают в поиск</li></ul><div class=plate>Цель: заполнить обязательные атрибуты автоматически и ничего не выдумать</div><span class=num>2</span></section><section class=""><span class=tag>attrx</span><h2>Решение</h2><div class=flow><span>Карточка</span>→<span>Категория</span>→<span>Продавец</span>→<span>Правила</span>→<span>NER</span>→<span>LLM</span>→<span>Проверка цитаты</span>→<span>Уверенность</span>→<span class=y>accepted / review / missing</span></div><ul><li>Дешёвые источники закрывают ядро, модели работают только на хвосте</li><li>У каждого значения есть уверенность, источник и цитата из карточки</li><li>Сомнительные значения уходят модератору, его правки пополняют словари</li></ul><span class=num>3</span></section><section class=""><span class=tag>attrx</span><h2>Анти-галлюцинации</h2><ul><li>LLM обязана вернуть дословную цитату (strict JSON schema)</li><li>Проверка заземления: цитата есть в карточке, значение из неё следует, enum-значение есть в справочнике</li><li>Конфликт продавца и текста → статус review, альтернативы показываются модератору</li><li>Generative UI: модель выбирает компоненты, значения берутся из результата, а не из её ответа</li></ul><span class=num>4</span></section><section class=""><span class=tag>attrx</span><h2>Generative UI</h2><div class=two><img src=img/ui_card.png><div><p>Интерфейс собирается под запрос модератора: «покажи только то, что надо проверить, с цитатами».</p><p>LLM возвращает декларативный UISpec из 7 разрешённых компонентов. Его валидирует pydantic, рендер идёт без innerHTML.</p><p>Без LLM работает детерминированный шаблон.</p></div></div><span class=num>5</span></section><section class=""><span class=tag>attrx</span><h2>Сравнение подходов</h2><table><tr><th>Режим</th><th>Precision</th><th>Recall</th><th>F1</th><th>Coverage</th><th>Карт/с</th><th>LLM</th></tr><tr><td>правила</td><td>1.000</td><td>0.933</td><td>0.965</td><td>0.866</td><td>761.7</td><td>0</td></tr><tr><td>продавец + правила</td><td>1.000</td><td>0.990</td><td>0.995</td><td>0.920</td><td>1137.3</td><td>0</td></tr><tr><td>+ ML (NER)</td><td>1.000</td><td>0.990</td><td>0.995</td><td>0.920</td><td>30.0</td><td>0</td></tr></table><p class=warn>Данные: синтетический sample (20 карточек), правила отлаживались на нём. Это проверка пайплайна, а не оценка качества. Таблицу перегенерирует attrx report на holdout организаторов.</p><span class=num>6</span></section><section class=""><span class=tag>attrx</span><h2>Метрики, которые мы считаем</h2><ul><li>Precision / Recall / F1 по каждому атрибуту и категории</li><li>Coverage: доля заполненных атрибутов</li><li>Traffic-weighted F1: важнее атрибуты, по которым фильтруют</li><li>Кривая precision/coverage от порога → выбор CONFIDENCE_THRESHOLD под целевую точность</li><li>Качество по сегментам продавцов</li></ul><table><tr><th>Сегмент</th><th>Карточек</th><th>F1</th><th>Coverage</th></tr><tr><td>есть атрибуты продавца</td><td>16</td><td>0.994</td><td>0.935</td></tr><tr><td>нет атрибутов продавца</td><td>4</td><td>1.000</td><td>0.850</td></tr><tr><td>короткое описание (&lt;80 симв.)</td><td>18</td><td>0.995</td><td>0.920</td></tr><tr><td>длинное описание (&gt;=80 симв.)</td><td>2</td><td>1.000</td><td>0.917</td></tr></table><span class=num>7</span></section><section class=""><span class=tag>attrx</span><h2>Внедрение без VPN</h2><ul><li>Без LLM всё работает на правилах и NER на CPU: один Docker-контейнер</li><li>LLM через любой OpenAI-совместимый endpoint: on-prem vLLM/Ollama, GigaChat, YandexGPT</li><li>Кэш и лимит вызовов: LLM платим только за хвост</li><li>Интеграция: POST /api/extract/batch из PIM или CLI по выгрузке</li></ul><span class=num>8</span></section><section class=""><span class=tag>attrx</span><h2>Риски</h2><table><tr><th>Риск</th><th>Мера</th></tr><tr><td>Галлюцинации LLM</td><td>цитата + заземление + порог</td></tr><tr><td>Стоимость</td><td>гибридный роутинг, кэш, локальная модель</td></tr><tr><td>Eval не покрывает хвост</td><td>holdout, метрики по категориям и сегментам</td></tr><tr><td>Дрейф и новые категории</td><td>таксономия в YAML, LLM для cold-start, петля фидбэка</td></tr><tr><td>Несправедливость к продавцам</td><td>coverage по сегментам, заполнение из текста</td></tr></table><span class=num>9</span></section><section class=""><span class=tag>attrx</span><h2>Дальше</h2><ul><li>Дообучить NER на gold организаторов, active learning на очереди review</li><li>LLM-предразметка (attrx prelabel) → человек проверяет → новые обучающие данные</li><li>Мониторинг качества по категориям в проде</li></ul><span class=num>10</span></section></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>attrx — финальная защита</title>
+<meta name="description" content="Финальная презентация кейса М.Видео: автозаполнение характеристик из текста карточки, результаты на holdout.">
+<!-- Сгенерировано docs/slides.py из submission/*.json (отчёт v2) — правьте генератор, а не этот файл.
+     Навигация: ← → / пробел, Home / End, 1–9, O — обзор, F — полный экран. -->
+<style>
+:root{
+  --paper:#ffffff; --ink:#111111; --ink-2:#3a3a3a; --muted:#6b7280; --faint:#9ca3af;
+  --hair:#e5e7eb; --wash:#f5f5f6; --bar:#9aa0a8;
+  --red:#fe0000;      /* М.Видео: цвет обложки презентации кейса (слайд 1, сэмпл пикселей) — крупные заливки и линии */
+  --red-ink:#e2231a;  /* акцент кейсодателя на белых слайдах; 4,7:1 на белом — мелкий красный текст */
+  --red-wash:#fdeceb;
+  --night:#111111; --night-2:#1a1a1a; --night-hair:#2e2e2e; --night-muted:#a3a3a3;
+  --sans:"Inter","Adwaita Sans","Segoe UI","Noto Sans",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono","JetBrainsMono NF","Adwaita Mono",ui-monospace,Consolas,monospace;
+  --s:1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#0b0b0b;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-kerning:normal}
+.stage{position:fixed;inset:0;display:grid;place-items:center}
+.frame{display:none;position:relative;width:calc(1280px * var(--s));height:calc(720px * var(--s));box-shadow:0 12px 48px rgba(0,0,0,.5)}
+.frame.on{display:block}
+.slide{position:absolute;left:0;top:0;width:1280px;height:720px;transform:scale(var(--s));transform-origin:0 0;overflow:hidden;
+  background:var(--paper);color:var(--ink);padding:48px 64px 0}
+
+/* типографика */
+.kicker{font-size:12.5px;font-weight:650;letter-spacing:.13em;text-transform:uppercase;color:var(--red-ink)}
+.h{font-size:37px;line-height:1.1;letter-spacing:-.02em;font-weight:720;margin-top:12px;max-width:1120px;text-wrap:balance}
+.lead{font-size:17px;line-height:1.45;color:var(--ink-2);margin-top:10px;max-width:980px}
+.lbl{display:block;font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.small{font-size:12px;line-height:1.45;color:var(--muted)}
+.foot{position:absolute;left:64px;right:64px;bottom:18px;display:flex;justify-content:space-between;align-items:baseline;gap:32px;
+  font-size:11px;line-height:1.4;color:var(--muted)}
+.pg{font-weight:650;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.todo{display:inline-block;border:1px dashed var(--red-ink);color:var(--red-ink);background:var(--red-wash);border-radius:4px;
+  padding:0 6px;font-size:.84em;font-weight:650;line-height:1.55;white-space:nowrap;letter-spacing:0}
+.pend{display:inline-block;border:1px dashed var(--faint);color:var(--ink-2);background:var(--wash);border-radius:4px;
+  padding:0 6px;font-size:.84em;font-weight:650;line-height:1.55;white-space:nowrap;letter-spacing:0}
+.st{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border:1px solid currentColor;
+  border-radius:3px;padding:0 4px;line-height:15px;vertical-align:1px;white-space:nowrap}
+.st.plan{color:var(--muted)} .st.yes{color:var(--ink)}
+q{quotes:"«" "»"}
+.mono{font-family:var(--mono);font-size:.92em}
+.cols{display:grid;grid-template-columns:repeat(12,1fr);column-gap:24px}
+.rule{border-top:1px solid var(--hair)}
+
+/* svg-схемы: цвета из токенов страницы */
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--sans);fill:var(--ink)}
+svg .t{font-size:13.5px;font-weight:700} svg .u{font-size:11.5px;fill:var(--muted)} svg .e{font-size:12px;font-weight:600}
+svg .box{fill:var(--paper);stroke:var(--ink);stroke-width:1.2}
+svg .ln{stroke:var(--ink);stroke-width:1.2;fill:none}
+svg .ah{fill:var(--ink)}
+svg .hot{stroke:var(--red);stroke-width:2.4}
+svg .red-fill{fill:var(--red);stroke:none}
+svg .on-red{fill:#fff}
+
+/* тёмные слайды */
+.slide.dark{background:var(--night);color:#fff}
+.dark .kicker{color:var(--red)}
+.dark .foot{color:var(--night-muted)} .dark .pg{color:#d4d4d4}
+.dark .small{color:var(--night-muted)}
+
+/* 1 · обложка */
+.cover-grid{display:grid;grid-template-columns:640px 1fr;column-gap:56px;margin-top:66px;align-items:start}
+.wordmark{font-size:20px;font-weight:760;letter-spacing:-.01em;color:#fff;display:flex;align-items:center;gap:10px}
+.wordmark::before{content:"";width:10px;height:10px;background:var(--red);border-radius:2px}
+.cover-h{font-size:50px;line-height:1.04;letter-spacing:-.025em;font-weight:740;margin-top:26px;text-wrap:balance}
+.cover-lead{font-size:18px;line-height:1.5;color:#cfcfcf;margin-top:24px;max-width:600px}
+.demo{background:var(--night-2);border:1px solid var(--night-hair);border-radius:10px;padding:22px 24px;margin-top:6px}
+.demo .src{font-size:15px;line-height:1.65;color:#e8e8e8}
+.demo .src u{text-decoration:none;border-bottom:2px solid var(--red);padding-bottom:1px}
+.demo .arrow{display:flex;align-items:center;gap:10px;margin:16px 0 12px;font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--night-muted)}
+.demo .arrow::after{content:"";flex:1;border-top:1px solid var(--night-hair)}
+.demo .lblx{font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--night-muted);margin-bottom:10px}
+.out{display:grid;grid-template-columns:1fr auto auto;column-gap:18px;row-gap:2px;align-items:baseline}
+.out .a{font-size:13px;color:#bdbdbd}
+.out .v{font-size:17px;font-weight:700;color:#fff;text-align:right}
+.out .c{font-size:15px;font-weight:650;color:#fff;font-variant-numeric:tabular-nums}
+.out .qq{grid-column:1/-1;font-family:var(--mono);font-size:11.5px;color:var(--night-muted);margin-bottom:9px}
+.s-cover .foot{font-size:12px}
+
+/* 2 · проблема */
+.chain{margin-top:22px}
+.chain .t{font-size:14px}
+.p-grid{display:grid;grid-template-columns:7fr 5fr;column-gap:48px;margin-top:22px}
+.hero-row{display:flex;align-items:flex-end;gap:20px}
+.hero{font-size:76px;line-height:.9;font-weight:760;letter-spacing:-.035em;white-space:nowrap}
+.hero-cap{font-size:16px;line-height:1.35;color:var(--ink-2);max-width:400px;padding-bottom:4px}
+.bars{margin-top:20px;display:grid;grid-template-columns:auto auto 1fr;column-gap:14px;row-gap:5px;align-items:center}
+.bars .q{font-size:13px;color:var(--ink);white-space:nowrap}
+.bars .k{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.bars .b{display:flex;align-items:center;gap:8px;min-width:0}
+.bars .b i{display:block;height:10px;width:calc((100% - 60px) * var(--w));min-width:2px;background:var(--bar);border-radius:0 3px 3px 0}
+.bars .b em{font-style:normal;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.facts{border-left:1px solid var(--hair);padding-left:28px}
+.fact{padding:9px 0;border-bottom:1px solid var(--hair)}
+.fact:first-child{padding-top:0}
+.fact b{display:block;font-size:24px;line-height:1.1;font-weight:740;letter-spacing:-.015em}
+.fact > span{display:block;font-size:12.5px;line-height:1.4;color:var(--muted);margin-top:2px}
+.fact .todo{margin-right:6px}
+.fact.last{border-bottom:0}
+.money{position:absolute;left:64px;right:64px;bottom:44px;font-size:13.5px;line-height:1.45;color:var(--ink-2);padding-top:10px;border-top:1px solid var(--hair)}
+.money b{color:var(--ink)}
+
+/* 3 · роли */
+.roles{display:grid;grid-template-columns:repeat(4,1fr);margin-top:30px;border-top:2px solid var(--ink)}
+.role{padding:18px 22px 0 0;margin-right:22px;border-right:1px solid var(--hair);display:flex;flex-direction:column}
+.role:last-child{border-right:0;margin-right:0;padding-right:0}
+.role h3{font-size:19px;line-height:1.2;font-weight:720;letter-spacing:-.01em;min-height:46px}
+.role .jtbd{font-size:14px;line-height:1.46;color:var(--ink-2);margin-top:10px;min-height:128px}
+.role ul{list-style:none;margin-top:2px}
+.role li{font-size:13.5px;line-height:1.4;padding-left:14px;position:relative;margin-bottom:6px}
+.role li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:1.5px;background:var(--ink)}
+.role .gives{margin-top:10px;min-height:110px}
+.role .metric{margin-top:8px;padding-top:12px;border-top:1px solid var(--hair);font-size:13.5px;line-height:1.4;font-weight:600}
+.value-line{position:absolute;left:64px;right:64px;bottom:44px;font-size:14.5px;line-height:1.45;color:var(--ink-2);padding-top:10px;border-top:1px solid var(--hair)}
+.value-line b{color:var(--ink)}
+
+/* 4 · пайплайн */
+.pipe{margin-top:26px}
+.layers{display:grid;grid-template-columns:repeat(4,1fr);column-gap:24px;margin-top:22px;border-top:1px solid var(--hair);padding-top:14px}
+.layers h4{font-size:14px;font-weight:720;margin-bottom:4px}
+.layers p{font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.layers .hotl h4{color:var(--red-ink)}
+.share-line{position:absolute;left:64px;right:64px;bottom:44px;font-size:13px;line-height:1.45;color:var(--ink-2)}
+.share-line b{color:var(--ink)}
+
+/* 5 · доверие */
+.t-grid{display:grid;grid-template-columns:5fr 7fr;column-gap:36px;margin-top:22px}
+.card-src{background:var(--wash);border-radius:8px;padding:22px 22px 18px;font-size:14px;line-height:2.3;color:var(--ink-2);display:flex;flex-direction:column}
+.card-src .ttl{font-size:15px;font-weight:700;color:var(--ink);line-height:2.1;margin-bottom:2px}
+.card-src mark{background:none;color:var(--ink);font-weight:600;border-bottom:2px solid var(--ink);position:relative;padding-bottom:0}
+.card-src mark.r{border-bottom-color:var(--red)}
+.card-src mark sup{position:absolute;left:50%;transform:translateX(-50%);top:-1.15em;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1;white-space:nowrap}
+.card-src mark.r sup{color:var(--red-ink)}
+.card-src .gap{color:var(--faint)}
+.card-src .legend{margin-top:auto;padding-top:12px;border-top:1px solid #e3e3e6;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.card-src .legend i{display:inline-block;width:18px;height:0;border-bottom:2px solid var(--ink);vertical-align:3px;margin-right:6px}
+.card-src .legend i.r{border-bottom-color:var(--red);margin-left:14px}
+.res{width:100%;border-collapse:collapse;font-size:13px;align-self:start}
+.res th{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 8px 7px 0;border-bottom:1px solid var(--ink)}
+.res td{padding:7px 8px 7px 0;border-bottom:1px solid var(--hair);vertical-align:top;line-height:1.35}
+.res td.v{font-weight:700;white-space:nowrap}
+.res td.n{white-space:nowrap;font-variant-numeric:tabular-nums}
+.res td.src{color:var(--ink-2);font-size:12.5px}
+.res td.stt{white-space:nowrap;font-weight:650}
+.res tr.rv td.stt{color:var(--red-ink)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink);margin-right:6px;vertical-align:1px}
+.rv .dot{background:var(--red)}
+.meter{position:relative;display:inline-block;width:52px;height:6px;background:var(--hair);border-radius:3px;vertical-align:1px;margin-right:7px}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:calc(var(--v) * 100%);background:var(--ink);border-radius:3px}
+.meter.low i{background:var(--red)}
+.meter b{position:absolute;left:70%;top:-3px;bottom:-3px;width:1.5px;background:var(--ink)}
+.contract{display:grid;grid-template-columns:repeat(5,1fr);column-gap:18px;margin-top:20px;border-top:2px solid var(--ink);padding-top:12px}
+.contract div{font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.contract b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.contract b span{color:var(--red-ink);font-variant-numeric:tabular-nums;margin-right:6px}
+.loop{margin-top:12px;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.caught{margin-top:12px;padding:9px 12px;border-left:3px solid var(--red);background:var(--red-wash);font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.caught b{color:var(--ink)}
+.loop b{color:var(--ink)}
+
+/* 6 · метрики */
+.m-grid{display:grid;grid-template-columns:8.6fr 3.4fr;column-gap:36px;margin-top:24px}
+.mt{width:100%;border-collapse:collapse;font-size:13px;line-height:1.38}
+.mt th{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 12px 7px 0;border-bottom:1px solid var(--ink)}
+.mt td{padding:5px 12px 5px 0;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-2)}
+.mt td:first-child{font-weight:700;color:var(--ink);width:170px}
+.mt{margin-top:20px}
+.mt td.now{font-weight:720;color:var(--ink);width:230px}
+.mt td.goal{font-weight:500;color:var(--ink-2);width:250px}
+.mt td.art{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:118px}
+.facts-row{display:grid;grid-template-columns:repeat(4,1fr);column-gap:24px;margin-top:16px}
+.facts-row div{font-size:12px;line-height:1.38;color:var(--ink-2);border-top:2px solid var(--ink);padding-top:7px}
+.facts-row b{display:block;font-size:21px;line-height:1.1;font-weight:740;letter-spacing:-.015em;color:var(--ink);margin-bottom:3px}
+.side{border-left:1px solid var(--hair);padding-left:24px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.side .big{display:block;font-size:28px;font-weight:740;letter-spacing:-.02em;color:var(--ink);line-height:1.05;margin-bottom:4px}
+.side p{margin-bottom:12px}
+
+/* 7 · внедрение */
+.r-grid{display:grid;grid-template-columns:7fr 5fr;column-gap:44px;margin-top:26px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);column-gap:16px;position:relative}
+.step{border-top:2px solid var(--ink);padding-top:12px;position:relative}
+.step.cur{border-top-color:var(--red)}
+.step .n{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.step.cur .n{color:var(--red-ink)}
+.step h4{font-size:15.5px;line-height:1.25;font-weight:720;margin:5px 0 7px}
+.step p{font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.step .gate{display:block;margin-top:8px;font-size:12px;font-weight:650;color:var(--ink)}
+.integr{margin-top:22px;padding-top:14px;border-top:1px solid var(--hair);display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:12px}
+.integr p{font-size:13px;line-height:1.5;color:var(--ink-2)}
+.integr b{color:var(--ink)}
+.econ{background:var(--wash);border-radius:10px;padding:20px 22px}
+.econ h3{font-size:16px;font-weight:720;margin-bottom:12px}
+.f{font-size:15.5px;line-height:1.75;font-variant-numeric:tabular-nums}
+.f var{font-style:italic;font-family:"Noto Serif","Times New Roman",serif;font-size:1.06em}
+.f sub{font-size:.68em;font-style:normal;font-family:var(--sans)}
+.f .res-line{display:block;margin-top:6px;padding-top:8px;border-top:1px solid var(--hair);font-weight:700}
+.inputs{margin-top:12px;font-size:12.5px;line-height:1.5;color:var(--ink-2);list-style:none}
+.inputs li{padding:5px 0;border-top:1px solid #e9e9eb;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inputs li span:last-child{text-align:right;font-weight:600;color:var(--ink);white-space:nowrap}
+
+/* 8 · отличия (тёмный) */
+.cmp{width:100%;border-collapse:collapse;margin-top:26px;font-size:15px;line-height:1.38}
+.cmp th{font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;text-align:left;color:var(--night-muted);padding:0 16px 8px 0;border-bottom:1px solid #4a4a4a}
+.cmp th.us{color:#fff}
+.cmp th.us::before{content:"";display:inline-block;width:8px;height:8px;background:var(--red);border-radius:2px;margin-right:8px;vertical-align:0}
+.cmp td{padding:9px 16px 9px 0;border-bottom:1px solid var(--night-hair);vertical-align:top;color:#bdbdbd}
+.cmp td:first-child{color:#fff;font-weight:650;width:200px}
+.cmp td.us{color:#fff}
+.assets{display:grid;grid-template-columns:repeat(5,1fr);column-gap:18px;margin-top:26px}
+.assets div{font-size:13px;line-height:1.42;color:#bdbdbd;border-top:1px solid #4a4a4a;padding-top:10px}
+.assets b{display:block;color:#fff;font-size:14px;margin-bottom:4px}
+.dark .st.plan{color:var(--night-muted)} .dark .st.yes{color:#fff}
+
+/* 9 · план и риски */
+.pr-grid{display:grid;grid-template-columns:4.6fr 7.4fr;column-gap:40px;margin-top:24px}
+.tl{list-style:none;border-left:2px solid var(--ink);padding-left:0}
+.tl li{position:relative;padding:0 0 12px 20px;font-size:13.5px;line-height:1.42;color:var(--ink-2)}
+.tl li::before{content:"";position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:2px solid var(--ink)}
+.tl li.now::before{background:var(--red);border-color:var(--red)}
+.tl li.end::before{background:var(--ink)}
+.tl b{display:block;font-size:14px;color:var(--ink)}
+.rk{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.4}
+.rk th{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 10px 7px 0;border-bottom:1px solid var(--ink)}
+.rk td{padding:7px 10px 7px 0;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-2)}
+.rk td:first-child{font-weight:700;color:var(--ink);width:150px}
+.rk td.sts{width:96px;white-space:nowrap}
+.asks{position:absolute;left:64px;right:64px;bottom:44px;font-size:13.5px;line-height:1.45;color:var(--ink-2);padding-top:10px;border-top:2px solid var(--ink)}
+.asks b{color:var(--ink)}
+
+/* интерфейс просмотра */
+.hud{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;font:600 12px var(--sans);color:#9a9a9a;
+  background:rgba(20,20,20,.86);border:1px solid #2a2a2a;border-radius:8px;padding:4px 6px;opacity:.35;transition:opacity .2s;user-select:none;z-index:5}
+.hud:hover{opacity:1}
+.hud button{font:inherit;color:#e5e5e5;background:none;border:0;padding:4px 9px;border-radius:5px;cursor:pointer}
+.hud button:hover,.hud button:focus-visible{background:#2a2a2a;outline:none}
+.hud .cnt{font-variant-numeric:tabular-nums;min-width:52px;text-align:center}
+body.overview .stage{position:static;display:grid;grid-template-columns:repeat(3,auto);gap:22px;justify-content:center;align-content:start;padding:28px}
+body.overview .frame{display:block;--s:.3;cursor:pointer;box-shadow:0 0 0 1px #2a2a2a}
+body.overview .frame.on{box-shadow:0 0 0 3px var(--red)}
+body.overview .hud{display:none}
+
+@page{size:1280px 720px;margin:0}
+@media print{
+  html,body{height:auto;background:#fff}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .stage{position:static;display:block}
+  .frame{display:block!important;--s:1;width:1280px;height:720px;box-shadow:none;break-after:page;page-break-after:always;overflow:hidden}
+  .frame:last-child{break-after:auto;page-break-after:auto}
+  .hud{display:none}
+}
+@media (prefers-reduced-motion:reduce){.hud{transition:none}}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);column-gap:28px;row-gap:22px}
+.kpi{border-top:2px solid var(--ink);padding-top:10px}
+.kpi b{display:block;font-size:34px;line-height:1.05;font-weight:740;letter-spacing:-.02em;white-space:nowrap}
+.kpi span{display:block;font-size:13px;line-height:1.4;color:var(--ink-2);margin-top:6px}
+.kpi small{display:block;font-size:11.5px;line-height:1.35;color:var(--muted);margin-top:3px}
+.res-grid{display:grid;grid-template-columns:4.3fr 7.7fr;column-gap:48px;margin-top:30px;align-items:start}
+.big{font-size:118px;line-height:.86;font-weight:760;letter-spacing:-.045em}
+.big-cap{font-size:16px;line-height:1.42;color:var(--ink-2);margin-top:16px;max-width:400px}
+.big-cap b{color:var(--ink)}
+.strip{position:absolute;left:64px;right:64px;bottom:44px;display:grid;grid-template-columns:1fr 1fr;column-gap:32px;
+  border-top:1px solid var(--hair);padding-top:10px;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.strip b{color:var(--ink)}
+.strip.s3{grid-template-columns:1fr 1fr 1fr;column-gap:28px;font-size:12px}
+.lt{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.3;margin-top:24px;font-variant-numeric:tabular-nums}
+.lt th{font-size:10.5px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;
+  padding:0 0 7px 10px;border-bottom:1px solid var(--ink);vertical-align:bottom}
+.lt th:first-child,.lt td:first-child{text-align:left;padding-left:0}
+.lt td{padding:6px 0 6px 10px;border-bottom:1px solid var(--hair);text-align:right;color:var(--ink-2)}
+.lt td:first-child{color:var(--ink);font-weight:600}
+.lt tr.sec td{border-bottom:0;padding-top:14px;font-size:11px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left}
+.lt tr.hl td{background:var(--red-wash);color:var(--ink);font-weight:700}
+.lt tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+.takeaways{display:grid;grid-template-columns:repeat(4,1fr);column-gap:22px;margin-top:20px}
+.takeaways div{font-size:12.5px;line-height:1.42;color:var(--ink-2);border-top:2px solid var(--ink);padding-top:8px}
+.takeaways b{display:block;font-size:13.5px;color:var(--ink);margin-bottom:3px}
+.takeaways.t5{grid-template-columns:repeat(5,1fr);column-gap:18px;margin-top:16px}
+.takeaways.t5 div{font-size:12px}
+.lt.tight td{padding:4px 0 4px 10px}
+.lt.tight tr.sec td{padding-top:9px}
+.caveat{margin-top:10px;padding:10px 16px;border-left:3px solid var(--red);background:var(--red-wash);font-size:13px;line-height:1.45;color:var(--ink-2)}
+.caveat b{color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;column-gap:44px;margin-top:22px;align-items:start}
+.two-w{display:grid;grid-template-columns:6fr 5fr;column-gap:40px;margin-top:20px;align-items:start}
+.chart-cap{font-size:12px;line-height:1.45;color:var(--muted);margin-top:6px}
+.chart-cap b{color:var(--ink-2)}
+.mf{width:100%;border-collapse:collapse;font-size:13px;line-height:1.3;font-variant-numeric:tabular-nums}
+.mf th{font-size:10.5px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;
+  padding:0 0 6px 10px;border-bottom:1px solid var(--ink)}
+.mf th:first-child,.mf td:first-child{text-align:left;padding-left:0}
+.mf td{padding:3px 0 3px 10px;border-bottom:1px solid var(--hair);text-align:right;color:var(--ink-2)}
+.mf td:first-child{color:var(--ink)}
+.mf td.f{font-weight:700;color:var(--ink)}
+.mf tr.grp td{font-size:11px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:8px;border-bottom:0}
+.mf td.low{color:var(--red-ink);font-weight:700}
+.notes{list-style:none;margin-top:4px}
+.notes li{font-size:13px;line-height:1.45;color:var(--ink-2);padding:9px 0;border-bottom:1px solid var(--hair)}
+.notes li:first-child{padding-top:0}
+.notes b{display:block;font-size:20px;line-height:1.15;font-weight:740;color:var(--ink);letter-spacing:-.01em;margin-bottom:2px}
+.shots{display:grid;grid-template-columns:744px 1fr;column-gap:24px;margin-top:16px}
+.shot img{display:block;width:100%;height:auto;border:1px solid var(--hair);border-radius:6px}
+.shot p{font-size:12px;line-height:1.4;color:var(--ink-2);margin-top:6px}
+.shot p b{color:var(--ink)}
+.shots .col{display:flex;flex-direction:column;gap:12px}
+.flow{list-style:none;counter-reset:f}
+.flow li{position:relative;padding:0 0 18px 92px;min-height:62px}
+.flow li > b{position:absolute;left:0;top:-4px;width:84px;font-size:34px;line-height:1;font-weight:740;letter-spacing:-.02em}
+.flow li > span{display:block;font-size:15px;line-height:1.4;color:var(--ink)}
+.flow li > small{display:block;font-size:12.5px;line-height:1.4;color:var(--muted);margin-top:3px}
+.flow .mono{font-size:12px}
+.flow li.r b{color:var(--red-ink)}
+.cf{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums;margin-top:8px}
+.cf th{font-size:10.5px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:0 0 7px 12px;border-bottom:1px solid var(--ink)}
+.cf th:first-child,.cf td:first-child{text-align:left;padding-left:0}
+.cf td{padding:7px 0 7px 12px;border-bottom:1px solid var(--hair);text-align:right}
+.cf td.d{color:var(--red-ink);font-weight:700}
+.verdict{margin-top:22px;padding:16px 18px;background:var(--wash);border-radius:8px;font-size:14.5px;line-height:1.5;color:var(--ink-2)}
+.verdict b{color:var(--ink)}
+.cost{list-style:none}
+.cost li{padding:12px 0 14px;border-bottom:1px solid var(--hair)}
+.cost li:first-child{padding-top:0}
+.cost .who{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:650}
+.cost .who em{font-style:normal;font-size:13px;font-weight:700;color:var(--red-ink)}
+.cost .row{display:grid;grid-template-columns:170px 1fr 74px;column-gap:10px;align-items:center;margin-top:6px;font-size:12.5px;color:var(--ink-2)}
+.cost .row i{display:block;height:12px;border-radius:0 3px 3px 0;background:var(--bar)}
+.cost .row.h i{background:var(--red-ink)}
+.cost .row span:last-child{text-align:right;font-weight:650;color:var(--ink);font-variant-numeric:tabular-nums}
+.speed{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.speed th{font-size:10.5px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:0 0 7px 10px;border-bottom:1px solid var(--ink)}
+.speed th:first-child,.speed td:first-child{text-align:left;padding-left:0}
+.speed td{padding:6px 0 6px 10px;border-bottom:1px solid var(--hair);text-align:right;color:var(--ink-2)}
+.speed td:first-child{color:var(--ink)}
+.speed tr.hl td{font-weight:700;color:var(--ink);background:var(--red-wash)}
+.rr{display:grid;grid-template-columns:3.4fr 8.6fr;column-gap:36px;margin-top:22px}
+.steps-v{list-style:none;border-left:2px solid var(--ink)}
+.steps-v li{position:relative;padding:0 0 14px 18px}
+.steps-v li::before{content:"";position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:2px solid var(--ink)}
+.steps-v li.done::before{background:var(--red);border-color:var(--red)}
+.steps-v li > b{display:block;font-size:14px;color:var(--ink)}
+.steps-v li > span{display:block;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.steps-v .mono{font-size:11.5px}
+.rk2{width:100%;border-collapse:collapse;font-size:12.8px;line-height:1.38}
+.rk2 th{font-size:10.5px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 10px 7px 0;border-bottom:1px solid var(--ink)}
+.rk2 td{padding:7px 10px 7px 0;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-2)}
+.rk2 td:first-child{font-weight:700;color:var(--ink);width:150px}
+.rk2 td.ev{color:var(--ink);font-weight:600;width:300px}
+.fin{display:grid;grid-template-columns:repeat(3,1fr);column-gap:32px;margin-top:26px}
+.fin h3{font-size:15px;font-weight:720;margin-bottom:8px;padding-top:10px;border-top:2px solid var(--ink)}
+.fin ul{list-style:none}
+.fin li{font-size:13px;line-height:1.42;color:var(--ink-2);padding:5px 0;border-bottom:1px solid var(--hair)}
+.fin li b{color:var(--ink)}
+.cover-kpis{background:var(--night-2);border:1px solid var(--night-hair);border-radius:10px;padding:22px 24px;margin-top:6px}
+.cover-kpis .lblx{font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--night-muted);margin-bottom:14px}
+.cover-kpis dl{display:grid;grid-template-columns:auto 1fr;column-gap:18px;row-gap:14px;align-items:baseline}
+.cover-kpis dt{font-size:30px;line-height:1;font-weight:740;letter-spacing:-.02em;color:#fff;white-space:nowrap}
+.cover-kpis dd{font-size:13.5px;line-height:1.38;color:#cfcfcf}
+.cover-kpis dd small{display:block;font-size:11.5px;color:var(--night-muted)}
+svg .bar{fill:var(--bar)} svg .bar.hl{fill:var(--red-ink)}
+svg .ax{stroke:#c3c2b7;stroke-width:1} svg .grid{stroke:#e8e8ea;stroke-width:1}
+svg .refl{stroke:var(--ink);stroke-width:1} svg .refl.r{stroke:var(--red);stroke-width:1.5}
+svg .tk{font-size:11px;fill:var(--muted)} svg .lb{font-size:12.5px} svg .lbm{font-size:11px;fill:var(--muted)}
+svg .val{font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
+svg .ln2{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+svg .s-ink{stroke:var(--ink)} svg .s-gray{stroke:var(--bar)} svg .s-red{stroke:var(--red-ink)}
+svg .dot{fill:var(--ink);stroke:var(--paper);stroke-width:2} svg .dot.r{fill:var(--red-ink)}
+svg .dot.o{fill:var(--paper);stroke:var(--bar);stroke-width:2}
+svg .val.r{fill:var(--red-ink)}
+</style>
+</head>
+<body>
+<main class="stage" id="stage">
+<div class="frame"><section class="slide dark" aria-label="Слайд 1 из 13. Обложка">
+  <div class="kicker">Точка сборки · Кейс № 3 · М.Видео · Финальная защита</div>
+  <div class="cover-grid">
+    <div>
+      <div class="wordmark">attrx</div>
+      <h1 class="cover-h">Характеристики товара — из&nbsp;текста карточки. Каждое значение с&nbsp;цитатой и&nbsp;уверенностью</h1>
+      <p class="cover-lead">Гибрид для каталога М.Видео: категория по&nbsp;тексту, правила и&nbsp;словари каталога — ядро, NER&nbsp;— свободный текст, LLM&nbsp;— только подсказки модератору. Проверено на&nbsp;всём отложенном holdout: на&nbsp;нём ничего не&nbsp;настраивалось, слабые места раскрыты.</p>
+    </div>
+    <div class="cover-kpis" aria-label="Главные цифры на holdout">
+      <div class="lblx">Holdout · 23&#8239;391 карточка · режим в&nbsp;сдаче</div>
+      <dl>
+        <dt>0,954</dt><dd>точность значений, принятых в&nbsp;каталог автоматически<small>95% ДИ от&nbsp;0,952; принято 94% найденного</small></dd>
+        <dt>0,937</dt><dd>F1 с&nbsp;учётом поискового спроса<small>micro-F1 0,858; полнота по&nbsp;значениям из&nbsp;текста 0,927</small></dd>
+        <dt>97,2%</dt><dd>поискового спроса с&nbsp;заполненным атрибутом<small>было 95,7%: +5&#8239;488 значений там, где каталог пуст</small></dd>
+        <dt>4–7×</dt><dd>дешевле, чем «LLM на&nbsp;каждую карточку»<small>гибрид: 0,83&nbsp;₽ на&nbsp;своей GPU, 20,6&nbsp;₽ в&nbsp;GigaChat Lite за&nbsp;1000 карточек</small></dd>
+      </dl>
+    </div>
+  </div>
+  <div class="foot"><span>Команда «Ъыъ»: Makhkets, jasperBLCK · Демо: <span class="mono">attrx serve</span> → порт 8000 · все цифры — <span class="mono">submission/</span> (отчёт v2)</span><span class="pg">01 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 2 из 13. Проблема в деньгах">
+  <div class="kicker">Проблема · деньги</div>
+  <h2 class="h">Нет характеристики — нет товара в&nbsp;фильтре, а&nbsp;значит и&nbsp;в&nbsp;выручке</h2>
+  <div class="p-grid" style="margin-top:26px">
+    <div>
+      <div class="hero-row"><div class="hero">56,5%</div>
+        <div class="hero-cap">кликов из&nbsp;поиска — по&nbsp;запросам, где покупатель назвал атрибут; 24,9% — характеристику кроме бренда и&nbsp;модели</div></div>
+      <div class="bars" role="img" aria-label="Клики по запросам, где названа характеристика">
+        <span class="q">«игровые ноутбуки»</span><span class="k">тип</span><span class="b"><i style="--w:1.000"></i><em>88&#8239;336</em></span>
+        <span class="q">«встраиваемые посудомоечные машины 45см»</span><span class="k">ширина</span><span class="b"><i style="--w:0.853"></i><em>75&#8239;371</em></span>
+        <span class="q">«смартфоны samsung»</span><span class="k">бренд</span><span class="b"><i style="--w:0.778"></i><em>68&#8239;732</em></span>
+        <span class="q">«телевизоры 55»</span><span class="k">диагональ</span><span class="b"><i style="--w:0.700"></i><em>61&#8239;792</em></span>
+        <span class="q">«накопительные водонагреватели 50л»</span><span class="k">объём</span><span class="b"><i style="--w:0.322"></i><em>28&#8239;465</em></span>
+        <span class="q">«iphone 17 pro max 512gb»</span><span class="k">память</span><span class="b"><i style="--w:0.053"></i><em>4&#8239;691</em></span>
+        <span class="q">«холодильник черный»</span><span class="k">цвет</span><span class="b"><i style="--w:0.025"></i><em>2&#8239;172</em></span>
+      </div>
+      <p class="small" style="margin-top:8px">Числа у&nbsp;полос — клики по&nbsp;точному запросу. Доли — разметка всех запросов словарём каталога; описательные запросы без значения не&nbsp;засчитаны — оценка снизу.</p>
+    </div>
+    <aside class="facts" aria-label="Масштаб данных кейса">
+      <div class="fact"><b>1&#8239;177&#8239;200</b><span>описаний карточек: название и&nbsp;текст продавца — вход решения</span></div>
+      <div class="fact"><b>546&#8239;069</b><span>офферов каталога с&nbsp;характеристиками в&nbsp;6&#8239;963 категориях — эталон</span></div>
+      <div class="fact"><b>30&#8239;991&#8239;350</b><span>кликов из&nbsp;поиска — вес атрибута в&nbsp;метриках и&nbsp;в&nbsp;очереди модератора</span></div>
+      <div class="fact"><b>75%</b><span>карточек без оффера и&nbsp;без кликов: есть только текст — холодный старт</span></div>
+      <div class="fact last"><b>83%</b><span>эталонных значений есть в&nbsp;тексте карточки (holdout): остальное не&nbsp;извлечь, только «нет в&nbsp;тексте»</span></div>
+    </aside>
+  </div>
+  <p class="money"><b>Деньги:</b> дозаполненная характеристика → больше показов в&nbsp;фильтрах и&nbsp;атрибутной выдаче × CTR × конверсия × средний чек. CTR, конверсия и&nbsp;чек — данные М.Видео; эффект подтверждаем A/B по&nbsp;категориям.</p>
+  <div class="foot"><span>Источники: архив кейса; доли спроса — <span class="mono">docs/EDA.md</span> §6; клики по&nbsp;запросам — <span class="mono">docs/checkpoint/demand_stats.json</span>; доля эталона в&nbsp;тексте — <span class="mono">submission/metrics.json</span></span><span class="pg">02 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 3 из 13. Решение">
+  <div class="kicker">Решение · гибридный пайплайн</div>
+  <h2 class="h">Ядро закрывают дешёвые правила. LLM&nbsp;— только для остатка и&nbsp;только с&nbsp;цитатой</h2>
+  <figure class="pipe">
+    <svg viewBox="0 0 1152 312" role="img" aria-label="Схема: карточка, затем правила и словари. Если атрибут закрыт уверенно, он идёт сразу в оценку уверенности и порог. Если нет, он уходит в хвост: NER, затем LLM, затем проверка заземления; прошедшие значения возвращаются в оценку уверенности, непрошедшие отбрасываются. После порога: принято в PIM, на проверку модератору или нет в тексте. Правки модератора возвращаются в словари.">
+      <defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <!-- основной путь -->
+      <rect class="box" x="0.6" y="34.6" width="150" height="80" rx="6"/>
+      <text class="t" x="75" y="64" text-anchor="middle">Карточка</text>
+      <text class="u" x="75" y="83" text-anchor="middle">текст и атрибуты</text>
+      <text class="u" x="75" y="99" text-anchor="middle">продавца → категория</text>
+      <line class="ln" x1="152" y1="74" x2="179" y2="74" marker-end="url(#ah4)"/>
+      <rect class="box" x="182.6" y="34.6" width="200" height="80" rx="6"/>
+      <text class="t" x="282" y="64" text-anchor="middle">Правила и словари</text>
+      <text class="u" x="282" y="83" text-anchor="middle">regex, единицы, синонимы,</text>
+      <text class="u" x="282" y="99" text-anchor="middle">атрибуты продавца</text>
+      <line class="ln" x1="384" y1="74" x2="403" y2="74" marker-end="url(#ah4)"/>
+      <polygon class="box" points="406,74 466,30 526,74 466,118"/>
+      <text class="e" x="466" y="71" text-anchor="middle">закрыт</text>
+      <text class="e" x="466" y="86" text-anchor="middle">уверенно?</text>
+      <line class="ln" x1="527" y1="74" x2="805" y2="74" marker-end="url(#ah4)"/>
+      <text class="e" x="666" y="65" text-anchor="middle">да — ядро, без LLM</text>
+      <text class="u" x="666" y="93" text-anchor="middle">≥ 0,6 и без конфликта</text>
+      <rect class="box" x="808.6" y="34.6" width="170" height="80" rx="6"/>
+      <text class="t" x="893" y="62" text-anchor="middle">Уверенность</text>
+      <text class="u" x="893" y="81" text-anchor="middle">noisy-OR + калибровка,</text>
+      <text class="u" x="893" y="97" text-anchor="middle">порог 0,70 (P ≥ 0,95)</text>
+      <polyline class="ln" points="980,74 992,74"/>
+      <polyline class="ln" points="992,28 992,120"/>
+      <line class="ln" x1="992" y1="28" x2="1003" y2="28" marker-end="url(#ah4)"/>
+      <line class="ln" x1="992" y1="74" x2="1003" y2="74" marker-end="url(#ah4)"/>
+      <line class="ln" x1="992" y1="120" x2="1003" y2="120" marker-end="url(#ah4)"/>
+      <rect class="box" x="1006.6" y="10.6" width="124" height="36" rx="5"/>
+      <text class="e" x="1068" y="25" text-anchor="middle">принято</text><text class="u" x="1068" y="40" text-anchor="middle">→ в PIM</text>
+      <rect class="box" x="1006.6" y="56.6" width="124" height="36" rx="5"/>
+      <text class="e" x="1068" y="71" text-anchor="middle">на проверку</text><text class="u" x="1068" y="86" text-anchor="middle">→ модератору</text>
+      <rect class="box" x="1006.6" y="102.6" width="124" height="36" rx="5"/>
+      <text class="e" x="1068" y="117" text-anchor="middle">нет в тексте</text><text class="u" x="1068" y="132" text-anchor="middle">→ не выдумываем</text>
+      <!-- хвост -->
+      <line class="ln" x1="466" y1="119" x2="466" y2="193" marker-end="url(#ah4)"/>
+      <text class="e" x="477" y="150">нет: пусто, слабо</text>
+      <text class="e" x="477" y="166">или конфликт</text>
+      <rect class="box" x="396.6" y="196.6" width="140" height="70" rx="6"/>
+      <text class="t" x="466" y="222" text-anchor="middle">NER</text>
+      <text class="u" x="466" y="240" text-anchor="middle">ruBERT-tiny2,</text>
+      <text class="u" x="466" y="255" text-anchor="middle">свободный текст</text>
+      <line class="ln" x1="538" y1="231" x2="563" y2="231" marker-end="url(#ah4)"/>
+      <rect class="box hot" x="566.6" y="196.6" width="200" height="70" rx="6"/>
+      <text class="t" x="666" y="222" text-anchor="middle">LLM в контуре</text>
+      <text class="u" x="666" y="240" text-anchor="middle">strict JSON, temperature 0,</text>
+      <text class="u" x="666" y="255" text-anchor="middle">обязательная цитата</text>
+      <line class="ln" x1="768" y1="231" x2="805" y2="231" marker-end="url(#ah4)"/>
+      <rect class="box" x="808.6" y="196.6" width="170" height="70" rx="6"/>
+      <text class="t" x="893" y="222" text-anchor="middle">Заземление</text>
+      <text class="u" x="893" y="240" text-anchor="middle">цитата найдена в тексте,</text>
+      <text class="u" x="893" y="255" text-anchor="middle">значение следует из неё</text>
+      <line class="ln" x1="893" y1="195" x2="893" y2="117" marker-end="url(#ah4)"/>
+      <text class="e" x="903" y="160">прошло</text>
+      <text class="u" x="903" y="176">только LLM → всегда</text>
+      <text class="u" x="903" y="191">на проверку</text>
+      <line class="ln" x1="980" y1="231" x2="1003" y2="231" marker-end="url(#ah4)"/>
+      <text class="u" x="1008" y="227">не прошло:</text>
+      <text class="u" x="1008" y="242">отброшено, в лог</text>
+      <!-- петля обратной связи -->
+      <polyline class="ln" points="1131,74 1143,74 1143,298 282,298 282,118" marker-end="url(#ah4)"/>
+      <text class="u" x="712" y="291" text-anchor="middle">правки модератора → feedback.jsonl → attrx learn → новые синонимы в словарях</text>
+    </svg>
+  </figure>
+  <div class="layers">
+    <div><h4>Категория и правила</h4><p>Без id категорию даёт классификатор: 0,9998 против 0,921 у&nbsp;ключевых слов. Правила и&nbsp;4&nbsp;822 бренда каталога: F1 0,853, 1&#8239;516 карточек/с на&nbsp;ядро.</p></div>
+    <div><h4>NER</h4><p>ruBERT-tiny2 на&nbsp;значениях каталога, найденных в&nbsp;тексте. Только слабые атрибуты: полнота по&nbsp;извлекаемому 0,918 → 0,927.</p></div>
+    <div class="hotl"><h4>LLM</h4><p>Только слабые и&nbsp;упомянутые в&nbsp;тексте атрибуты — LLM спрашивали для&nbsp;31% карточек. Одна LLM — только на&nbsp;проверку.</p></div>
+    <div><h4>Заземление и порог</h4><p>Цитата найдена в&nbsp;тексте, значение следует из&nbsp;неё; калиброванный порог 0,70 → точность принятых 0,954.</p></div>
+  </div>
+  <div class="foot"><span>Схема = <span class="mono">src/attrx/pipeline.py</span>; классификатор — <span class="mono">docs/CATEGORY.md</span>; цифры — весь holdout, <span class="mono">submission/compare.json</span></span><span class="pg">03 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 4 из 13. Живое демо">
+  <div class="kicker">Живое демо</div>
+  <h2 class="h">Модератор видит значение, уверенность и&nbsp;цитату</h2>
+  <div class="shots">
+    <figure class="shot"><img src="img/ui_workbench_light.png" alt="Экран «Карточка»: текст карточки с подсвеченной цитатой и таблица характеристик со статусами">
+      <p><b>Карточка.</b> Наведение на&nbsp;характеристику подсвечивает цитату в&nbsp;тексте; уверенность с&nbsp;отметкой порога, статус, источник, другие варианты при&nbsp;конфликте; «Принять / Исправить / Отклонить».</p></figure>
+    <div class="col">
+      <figure class="shot"><img src="img/ui_review_light.png" alt="Экран «Очередь проверки»">
+        <p><b>Очередь:</b> первыми — частый спрос и&nbsp;низкая уверенность.</p></figure>
+      <figure class="shot"><img src="img/ui_palette.png" alt="Палитра Ctrl+K: экран под запрос">
+        <p><b>Ctrl/⌘K.</b> Экран под&nbsp;запрос из&nbsp;безопасных компонентов.</p></figure>
+    </div>
+  </div>
+  <div class="foot"><span>Демо: <span class="mono">attrx serve</span> или <span class="mono">docker compose up</span> → порт 8000 на&nbsp;ВМ команды; Swagger — /docs; без датасета — 400 реальных карточек из&nbsp;<span class="mono">data/sample</span></span><span class="pg">04 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 5 из 13. Результат на holdout">
+  <div class="kicker">Результат · весь holdout · 23&#8239;391 карточка</div>
+  <h2 class="h">Точность принятых 0,954 — на&nbsp;всём holdout, на&nbsp;котором ничего не&nbsp;настраивалось</h2>
+  <div class="res-grid">
+    <div>
+      <div class="big">0,954</div>
+      <p class="big-cap"><b>точность значений, которые attrx принял в&nbsp;каталог сам</b> (цель ≥ 0,95). 95% ДИ от&nbsp;0,952; принято 94% найденных значений, остальное — модератору с&nbsp;цитатой.</p>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><b>0,858</b><span>micro-F1 по&nbsp;всем слотам с&nbsp;эталоном</span><small>P 0,954 · R 0,779</small></div>
+      <div class="kpi"><b>0,927</b><span>полнота по&nbsp;значениям, которые есть в&nbsp;тексте</span><small>в&nbsp;тексте есть 83,0% эталона</small></div>
+      <div class="kpi"><b>0,937</b><span>F1 с&nbsp;учётом поискового спроса</span><small>атрибуты, по&nbsp;которым ищут, весят больше</small></div>
+      <div class="kpi"><b>95,7% → 97,2%</b><span>поискового спроса с&nbsp;заполненным атрибутом</span><small>слоты каталога 80,7% → 88,1%, +5&#8239;488 значений</small></div>
+      <div class="kpi"><b>0,019</b><span>ошибка калибровки (ECE)</span><small>у&nbsp;порога, 0,70–0,80, верно лишь 57% — слайд 9</small></div>
+      <div class="kpi"><b>10,8%</b><span>слотов уходит на&nbsp;проверку</span><small>цель ≤ 10% — чуть выше; на&nbsp;стратифицированном наборе 7,0%</small></div>
+    </div>
+  </div>
+  <div class="strip s3">
+    <div><b>Протокол.</b> Весь holdout с&nbsp;эталоном без 400 SKU демо-сэмпла; 94% карточек — хвост каталога. Отчёт v2: исправления выбраны на&nbsp;dev, v1 раскрыт. Весь dev → весь holdout: F1 0,859 → 0,858.</div>
+    <div><b>Новые товары.</b> У&nbsp;72% карточек названия нет в&nbsp;train: F1 0,841 против 0,912 у&nbsp;повторов. Без category_id классификатор угадал категорию у&nbsp;всех 2&#8239;416 карточек стратифицированного набора.</div>
+    <div><b>Холодный старт.</b> 1&#8239;000 карточек вне фида (75% каталога, эталона нет): автоматически заполнено 54,3% слотов, на&nbsp;проверку 11,6%.</div>
+  </div>
+  <div class="foot"><span>Режим в&nbsp;сдаче «+ NER», порог 0,70 · <span class="mono">submission/metrics.json</span>, <span class="mono">REPORT.md</span> §1–3, §5, §11; dev — <span class="mono">docs/EVALUATION.md</span> §9.2</span><span class="pg">05 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 6 из 13. Что даёт каждый шаг">
+  <div class="kicker">Что даёт каждый шаг · таблица из&nbsp;брифа на&nbsp;наших цифрах</div>
+  <h2 class="h">Правила дают ядро, NER — хвост, локальная LLM — ноль к&nbsp;F1</h2>
+  <table class="lt tight">
+    <thead><tr><th>Подход</th><th>P</th><th>R</th><th>F1</th><th>R по&nbsp;извлек.</th><th>F1 по&nbsp;спросу</th><th>macro-F1</th><th>Покрытие</th><th>На проверку</th><th>Карточек/с</th><th>LLM на&nbsp;1000</th></tr></thead>
+    <tbody>
+      <tr class="sec"><td colspan="11">Весь holdout · 23&#8239;391 карточка · основной набор</td></tr>
+<tr><td>Правила и словари</td><td>0,952</td><td>0,772</td><td>0,853</td><td>0,918</td><td>0,935</td><td>0,623</td><td>72,0%</td><td>11,2%</td><td>1&#8239;516</td><td>0</td></tr>
+<tr><td>+ атрибуты продавца</td><td>0,953</td><td>0,771</td><td>0,853</td><td>0,917</td><td>0,935</td><td>0,624</td><td>71,9%</td><td>11,4%</td><td>1&#8239;454</td><td>0</td></tr>
+<tr class="hl"><td>+ NER — в сдаче</td><td>0,954</td><td>0,779</td><td>0,858</td><td>0,927</td><td>0,937</td><td>0,640</td><td>73,3%</td><td>10,8%</td><td>421</td><td>0</td></tr>
+      <tr class="sec"><td colspan="11">Стратифицированный набор · 2&#8239;416 карточек: все 12 категорий + хвост, как в&nbsp;v1</td></tr>
+<tr><td>Правила и словари</td><td>0,961</td><td>0,742</td><td>0,837</td><td>0,921</td><td>0,935</td><td>0,630</td><td>72,4%</td><td>6,8%</td><td>1&#8239;235</td><td>0</td></tr>
+<tr><td>+ NER</td><td>0,961</td><td>0,749</td><td>0,842</td><td>0,930</td><td>0,937</td><td>0,646</td><td>73,4%</td><td>7,0%</td><td>382</td><td>0</td></tr>
+<tr><td>+ NER без id категории (классификатор)</td><td>0,961</td><td>0,749</td><td>0,842</td><td>0,930</td><td>0,937</td><td>0,646</td><td>73,4%</td><td>7,0%</td><td>256</td><td>0</td></tr>
+      <tr class="sec"><td colspan="11">Подвыборка LLM · 662 карточки, все режимы на&nbsp;одних и&nbsp;тех же карточках</td></tr>
+<tr><td>+ NER</td><td>0,962</td><td>0,759</td><td>0,849</td><td>0,929</td><td>0,933</td><td>0,635</td><td>75,0%</td><td>6,1%</td><td>401</td><td>0</td></tr>
+<tr><td>+ LLM (qwen3:4b-instruct)</td><td>0,962</td><td>0,759</td><td>0,849</td><td>0,929</td><td>0,933</td><td>0,635</td><td>75,0%</td><td>6,8%</td><td>1,0</td><td>310</td></tr>
+    </tbody>
+  </table>
+  <div class="takeaways t5">
+    <div><b>Правила и словари</b>ядро: F1 0,853 на&nbsp;CPU; без справочника 4&nbsp;822 брендов каталога F1 на&nbsp;dev ниже на&nbsp;0,175 (абляция)</div>
+    <div><b>+ атрибуты продавца</b>≈&nbsp;0 на&nbsp;holdout: блок «Характеристики» есть лишь у&nbsp;7% карточек фида; работает вне фида</div>
+    <div><b>+ NER</b>полнота 0,772 → 0,779, macro-F1 0,623 → 0,640 при той&nbsp;же точности</div>
+    <div><b>Без id категории</b>та&nbsp;же F1 0,842: классификатор угадал категорию у&nbsp;всех 2&#8239;416 карточек; цена — 1,3&nbsp;мс на&nbsp;карточку</div>
+    <div><b>+ LLM</b>F1 не&nbsp;меняется: значения одной LLM уходят на&nbsp;проверку, а&nbsp;не&nbsp;в&nbsp;каталог — слайд 10</div>
+  </div>
+  <div class="foot"><span><span class="mono">submission/compare.json</span>, <span class="mono">REPORT.md</span> §2–4; скорость — медиана 3 замеров, NER и&nbsp;LLM на&nbsp;GPU стенда (GTX 1060); абляция — <span class="mono">docs/EVALUATION.md</span> §8.2</span><span class="pg">06 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 7 из 13. По категориям">
+  <div class="kicker">Качество по&nbsp;категориям и&nbsp;обязательным полям кейса</div>
+  <h2 class="h">Ядро — 0,9 и&nbsp;выше; низкий F1 там, где значения нет в&nbsp;тексте</h2>
+  <div class="two-w">
+    <figure>
+      <svg viewBox="0 0 600 388" role="img" aria-label="micro-F1 по категориям на holdout">
+<line class="refl" x1="496.2" y1="14" x2="496.2" y2="362"/>
+<text class="lbm" x="496.2" y="10" text-anchor="middle">весь holdout 0,858</text>
+<text class="lb" x="0" y="33">Планшеты</text>
+<text class="lbm" x="224" y="33" text-anchor="end">94</text>
+<path class="bar" d="M232.0,22.0h281.5a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-281.5z"><title>Планшеты: F1 0,924, карточек 94</title></path>
+<text class="val" x="522.5" y="33">0,924</text>
+<text class="lb" x="0" y="59" font-weight="700">Ноутбуки</text>
+<text class="lbm" x="224" y="59" text-anchor="end">62</text>
+<path class="bar hl" d="M232.0,48.0h281.2a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-281.2z"><title>Ноутбуки: F1 0,923, карточек 62</title></path>
+<text class="val" x="522.2" y="59">0,923</text>
+<text class="lb" x="0" y="85" font-weight="700">Смартфоны</text>
+<text class="lbm" x="224" y="85" text-anchor="end">381</text>
+<path class="bar hl" d="M232.0,74.0h274.0a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-274.0z"><title>Смартфоны: F1 0,899, карточек 381</title></path>
+<text class="val" x="515.0" y="85">0,899</text>
+<text class="lb" x="0" y="111">Телевизоры</text>
+<text class="lbm" x="224" y="111" text-anchor="end">132</text>
+<path class="bar" d="M232.0,100.0h273.0a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-273.0z"><title>Телевизоры: F1 0,896, карточек 132</title></path>
+<text class="val" x="514.0" y="111">0,896</text>
+<text class="lb" x="0" y="137">Хвост (generic)</text>
+<text class="lbm" x="224" y="137" text-anchor="end">22&#8239;019</text>
+<path class="bar" d="M232.0,126.0h262.2a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-262.2z"><title>Хвост (generic): F1 0,861, карточек 22019</title></path>
+<text class="val" x="503.2" y="137">0,861</text>
+<text class="lb" x="0" y="163">Стиральные машины</text>
+<text class="lbm" x="224" y="163" text-anchor="end">72</text>
+<path class="bar" d="M232.0,152.0h250.7a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-250.7z"><title>Стиральные машины: F1 0,824, карточек 72</title></path>
+<text class="val" x="491.7" y="163">0,824</text>
+<text class="lb" x="0" y="189">Электрические чайники</text>
+<text class="lbm" x="224" y="189" text-anchor="end">103</text>
+<path class="bar" d="M232.0,178.0h246.4a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-246.4z"><title>Электрические чайники: F1 0,810, карточек 103</title></path>
+<text class="val" x="487.4" y="189">0,810</text>
+<text class="lb" x="0" y="215">Смарт-часы</text>
+<text class="lbm" x="224" y="215" text-anchor="end">79</text>
+<path class="bar" d="M232.0,204.0h243.4a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-243.4z"><title>Смарт-часы: F1 0,800, карточек 79</title></path>
+<text class="val" x="484.4" y="215">0,800</text>
+<text class="lb" x="0" y="241">Пылесосы</text>
+<text class="lbm" x="224" y="241" text-anchor="end">105</text>
+<path class="bar" d="M232.0,230.0h240.2a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-240.2z"><title>Пылесосы: F1 0,790, карточек 105</title></path>
+<text class="val" x="481.2" y="241">0,790</text>
+<text class="lb" x="0" y="267">Сплит-системы</text>
+<text class="lbm" x="224" y="267" text-anchor="end">20</text>
+<path class="bar" d="M232.0,256.0h237.2a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-237.2z"><title>Сплит-системы: F1 0,780, карточек 20</title></path>
+<text class="val" x="478.2" y="267">0,780</text>
+<text class="lb" x="0" y="293">Наушники</text>
+<text class="lbm" x="224" y="293" text-anchor="end">181</text>
+<path class="bar" d="M232.0,282.0h225.1a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-225.1z"><title>Наушники: F1 0,741, карточек 181</title></path>
+<text class="val" x="466.1" y="293">0,741</text>
+<text class="lb" x="0" y="319">Аэрогрили</text>
+<text class="lbm" x="224" y="319" text-anchor="end">20</text>
+<path class="bar" d="M232.0,308.0h218.1a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-218.1z"><title>Аэрогрили: F1 0,718, карточек 20</title></path>
+<text class="val" x="459.1" y="319">0,718</text>
+<text class="lb" x="0" y="345">Холодильники</text>
+<text class="lbm" x="224" y="345" text-anchor="end">123</text>
+<path class="bar" d="M232.0,334.0h205.9a3.0,3.0 0 0 1 3.0,3.0v8.0a3.0,3.0 0 0 1 -3.0,3.0h-205.9z"><title>Холодильники: F1 0,678, карточек 123</title></path>
+<text class="val" x="446.9" y="345">0,678</text>
+<line class="ax" x1="232" y1="16" x2="232" y2="366"/>
+<text class="tk" x="232.0" y="380" text-anchor="middle">0</text>
+<text class="tk" x="386.0" y="380" text-anchor="middle">0,5</text>
+<text class="tk" x="540.0" y="380" text-anchor="middle">1,0</text>
+<text class="tk" x="224" y="380" text-anchor="end">карточек</text>
+</svg>
+      <figcaption class="chart-cap"><b>micro-F1 по&nbsp;категориям</b>, режим в&nbsp;сдаче; красным — категории кейса. Холодильники и&nbsp;аэрогрили ниже: объём камер, высота, материал редко есть в&nbsp;тексте. В&nbsp;хвосте слабее всего цвет: F1 0,51, в&nbsp;тексте лишь 42% эталона.</figcaption>
+    </figure>
+    <div>
+      <table class="mf">
+        <thead><tr><th>Обязательное поле</th><th>F1</th><th>P</th><th>в&nbsp;тексте</th><th>R по&nbsp;извлек.</th></tr></thead>
+        <tbody>
+<tr class="grp"><td colspan="5">Смартфон · 381 карточка</td></tr>
+<tr><td>Бренд</td><td class="f">1,00</td><td>1,00</td><td>100%</td><td>1,00</td></tr>
+<tr><td>Модель</td><td class="f">1,00</td><td>1,00</td><td>96%</td><td>1,00</td></tr>
+<tr><td>Память / накопитель</td><td class="f">0,99</td><td>1,00</td><td>99%</td><td>0,99</td></tr>
+<tr><td>Диагональ</td><td class="f">0,64</td><td>0,98</td><td class="low">49%</td><td>0,96</td></tr>
+<tr><td>Аккумулятор</td><td class="f">0,65</td><td>0,96</td><td class="low">49%</td><td>1,00</td></tr>
+<tr><td>Цвет</td><td class="f">0,96</td><td>0,97</td><td>96%</td><td>0,98</td></tr>
+<tr class="grp"><td colspan="5">Ноутбук · 62 карточки</td></tr>
+<tr><td>Бренд</td><td class="f">0,98</td><td>0,98</td><td>100%</td><td>0,98</td></tr>
+<tr><td>Процессор</td><td class="f">0,89</td><td>0,95</td><td>95%</td><td>0,85</td></tr>
+<tr><td>Оперативная память</td><td class="f">0,92</td><td>0,93</td><td>95%</td><td>0,95</td></tr>
+<tr><td>Память / накопитель</td><td class="f">0,92</td><td>0,95</td><td>95%</td><td>0,95</td></tr>
+<tr><td>Диагональ</td><td class="f">0,91</td><td>0,98</td><td>89%</td><td>0,95</td></tr>
+<tr><td>Цвет</td><td class="f">0,90</td><td>0,96</td><td>85%</td><td>1,00</td></tr>
+        </tbody>
+      </table>
+      <p class="chart-cap" style="margin-top:8px"><b>Диагональ и&nbsp;аккумулятор смартфона</b> есть в&nbsp;тексте у&nbsp;половины карточек: полнота по&nbsp;ним 0,96–1,00, общий F1 ограничен текстом.</p>
+    </div>
+  </div>
+  <div class="foot"><span><span class="mono">submission/metrics.json</span> (<span class="mono">per_category</span>), <span class="mono">REPORT.md</span> §6–7 · «в тексте» — доля эталонных значений, которые вообще есть в&nbsp;тексте карточки</span><span class="pg">07 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 8 из 13. Справедливость">
+  <div class="kicker">Справедливость · продавцы, хвост каталога, новые товары</div>
+  <h2 class="h">Партнёры маркетплейса и&nbsp;редкие категории — на&nbsp;уровне М.Видео и&nbsp;крупных</h2>
+  <div class="two-w">
+    <figure>
+      <svg viewBox="0 0 600 280" role="img" aria-label="F1 по сегментам: базовая линия на dev и holdout">
+<line class="grid" x1="190.0" y1="18" x2="190.0" y2="256"/>
+<text class="tk" x="190.0" y="271" text-anchor="middle">0</text>
+<line class="grid" x1="282.5" y1="18" x2="282.5" y2="256"/>
+<text class="tk" x="282.5" y="271" text-anchor="middle">0,25</text>
+<line class="grid" x1="375.0" y1="18" x2="375.0" y2="256"/>
+<text class="tk" x="375.0" y="271" text-anchor="middle">0,50</text>
+<line class="grid" x1="467.5" y1="18" x2="467.5" y2="256"/>
+<text class="tk" x="467.5" y="271" text-anchor="middle">0,75</text>
+<line class="grid" x1="560.0" y1="18" x2="560.0" y2="256"/>
+<text class="tk" x="560.0" y="271" text-anchor="middle">1,00</text>
+<text class="lbm" x="0" y="20" letter-spacing=".06em">ПРОДАВЕЦ</text>
+<text class="lb" x="0" y="38">М.Видео</text>
+<text class="lbm" x="180" y="38" text-anchor="end">5&#8239;503</text>
+<line class="ln2 s-gray" x1="432.0" y1="34" x2="512.9" y2="34"/>
+<circle class="dot o" cx="432.0" cy="34" r="5"><title>М.Видео: база (dev) 0,654</title></circle>
+<circle class="dot" cx="512.9" cy="34" r="6"><title>М.Видео: holdout 0,873</title></circle>
+<text class="tk" x="423.0" y="38" text-anchor="end">0,654</text>
+<text class="val" x="522.9" y="38">0,873</text>
+<text class="lb" x="0" y="82">Маркетплейс</text>
+<text class="lbm" x="180" y="82" text-anchor="end">17&#8239;880</text>
+<line class="ln2 s-gray" x1="355.4" y1="78" x2="505.4" y2="78"/>
+<circle class="dot o" cx="355.4" cy="78" r="5"><title>Маркетплейс: база (dev) 0,447</title></circle>
+<circle class="dot" cx="505.4" cy="78" r="6"><title>Маркетплейс: holdout 0,853</title></circle>
+<text class="tk" x="346.4" y="82" text-anchor="end">0,447</text>
+<text class="val" x="515.4" y="82">0,853</text>
+<text class="lbm" x="0" y="108" letter-spacing=".06em">РАЗМЕР КАТЕГОРИИ</text>
+<text class="lb" x="0" y="126">head (≥ 1000 офферов)</text>
+<text class="lbm" x="180" y="126" text-anchor="end">14&#8239;193</text>
+<line class="ln2 s-gray" x1="417.9" y1="122" x2="511.9" y2="122"/>
+<circle class="dot o" cx="417.9" cy="122" r="5"><title>head (≥ 1000 офферов): база (dev) 0,616</title></circle>
+<circle class="dot" cx="511.9" cy="122" r="6"><title>head (≥ 1000 офферов): holdout 0,870</title></circle>
+<text class="tk" x="408.9" y="126" text-anchor="end">0,616</text>
+<text class="val" x="521.9" y="126">0,870</text>
+<text class="lb" x="0" y="170">torso (100–999)</text>
+<text class="lbm" x="180" y="170" text-anchor="end">6&#8239;808</text>
+<line class="ln2 s-gray" x1="285.1" y1="166" x2="502.4" y2="166"/>
+<circle class="dot o" cx="285.1" cy="166" r="5"><title>torso (100–999): база (dev) 0,257</title></circle>
+<circle class="dot" cx="502.4" cy="166" r="6"><title>torso (100–999): holdout 0,844</title></circle>
+<text class="tk" x="276.1" y="170" text-anchor="end">0,257</text>
+<text class="val" x="512.4" y="170">0,844</text>
+<text class="lb" x="0" y="214">tail (&lt; 100)</text>
+<text class="lbm" x="180" y="214" text-anchor="end">2&#8239;390</text>
+<line class="ln2 s-gray" x1="274.0" y1="210" x2="492.5" y2="210"/>
+<circle class="dot o" cx="274.0" cy="210" r="5"><title>tail (&lt; 100): база (dev) 0,227</title></circle>
+<circle class="dot" cx="492.5" cy="210" r="6"><title>tail (&lt; 100): holdout 0,818</title></circle>
+<text class="tk" x="265.0" y="214" text-anchor="end">0,227</text>
+<text class="val" x="502.5" y="214">0,818</text>
+</svg>
+      <figcaption class="chart-cap"><b>F1 по&nbsp;сегментам.</b> ○ база: dev (стратифицированный набор), продавец + правила до&nbsp;словарей каталога · ● весь holdout, режим в&nbsp;сдаче. Справа от&nbsp;названия — карточек на&nbsp;holdout.</figcaption>
+    </figure>
+    <ul class="notes">
+      <li><b>2,0 п.п.</b>разрыв М.Видео и&nbsp;маркетплейса (цель ≤ 5; в&nbsp;базе — 21 п.п.): справочник 4&nbsp;822 брендов всего каталога одинаково покрывает всех продавцов</li>
+      <li><b>5,2 п.п.</b>разрыв крупных и&nbsp;редких категорий (цель ≤ 10): у&nbsp;tail точность 0,933 против 0,962, полнота по&nbsp;извлекаемому 0,893 против 0,942</li>
+      <li><b>0,857 · 0,853 · 0,881</b>короткие, средние и&nbsp;длинные описания; полнота по&nbsp;извлекаемому 0,924 · 0,924 · 0,941</li>
+      <li><b>0,841 против 0,912</b>новые названия (нет в&nbsp;train, 16&#8239;803 карточек) против повторов; полнота по&nbsp;извлекаемому почти та&nbsp;же: 0,922 против 0,941</li>
+    </ul>
+  </div>
+  <div class="foot"><span>holdout — <span class="mono">submission/segments.json</span>, <span class="mono">REPORT.md</span> §5, §8; база — <span class="mono">docs/EVALUATION.md</span> §8.4 (dev); head / torso / tail — число офферов в&nbsp;листовой категории</span><span class="pg">08 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 9 из 13. Доверие: калибровка и порог">
+  <div class="kicker">Доверие · калибровка и&nbsp;порог</div>
+  <h2 class="h">Точность принятых 0,954 выдержала holdout, но&nbsp;у&nbsp;самого порога уверенность завышена</h2>
+  <div class="two" style="margin-top:14px">
+    <figure>
+      <svg viewBox="0 0 520 292" role="img" aria-label="Диаграмма надёжности: уверенность против доли верных на holdout">
+<line class="grid" x1="46" y1="250.0" x2="500" y2="250.0"/>
+<text class="tk" x="38" y="254.0" text-anchor="end">0</text>
+<text class="tk" x="46.0" y="266" text-anchor="middle">0</text>
+<line class="grid" x1="46" y1="132.0" x2="500" y2="132.0"/>
+<text class="tk" x="38" y="136.0" text-anchor="end">0,5</text>
+<text class="tk" x="273.0" y="266" text-anchor="middle">0,5</text>
+<line class="grid" x1="46" y1="14.0" x2="500" y2="14.0"/>
+<text class="tk" x="38" y="18.0" text-anchor="end">1,0</text>
+<text class="tk" x="500.0" y="266" text-anchor="middle">1,0</text>
+<line class="refl" x1="46" y1="250" x2="500" y2="14"/>
+<line class="refl" x1="56" y1="26" x2="80" y2="26"/>
+<text class="lbm" x="86" y="30">идеальная калибровка: уверенность = доля верных</text>
+<polyline class="ln2 s-ink" points="130.5,167.9 154.1,132.0 187.3,201.2 238.9,141.5 295.7,121.9 335.6,113.1 387.0,115.1 420.0,57.5 495.6,18.3" opacity=".35"/>
+<circle class="dot" cx="130.5" cy="167.9" r="6.6"><title>уверенность 0,186: верно 0,348, значений 983</title></circle>
+<circle class="dot" cx="154.1" cy="132.0" r="4.1"><title>уверенность 0,238: верно 0,500, значений 2</title></circle>
+<circle class="dot" cx="187.3" cy="201.2" r="4.4"><title>уверенность 0,311: верно 0,207, значений 29</title></circle>
+<circle class="dot" cx="238.9" cy="141.5" r="7.0"><title>уверенность 0,425: верно 0,460, значений 1285</title></circle>
+<circle class="dot" cx="295.7" cy="121.9" r="4.9"><title>уверенность 0,550: верно 0,543, значений 129</title></circle>
+<circle class="dot" cx="335.6" cy="113.1" r="6.2"><title>уверенность 0,638: верно 0,580, значений 674</title></circle>
+<circle class="dot r" cx="387.0" cy="115.1" r="7.7"><title>уверенность 0,751: верно 0,572, значений 2022</title></circle>
+<text class="val r" x="500" y="151.1" text-anchor="end">0,7–0,8: обещано 0,75, верно 0,57</text>
+<circle class="dot" cx="420.0" cy="57.5" r="8.8"><title>уверенность 0,824: верно 0,816, значений 3306</title></circle>
+<circle class="dot" cx="495.6" cy="18.3" r="11.0"><title>уверенность 0,990: верно 0,982, значений 43704</title></circle>
+<text class="tk" x="273.0" y="288" text-anchor="middle">уверенность attrx (калибровка выучена на dev)</text>
+<text class="tk" x="12" y="132.0" text-anchor="middle" transform="rotate(-90 12 132.0)">доля верных на holdout</text>
+</svg>
+      <figcaption class="chart-cap"><b>ECE 0,019</b> на&nbsp;52&#8239;134 значениях с&nbsp;эталоном. 84% значений — в&nbsp;корзине 0,9–1,0: уверенность 0,990, верно 0,982. Размер точки — число значений.</figcaption>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 520 292" role="img" aria-label="Точность и покрытие слотов в зависимости от порога">
+<line class="grid" x1="46" y1="250.0" x2="448" y2="250.0"/>
+<text class="tk" x="38" y="254.0" text-anchor="end">0,50</text>
+<line class="grid" x1="46" y1="132.0" x2="448" y2="132.0"/>
+<text class="tk" x="38" y="136.0" text-anchor="end">0,75</text>
+<line class="grid" x1="46" y1="14.0" x2="448" y2="14.0"/>
+<text class="tk" x="38" y="18.0" text-anchor="end">1,00</text>
+<text class="tk" x="46.0" y="266" text-anchor="middle">0</text>
+<text class="tk" x="151.8" y="266" text-anchor="middle">0,25</text>
+<text class="tk" x="257.6" y="266" text-anchor="middle">0,50</text>
+<text class="tk" x="363.4" y="266" text-anchor="middle">0,75</text>
+<text class="tk" x="448.0" y="266" text-anchor="middle">0,95</text>
+<polyline class="ln2 s-ink" points="46.0,49.9 67.2,49.9 88.3,49.9 109.5,49.9 130.6,44.7 151.8,44.7 172.9,44.7 194.1,44.5 215.3,44.5 236.4,40.1 257.6,38.7 278.7,38.4 299.9,38.2 321.1,36.2 342.2,35.8 363.4,31.3 384.5,28.1 405.7,22.8 426.8,22.6 448.0,20.3"/>
+<polyline class="ln2 s-gray" points="46.0,89.0 67.2,89.0 88.3,89.0 109.5,89.0 130.6,116.8 151.8,116.8 172.9,116.9 194.1,117.3 215.3,117.3 236.4,127.6 257.6,133.2 278.7,133.7 299.9,134.1 321.1,138.7 342.2,139.7 363.4,151.4 384.5,157.1 405.7,186.2 426.8,189.0 448.0,207.7"/>
+<text class="val" x="456.0" y="24.3">точность</text>
+<text class="val" x="456.0" y="211.7">покрытие</text>
+<line class="refl r" x1="342.2" y1="10" x2="342.2" y2="250"/>
+<circle class="dot r" cx="342.2" cy="35.9" r="5"/>
+<circle class="dot r" cx="342.2" cy="139.9" r="5"/>
+<text class="val" x="334.2" y="25.9" text-anchor="end">0,954</text>
+<text class="val" x="334.2" y="157.9" text-anchor="end">73,3%</text>
+<text class="lbm" x="348.2" y="20">порог 0,70</text>
+<text class="tk" x="247.0" y="288" text-anchor="middle">порог уверенности для автопринятия</text>
+</svg>
+      <figcaption class="chart-cap"><b>Порог 0,70</b> выбран на&nbsp;dev: наименьший, при котором нижняя граница точности принятых ≥ 0,95 и&nbsp;ни одна ячейка не&nbsp;ниже 0,75; на&nbsp;dev кросс-фиттингом ожидали 0,967. На&nbsp;holdout не&nbsp;подбирался: 0,954 (ДИ от&nbsp;0,952), принято 94% найденного.</figcaption>
+    </figure>
+  </div>
+  <p class="caveat"><b>Слабое место.</b> Принятые значения с&nbsp;уверенностью 0,70–0,80 верны лишь в&nbsp;57% случаев: 2&#8239;008 значений — 4% принятого, но&nbsp;38% ошибок среди принятого; 91% из&nbsp;них — цвет и&nbsp;модель хвоста. На&nbsp;dev картина та&nbsp;же. Кандидат исправления найден только на&nbsp;dev: калибровка на&nbsp;всём dev → порог 0,82, точность принятых 0,982 при&nbsp;доле автопринятия 85,5% вместо 94%. <b>Не&nbsp;применён:</b> выбор после просмотра holdout нарушил&nbsp;бы протокол; решение — по&nbsp;мониторингу на&nbsp;новых данных.</p>
+  <div class="foot"><span><span class="mono">submission/calibration.json</span> (<span class="mono">accepted_band</span>), <span class="mono">threshold.json</span>, <span class="mono">REPORT.md</span> §9–10; кандидат — <span class="mono">docs/EVALUATION.md</span> §9.5 (только dev)</span><span class="pg">09 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 10 из 13. LLM: честный результат">
+  <div class="kicker">LLM · честный результат</div>
+  <h2 class="h">С&nbsp;локальной 4B-моделью LLM — подсказка модератору, а&nbsp;не&nbsp;автоматический источник</h2>
+  <div class="two" style="grid-template-columns:5fr 6fr">
+    <ol class="flow">
+      <li><b>31%</b><span>карточек подвыборки (662), где LLM вообще спросили</span><small>205 вызовов: только слабые и&nbsp;упомянутые в&nbsp;тексте атрибуты; 969&nbsp;+&nbsp;52 токена, 3,3&nbsp;с на&nbsp;вызов (p95 5,0&nbsp;с), ошибок 0</small></li>
+      <li class="r"><b>61</b><span>ответ без опоры в&nbsp;тексте — отброшен проверкой заземления</span><small>цитаты нет в&nbsp;карточке или значение из&nbsp;неё не&nbsp;следует</small></li>
+      <li><b>71</b><span>значение предложила только LLM — ушло модератору, а&nbsp;не&nbsp;в&nbsp;каталог</span><small>из&nbsp;них 23 закрывают слот, пустой без LLM</small></li>
+      <li class="r"><b>38%</b><span>верны там, где есть эталон (13 из&nbsp;34)</span><small>поэтому одна LLM не&nbsp;решает: правило <span class="mono">pipeline.UNVERIFIED_ONLY</span></small></li>
+    </ol>
+    <div>
+      <table class="cf">
+        <thead><tr><th>Подвыборка, 662 карточки</th><th>P</th><th>R</th><th>F1</th></tr></thead>
+        <tbody>
+          <tr><td>+ NER, без LLM</td><td>0,962</td><td>0,759</td><td>0,849</td></tr>
+          <tr><td>+ LLM, одна LLM → проверка (в&nbsp;сдаче)</td><td>0,962</td><td>0,759</td><td>0,849</td></tr>
+          <tr><td>+ LLM, если принимать одну LLM автоматически</td><td class="d">0,958</td><td>0,762</td><td>0,849</td></tr>
+        </tbody>
+      </table>
+      <p class="verdict"><b>Вывод.</b> Автопринятие ответов 4B-модели добавило&nbsp;бы 0,003 полноты ценой 0,004 точности каталога. Правила + NER закрывают ядро и&nbsp;хвост; LLM — подсказки модератору с&nbsp;цитатой. <b>Следующий шаг:</b> тот&nbsp;же замер с&nbsp;моделью организаторов на&nbsp;ВМ (<span class="mono">make report</span>) и&nbsp;7–8B в&nbsp;vLLM — порог и&nbsp;правило доверия не&nbsp;меняются.</p>
+    </div>
+  </div>
+  <div class="foot"><span><span class="mono">submission/REPORT.md</span> §4, <span class="mono">compare.json</span> (набор <span class="mono">llm_subsample</span>); модель — qwen3:4b-instruct в&nbsp;Ollama на&nbsp;GTX 1060, кэш ответов выключен</span><span class="pg">10 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 11 из 13. Экономика">
+  <div class="kicker">Экономика</div>
+  <h2 class="h">Гибрид в&nbsp;4–7 раз дешевле «LLM на&nbsp;каждую карточку», режим в&nbsp;сдаче — почти бесплатен</h2>
+  <div class="two" style="grid-template-columns:6fr 5fr">
+    <div>
+      <span class="lbl">₽ за&nbsp;1000 карточек · полосы — внутри строки</span>
+      <ul class="cost">
+      <li><div class="who"><span>Своя GPU (GTX 1060)</span><em>в&nbsp;6,7 раза дешевле</em></div>
+        <div class="row h"><span>гибрид: LLM для&nbsp;31%&nbsp;карточек</span><i style="width:14.8%"></i><span>0,83&nbsp;₽</span></div>
+        <div class="row"><span>LLM на&nbsp;каждую&nbsp;карточку</span><i style="width:100%"></i><span>5,62&nbsp;₽</span></div></li>
+      <li><div class="who"><span>GigaChat Lite</span><em>в&nbsp;4,1 раза дешевле</em></div>
+        <div class="row h"><span>гибрид: LLM для&nbsp;31%&nbsp;карточек</span><i style="width:24.3%"></i><span>20,6&nbsp;₽</span></div>
+        <div class="row"><span>LLM на&nbsp;каждую&nbsp;карточку</span><i style="width:100%"></i><span>84,6&nbsp;₽</span></div></li>
+      <li><div class="who"><span>YandexGPT Lite</span><em>в&nbsp;4,1 раза дешевле</em></div>
+        <div class="row h"><span>гибрид: LLM для&nbsp;31%&nbsp;карточек</span><i style="width:24.3%"></i><span>63,2&nbsp;₽</span></div>
+        <div class="row"><span>LLM на&nbsp;каждую&nbsp;карточку</span><i style="width:100%"></i><span>260,2&nbsp;₽</span></div></li>
+      </ul>
+    </div>
+    <div>
+      <span class="lbl">Скорость и&nbsp;стоимость режимов на&nbsp;стенде команды</span>
+      <table class="speed">
+        <thead><tr><th>Режим</th><th>на&nbsp;карточку</th><th>₽ за&nbsp;1000</th><th>с&nbsp;LLM</th></tr></thead>
+        <tbody>
+<tr><td>Правила&nbsp;и словари</td><td>0,7&nbsp;мс</td><td>&lt; 0,01&nbsp;₽</td><td>0%</td></tr>
+<tr><td>+&nbsp;атрибуты продавца</td><td>0,7&nbsp;мс</td><td>&lt; 0,01&nbsp;₽</td><td>0%</td></tr>
+<tr class="hl"><td>+&nbsp;NER — в сдаче (GPU)</td><td>2,4&nbsp;мс</td><td>&lt; 0,01&nbsp;₽</td><td>0%</td></tr>
+<tr><td>+&nbsp;LLM: гибрид, своя GPU</td><td>1,0&nbsp;с</td><td>0,83&nbsp;₽</td><td>31%</td></tr>
+<tr><td>LLM&nbsp;на каждую карточку</td><td>6,9&nbsp;с</td><td>5,62&nbsp;₽</td><td>100%</td></tr>
+        </tbody>
+      </table>
+      <p class="chart-cap" style="margin-top:10px">Время — медиана 3 замеров на&nbsp;всём holdout. Свой стенд — GTX 1060: 2,93&nbsp;₽/ч (амортизация + электричество) × время пайплайна. API — тарифы с&nbsp;НДС на&nbsp;14.10.2026 и&nbsp;токены замера (969&nbsp;+&nbsp;52 на&nbsp;вызов). «LLM на&nbsp;каждую» — бенчмарк <span class="mono">attrx llm-bench</span>: все атрибуты, 6,9&nbsp;с на&nbsp;карточку.</p>
+    </div>
+  </div>
+  <div class="foot"><span><span class="mono">submission/cost.json</span>, <span class="mono">REPORT.md</span> §12, <span class="mono">config/llm_prices.yaml</span>, <span class="mono">docs/LLM.md</span> §6; провайдеры API — оценка по&nbsp;токенам замера</span><span class="pg">11 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 12 из 13. Внедрение и риски">
+  <div class="kicker">Внедрение и&nbsp;риски</div>
+  <h2 class="h">В&nbsp;прод — через тень; каждый риск кейса закрыт мерой и&nbsp;измерен</h2>
+  <div class="rr">
+    <ol class="steps-v">
+      <li class="done"><b>0 · Офлайн-гейт</b><span>точность принятых ≥ 0,95: на&nbsp;всём holdout 0,954; разрывы 2,0 и&nbsp;5,2 п.п. — выполнено</span></li>
+      <li><b>1 · Тень, 2–4 недели</b><span>пишем рядом, не&nbsp;в&nbsp;каталог; сверяем с&nbsp;модераторами; слой 0,70–0,80 — на&nbsp;аудит, решаем о&nbsp;новой калибровке</span></li>
+      <li><b>2 · Автопринятие</b><span>выше порога — в&nbsp;PIM в&nbsp;топ-категориях по&nbsp;трафику; выборочный аудит; точность ниже гейта — категория обратно в&nbsp;тень</span></li>
+      <li><b>3 · Все категории</b><span>холодный старт: LLM-подсказки на&nbsp;проверку, правки → словари и&nbsp;NER</span></li>
+      <li><b>Интеграция</b><span><span class="mono">POST /api/extract/batch</span> (до&nbsp;1000) или <span class="mono">attrx extract</span>; LLM — vLLM / Ollama в&nbsp;контуре, без VPN</span></li>
+    </ol>
+    <table class="rk2">
+      <thead><tr><th>Риск</th><th>Мера в&nbsp;решении</th><th>Что показал holdout</th></tr></thead>
+      <tbody>
+        <tr><td>Галлюцинации LLM</td><td>схема, справочник, цитата и&nbsp;проверка заземления, калиброванный порог; значение одной LLM — только на&nbsp;проверку</td><td class="ev">61 ответ без опоры отброшен; 71 значение одной LLM — модератору (верны 38%)</td></tr>
+        <tr><td>Стоимость на&nbsp;масштабе</td><td>LLM только для слабых и&nbsp;упомянутых атрибутов, кэш, лимиты, on-prem</td><td class="ev">гибрид в&nbsp;4–7 раз дешевле; режим в&nbsp;сдаче — &lt; 0,01&nbsp;₽ за&nbsp;1000 карточек</td></tr>
+        <tr><td>Оценка не&nbsp;видит хвост</td><td>весь holdout, метрики по&nbsp;атрибуту и&nbsp;категории, head / torso / tail, полнота по&nbsp;извлекаемому</td><td class="ev">tail 0,818, torso 0,844; 77% пропусков — значения нет в&nbsp;тексте</td></tr>
+        <tr><td>Дрейф, новые категории</td><td>классификатор категории, generic-схема, таксономия в&nbsp;YAML; <span class="mono">attrx monitor</span>: review, missing, PSI категорий → алерт</td><td class="ev">без category_id категория угадана у&nbsp;всех 2&#8239;416 карточек; вне фида 54,3% слотов автоматически</td></tr>
+        <tr><td>Несправедливость к&nbsp;продавцам</td><td>справочник брендов всего каталога, метрики по&nbsp;сегментам</td><td class="ev">маркетплейс 0,853 против 0,873 у&nbsp;М.Видео (было 0,447 против 0,654)</td></tr>
+        <tr><td>Калибровка у&nbsp;порога</td><td>нашли сами; аудит слоя 0,70–0,80 в&nbsp;тени; кандидат — калибровка на&nbsp;всём dev (порог 0,82)</td><td class="ev">слой верен на&nbsp;57%: 4% принятого, 38% ошибок; весь поток — 0,954</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot"><span><span class="mono">docs/DEPLOYMENT.md</span>, <span class="mono">docs/RISKS.md</span>, <span class="mono">docs/MONITORING.md</span>, <span class="mono">submission/REPORT.md</span> §9, §13</span><span class="pg">12 / 13</span></div>
+</section></div>
+<div class="frame"><section class="slide" aria-label="Слайд 13 из 13. Итог">
+  <div class="kicker">Итог</div>
+  <h2 class="h">Каталог полнее, точность принятого ≥ 0,95, LLM — только под&nbsp;контролем</h2>
+  <div class="fin">
+    <div><h3>Что сдано</h3><ul>
+      <li><b>Код и&nbsp;пайплайн</b> — пакет <span class="mono">attrx</span>, CLI, API, Docker</li>
+      <li><b>README</b> — запуск за&nbsp;5 минут, матрица «требование → где»</li>
+      <li><b>EDA</b> — <span class="mono">notebooks/01_eda.ipynb</span>, <span class="mono">docs/EDA.md</span></li>
+      <li><b>Предсказания по&nbsp;каждой карточке</b> — <span class="mono">submission/predictions.*</span></li>
+      <li><b>Отчёт и&nbsp;метрики</b> — <span class="mono">submission/REPORT.md</span>, проверка цифр — <span class="mono">make verify</span></li>
+      <li><b>Презентация</b> — этот файл, <span class="mono">docs/slides.pdf</span></li>
+    </ul></div>
+    <div><h3>Что получает М.Видео</h3><ul>
+      <li><b>0,954</b> — точность значений, которые попадают в&nbsp;каталог без человека</li>
+      <li><b>95,7% → 97,2%</b> — доля спроса с&nbsp;заполненным атрибутом; +5&#8239;488 значений на&nbsp;holdout</li>
+      <li><b>54,3%</b> слотов заполняется автоматически у&nbsp;карточек вне фида (75% каталога)</li>
+      <li><b>10,8%</b> слотов — модератору, с&nbsp;цитатой и&nbsp;в&nbsp;порядке спроса</li>
+      <li><b>0,83&nbsp;₽</b> за&nbsp;1000 карточек с&nbsp;LLM на&nbsp;своей GPU; без LLM — меньше копейки</li>
+    </ul></div>
+    <div><h3>Следующий шаг</h3><ul>
+      <li><b>Пилот в&nbsp;тени</b> на&nbsp;одной категории: смартфоны или телевизоры</li>
+      <li><b>Калибровка:</b> кандидат с&nbsp;dev (порог 0,82, точность принятых 0,982 при&nbsp;85,5% автопринятия) — включаем по&nbsp;данным тени</li>
+      <li><b>LLM:</b> замер с&nbsp;моделью организаторов на&nbsp;ВМ и&nbsp;7–8B в&nbsp;vLLM</li>
+      <li><b>От&nbsp;М.Видео:</b> список обязательных атрибутов, CTR / конверсия / чек для&nbsp;A/B, выгрузка правок модераторов, разрешённый LLM-контур</li>
+    </ul></div>
+  </div>
+  <div class="foot"><span>Репозиторий — Gitea команды · демо — ВМ команды, порт 8000 · документы: <span class="mono">docs/PRD.md</span>, <span class="mono">EVALUATION.md</span>, <span class="mono">RISKS.md</span>, <span class="mono">DEPLOYMENT.md</span></span><span class="pg">13 / 13</span></div>
+</section></div>
+</main>
+<nav class="hud" aria-label="Навигация по слайдам">
+  <button type="button" id="prev" aria-label="Предыдущий слайд">←</button>
+  <span class="cnt" id="cnt">1 / 13</span>
+  <button type="button" id="next" aria-label="Следующий слайд">→</button>
+  <button type="button" id="ovr" aria-label="Обзор всех слайдов">Обзор</button>
+</nav>
+<script>
+(() => {
+  const frames = [...document.querySelectorAll('.frame')];
+  const N = frames.length, root = document.documentElement, cnt = document.getElementById('cnt');
+  let i = 0;
+  const fit = () => root.style.setProperty('--s', Math.min(innerWidth / 1280, (innerHeight - 8) / 720).toFixed(4));
+  const show = n => {
+    i = Math.max(0, Math.min(N - 1, n));
+    frames.forEach((f, k) => f.classList.toggle('on', k === i));
+    cnt.textContent = `${i + 1} / ${N}`;
+    if (location.hash !== `#${i + 1}`) history.replaceState(null, '', `#${i + 1}`);
+  };
+  const overview = on => {
+    document.body.classList.toggle('overview', on);
+    if (on) frames[i].scrollIntoView({block: 'center'});
+  };
+  addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (document.body.classList.contains('overview')) {
+      if (k === 'Escape' || k === 'o' || k === 'O' || k === 'Enter') { overview(false); e.preventDefault(); }
+      return;
+    }
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) { show(i + 1); e.preventDefault(); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) { show(i - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(N - 1);
+    else if (/^[1-9]$/.test(k)) show(+k - 1);
+    else if (k === 'o' || k === 'O' || k === 'Escape') overview(k !== 'Escape');
+    else if ((k === 'f' || k === 'F') && document.fullscreenEnabled) {
+      document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
+    }
+  });
+  frames.forEach((f, k) => f.addEventListener('click', () => {
+    if (document.body.classList.contains('overview')) { show(k); overview(false); }
+  }));
+  document.getElementById('prev').onclick = () => show(i - 1);
+  document.getElementById('next').onclick = () => show(i + 1);
+  document.getElementById('ovr').onclick = () => overview(true);
+  addEventListener('resize', fit);
+  addEventListener('hashchange', () => show((parseInt(location.hash.slice(1), 10) || 1) - 1));
+  fit();
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>

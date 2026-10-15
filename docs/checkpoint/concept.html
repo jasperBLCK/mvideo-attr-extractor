@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>attrx — продуктовая концепция</title>
+<meta name="description" content="Продуктовый чекпоинт 15.10: автозаполнение характеристик товаров М.Видео из текста карточки — гибрид правил, NER и LLM с цитатой и уверенностью.">
+<!--
+  Продуктовый чекпоинт 15.10.2026 · кейс № 3 М.Видео · команда «Ъыъ».
+  Навигация: ← → / PgUp PgDn / пробел, Home / End, 1–9 — номер слайда, O — обзор всех слайдов, F — полный экран.
+  PDF (из корня репозитория):
+    chromium --headless --no-sandbox --no-pdf-header-footer \
+      --print-to-pdf=docs/checkpoint/concept.pdf file://$PWD/docs/checkpoint/concept.html
+  Цифры без источника не ставим. Результаты — holdout, отчёт v2 (submission/; основной набор — весь holdout, 23 391 карточка);
+  «dev» — только где речь о процессе.
+  Источники всех цифр — в SPEECH.md.
+  Шрифты системные (Inter / Adwaita Sans / Segoe UI), внешних загрузок нет.
+-->
+<style>
+:root{
+  --paper:#ffffff; --ink:#111111; --ink-2:#3a3a3a; --muted:#6b7280; --faint:#9ca3af;
+  --hair:#e5e7eb; --wash:#f5f5f6; --bar:#9aa0a8;
+  --red:#fe0000;      /* М.Видео: цвет обложки презентации кейса (слайд 1, сэмпл пикселей) — крупные заливки и линии */
+  --red-ink:#e2231a;  /* акцент кейсодателя на белых слайдах; 4,7:1 на белом — мелкий красный текст */
+  --red-wash:#fdeceb;
+  --night:#111111; --night-2:#1a1a1a; --night-hair:#2e2e2e; --night-muted:#a3a3a3;
+  --sans:"Inter","Adwaita Sans","Segoe UI","Noto Sans",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono","JetBrainsMono NF","Adwaita Mono",ui-monospace,Consolas,monospace;
+  --s:1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#0b0b0b;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-kerning:normal}
+.stage{position:fixed;inset:0;display:grid;place-items:center}
+.frame{display:none;position:relative;width:calc(1280px * var(--s));height:calc(720px * var(--s));box-shadow:0 12px 48px rgba(0,0,0,.5)}
+.frame.on{display:block}
+.slide{position:absolute;left:0;top:0;width:1280px;height:720px;transform:scale(var(--s));transform-origin:0 0;overflow:hidden;
+  background:var(--paper);color:var(--ink);padding:48px 64px 0}
+
+/* типографика */
+.kicker{font-size:12.5px;font-weight:650;letter-spacing:.13em;text-transform:uppercase;color:var(--red-ink)}
+.h{font-size:37px;line-height:1.1;letter-spacing:-.02em;font-weight:720;margin-top:12px;max-width:1120px;text-wrap:balance}
+.lead{font-size:17px;line-height:1.45;color:var(--ink-2);margin-top:10px;max-width:980px}
+.lbl{display:block;font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.small{font-size:12px;line-height:1.45;color:var(--muted)}
+.foot{position:absolute;left:64px;right:64px;bottom:18px;display:flex;justify-content:space-between;align-items:baseline;gap:32px;
+  font-size:11px;line-height:1.4;color:var(--muted)}
+.pg{font-weight:650;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.todo{display:inline-block;border:1px dashed var(--red-ink);color:var(--red-ink);background:var(--red-wash);border-radius:4px;
+  padding:0 6px;font-size:.84em;font-weight:650;line-height:1.55;white-space:nowrap;letter-spacing:0}
+.pend{display:inline-block;border:1px dashed var(--faint);color:var(--ink-2);background:var(--wash);border-radius:4px;
+  padding:0 6px;font-size:.84em;font-weight:650;line-height:1.55;white-space:nowrap;letter-spacing:0}
+.st{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border:1px solid currentColor;
+  border-radius:3px;padding:0 4px;line-height:15px;vertical-align:1px;white-space:nowrap}
+.st.plan{color:var(--muted)} .st.yes{color:var(--ink)}
+q{quotes:"«" "»"}
+.mono{font-family:var(--mono);font-size:.92em}
+.cols{display:grid;grid-template-columns:repeat(12,1fr);column-gap:24px}
+.rule{border-top:1px solid var(--hair)}
+
+/* svg-схемы: цвета из токенов страницы */
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--sans);fill:var(--ink)}
+svg .t{font-size:13.5px;font-weight:700} svg .u{font-size:11.5px;fill:var(--muted)} svg .e{font-size:12px;font-weight:600}
+svg .box{fill:var(--paper);stroke:var(--ink);stroke-width:1.2}
+svg .ln{stroke:var(--ink);stroke-width:1.2;fill:none}
+svg .ah{fill:var(--ink)}
+svg .hot{stroke:var(--red);stroke-width:2.4}
+svg .red-fill{fill:var(--red);stroke:none}
+svg .on-red{fill:#fff}
+
+/* тёмные слайды */
+.slide.dark{background:var(--night);color:#fff}
+.dark .kicker{color:var(--red)}
+.dark .foot{color:var(--night-muted)} .dark .pg{color:#d4d4d4}
+.dark .small{color:var(--night-muted)}
+
+/* 1 · обложка */
+.cover-grid{display:grid;grid-template-columns:640px 1fr;column-gap:56px;margin-top:66px;align-items:start}
+.wordmark{font-size:20px;font-weight:760;letter-spacing:-.01em;color:#fff;display:flex;align-items:center;gap:10px}
+.wordmark::before{content:"";width:10px;height:10px;background:var(--red);border-radius:2px}
+.cover-h{font-size:50px;line-height:1.04;letter-spacing:-.025em;font-weight:740;margin-top:26px;text-wrap:balance}
+.cover-lead{font-size:18px;line-height:1.5;color:#cfcfcf;margin-top:24px;max-width:600px}
+.demo{background:var(--night-2);border:1px solid var(--night-hair);border-radius:10px;padding:22px 24px;margin-top:6px}
+.demo .src{font-size:15px;line-height:1.65;color:#e8e8e8}
+.demo .src u{text-decoration:none;border-bottom:2px solid var(--red);padding-bottom:1px}
+.demo .arrow{display:flex;align-items:center;gap:10px;margin:16px 0 12px;font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--night-muted)}
+.demo .arrow::after{content:"";flex:1;border-top:1px solid var(--night-hair)}
+.demo .lblx{font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--night-muted);margin-bottom:10px}
+.out{display:grid;grid-template-columns:1fr auto auto;column-gap:18px;row-gap:2px;align-items:baseline}
+.out .a{font-size:13px;color:#bdbdbd}
+.out .v{font-size:17px;font-weight:700;color:#fff;text-align:right}
+.out .c{font-size:15px;font-weight:650;color:#fff;font-variant-numeric:tabular-nums}
+.out .qq{grid-column:1/-1;font-family:var(--mono);font-size:11.5px;color:var(--night-muted);margin-bottom:9px}
+.s-cover .foot{font-size:12px}
+
+/* 2 · проблема */
+.chain{margin-top:22px}
+.chain .t{font-size:14px}
+.p-grid{display:grid;grid-template-columns:7fr 5fr;column-gap:48px;margin-top:22px}
+.hero-row{display:flex;align-items:flex-end;gap:20px}
+.hero{font-size:76px;line-height:.9;font-weight:760;letter-spacing:-.035em;white-space:nowrap}
+.hero-cap{font-size:16px;line-height:1.35;color:var(--ink-2);max-width:400px;padding-bottom:4px}
+.bars{margin-top:20px;display:grid;grid-template-columns:auto auto 1fr;column-gap:14px;row-gap:5px;align-items:center}
+.bars .q{font-size:13px;color:var(--ink);white-space:nowrap}
+.bars .k{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.bars .b{display:flex;align-items:center;gap:8px;min-width:0}
+.bars .b i{display:block;height:10px;width:calc((100% - 60px) * var(--w));min-width:2px;background:var(--bar);border-radius:0 3px 3px 0}
+.bars .b em{font-style:normal;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.facts{border-left:1px solid var(--hair);padding-left:28px}
+.fact{padding:9px 0;border-bottom:1px solid var(--hair)}
+.fact:first-child{padding-top:0}
+.fact b{display:block;font-size:24px;line-height:1.1;font-weight:740;letter-spacing:-.015em}
+.fact > span{display:block;font-size:12.5px;line-height:1.4;color:var(--muted);margin-top:2px}
+.fact .todo{margin-right:6px}
+.fact.last{border-bottom:0}
+.money{position:absolute;left:64px;right:64px;bottom:44px;font-size:13.5px;line-height:1.45;color:var(--ink-2);padding-top:10px;border-top:1px solid var(--hair)}
+.money b{color:var(--ink)}
+
+/* 3 · роли */
+.roles{display:grid;grid-template-columns:repeat(4,1fr);margin-top:30px;border-top:2px solid var(--ink)}
+.role{padding:18px 22px 0 0;margin-right:22px;border-right:1px solid var(--hair);display:flex;flex-direction:column}
+.role:last-child{border-right:0;margin-right:0;padding-right:0}
+.role h3{font-size:19px;line-height:1.2;font-weight:720;letter-spacing:-.01em;min-height:46px}
+.role .jtbd{font-size:14px;line-height:1.46;color:var(--ink-2);margin-top:10px;min-height:128px}
+.role ul{list-style:none;margin-top:2px}
+.role li{font-size:13.5px;line-height:1.4;padding-left:14px;position:relative;margin-bottom:6px}
+.role li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:1.5px;background:var(--ink)}
+.role .gives{margin-top:10px;min-height:110px}
+.role .metric{margin-top:8px;padding-top:12px;border-top:1px solid var(--hair);font-size:13.5px;line-height:1.4;font-weight:600}
+.value-line{position:absolute;left:64px;right:64px;bottom:44px;font-size:14.5px;line-height:1.45;color:var(--ink-2);padding-top:10px;border-top:1px solid var(--hair)}
+.value-line b{color:var(--ink)}
+
+/* 4 · пайплайн */
+.pipe{margin-top:26px}
+.layers{display:grid;grid-template-columns:repeat(4,1fr);column-gap:24px;margin-top:22px;border-top:1px solid var(--hair);padding-top:14px}
+.layers h4{font-size:14px;font-weight:720;margin-bottom:4px}
+.layers p{font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.layers .hotl h4{color:var(--red-ink)}
+.share-line{position:absolute;left:64px;right:64px;bottom:44px;font-size:13px;line-height:1.45;color:var(--ink-2)}
+.share-line b{color:var(--ink)}
+
+/* 5 · доверие */
+.t-grid{display:grid;grid-template-columns:5fr 7fr;column-gap:36px;margin-top:22px}
+.card-src{background:var(--wash);border-radius:8px;padding:22px 22px 18px;font-size:14px;line-height:2.3;color:var(--ink-2);display:flex;flex-direction:column}
+.card-src .ttl{font-size:15px;font-weight:700;color:var(--ink);line-height:2.1;margin-bottom:2px}
+.card-src mark{background:none;color:var(--ink);font-weight:600;border-bottom:2px solid var(--ink);position:relative;padding-bottom:0}
+.card-src mark.r{border-bottom-color:var(--red)}
+.card-src mark sup{position:absolute;left:50%;transform:translateX(-50%);top:-1.15em;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1;white-space:nowrap}
+.card-src mark.r sup{color:var(--red-ink)}
+.card-src .gap{color:var(--faint)}
+.card-src .legend{margin-top:auto;padding-top:12px;border-top:1px solid #e3e3e6;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.card-src .legend i{display:inline-block;width:18px;height:0;border-bottom:2px solid var(--ink);vertical-align:3px;margin-right:6px}
+.card-src .legend i.r{border-bottom-color:var(--red);margin-left:14px}
+.res{width:100%;border-collapse:collapse;font-size:13px;align-self:start}
+.res th{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 8px 7px 0;border-bottom:1px solid var(--ink)}
+.res td{padding:7px 8px 7px 0;border-bottom:1px solid var(--hair);vertical-align:top;line-height:1.35}
+.res td.v{font-weight:700;white-space:nowrap}
+.res td.n{white-space:nowrap;font-variant-numeric:tabular-nums}
+.res td.src{color:var(--ink-2);font-size:12.5px}
+.res td.stt{white-space:nowrap;font-weight:650}
+.res tr.rv td.stt{color:var(--red-ink)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink);margin-right:6px;vertical-align:1px}
+.rv .dot{background:var(--red)}
+.meter{position:relative;display:inline-block;width:52px;height:6px;background:var(--hair);border-radius:3px;vertical-align:1px;margin-right:7px}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:calc(var(--v) * 100%);background:var(--ink);border-radius:3px}
+.meter.low i{background:var(--red)}
+.meter b{position:absolute;left:70%;top:-3px;bottom:-3px;width:1.5px;background:var(--ink)}
+.contract{display:grid;grid-template-columns:repeat(5,1fr);column-gap:18px;margin-top:20px;border-top:2px solid var(--ink);padding-top:12px}
+.contract div{font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.contract b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.contract b span{color:var(--red-ink);font-variant-numeric:tabular-nums;margin-right:6px}
+.loop{margin-top:12px;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.caught{margin-top:12px;padding:9px 12px;border-left:3px solid var(--red);background:var(--red-wash);font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.caught b{color:var(--ink)}
+.loop b{color:var(--ink)}
+
+/* 6 · метрики */
+.m-grid{display:grid;grid-template-columns:8.6fr 3.4fr;column-gap:36px;margin-top:24px}
+.mt{width:100%;border-collapse:collapse;font-size:13px;line-height:1.38}
+.mt th{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 12px 7px 0;border-bottom:1px solid var(--ink)}
+.mt td{padding:5px 12px 5px 0;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-2)}
+.mt td:first-child{font-weight:700;color:var(--ink);width:170px}
+.mt{margin-top:20px}
+.mt td.now{font-weight:720;color:var(--ink);width:230px}
+.mt td.goal{font-weight:500;color:var(--ink-2);width:250px}
+.mt td.art{font-family:var(--mono);font-size:11.5px;color:var(--muted);width:118px}
+.facts-row{display:grid;grid-template-columns:repeat(4,1fr);column-gap:24px;margin-top:16px}
+.facts-row div{font-size:12px;line-height:1.38;color:var(--ink-2);border-top:2px solid var(--ink);padding-top:7px}
+.facts-row b{display:block;font-size:21px;line-height:1.1;font-weight:740;letter-spacing:-.015em;color:var(--ink);margin-bottom:3px}
+.side{border-left:1px solid var(--hair);padding-left:24px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.side .big{display:block;font-size:28px;font-weight:740;letter-spacing:-.02em;color:var(--ink);line-height:1.05;margin-bottom:4px}
+.side p{margin-bottom:12px}
+
+/* 7 · внедрение */
+.r-grid{display:grid;grid-template-columns:7fr 5fr;column-gap:44px;margin-top:26px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);column-gap:16px;position:relative}
+.step{border-top:2px solid var(--ink);padding-top:12px;position:relative}
+.step.cur{border-top-color:var(--red)}
+.step .n{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.step.cur .n{color:var(--red-ink)}
+.step h4{font-size:15.5px;line-height:1.25;font-weight:720;margin:5px 0 7px}
+.step p{font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.step .gate{display:block;margin-top:8px;font-size:12px;font-weight:650;color:var(--ink)}
+.integr{margin-top:22px;padding-top:14px;border-top:1px solid var(--hair);display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:12px}
+.integr p{font-size:13px;line-height:1.5;color:var(--ink-2)}
+.integr b{color:var(--ink)}
+.econ{background:var(--wash);border-radius:10px;padding:20px 22px}
+.econ h3{font-size:16px;font-weight:720;margin-bottom:12px}
+.f{font-size:15.5px;line-height:1.75;font-variant-numeric:tabular-nums}
+.f var{font-style:italic;font-family:"Noto Serif","Times New Roman",serif;font-size:1.06em}
+.f sub{font-size:.68em;font-style:normal;font-family:var(--sans)}
+.f .res-line{display:block;margin-top:6px;padding-top:8px;border-top:1px solid var(--hair);font-weight:700}
+.inputs{margin-top:12px;font-size:12.5px;line-height:1.5;color:var(--ink-2);list-style:none}
+.inputs li{padding:5px 0;border-top:1px solid #e9e9eb;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inputs li span:last-child{text-align:right;font-weight:600;color:var(--ink);white-space:nowrap}
+
+/* 8 · отличия (тёмный) */
+.cmp{width:100%;border-collapse:collapse;margin-top:26px;font-size:15px;line-height:1.38}
+.cmp th{font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;text-align:left;color:var(--night-muted);padding:0 16px 8px 0;border-bottom:1px solid #4a4a4a}
+.cmp th.us{color:#fff}
+.cmp th.us::before{content:"";display:inline-block;width:8px;height:8px;background:var(--red);border-radius:2px;margin-right:8px;vertical-align:0}
+.cmp td{padding:9px 16px 9px 0;border-bottom:1px solid var(--night-hair);vertical-align:top;color:#bdbdbd}
+.cmp td:first-child{color:#fff;font-weight:650;width:200px}
+.cmp td.us{color:#fff}
+.assets{display:grid;grid-template-columns:repeat(5,1fr);column-gap:18px;margin-top:26px}
+.assets div{font-size:13px;line-height:1.42;color:#bdbdbd;border-top:1px solid #4a4a4a;padding-top:10px}
+.assets b{display:block;color:#fff;font-size:14px;margin-bottom:4px}
+.dark .st.plan{color:var(--night-muted)} .dark .st.yes{color:#fff}
+
+/* 9 · план и риски */
+.pr-grid{display:grid;grid-template-columns:4.6fr 7.4fr;column-gap:40px;margin-top:24px}
+.tl{list-style:none;border-left:2px solid var(--ink);padding-left:0}
+.tl li{position:relative;padding:0 0 12px 20px;font-size:13.5px;line-height:1.42;color:var(--ink-2)}
+.tl li::before{content:"";position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:2px solid var(--ink)}
+.tl li.now::before{background:var(--red);border-color:var(--red)}
+.tl li.end::before{background:var(--ink)}
+.tl b{display:block;font-size:14px;color:var(--ink)}
+.rk{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.4}
+.rk th{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 10px 7px 0;border-bottom:1px solid var(--ink)}
+.rk td{padding:7px 10px 7px 0;border-bottom:1px solid var(--hair);vertical-align:top;color:var(--ink-2)}
+.rk td:first-child{font-weight:700;color:var(--ink);width:150px}
+.rk td.sts{width:96px;white-space:nowrap}
+.asks{position:absolute;left:64px;right:64px;bottom:44px;font-size:13.5px;line-height:1.45;color:var(--ink-2);padding-top:10px;border-top:2px solid var(--ink)}
+.asks b{color:var(--ink)}
+
+/* интерфейс просмотра */
+.hud{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;font:600 12px var(--sans);color:#9a9a9a;
+  background:rgba(20,20,20,.86);border:1px solid #2a2a2a;border-radius:8px;padding:4px 6px;opacity:.35;transition:opacity .2s;user-select:none;z-index:5}
+.hud:hover{opacity:1}
+.hud button{font:inherit;color:#e5e5e5;background:none;border:0;padding:4px 9px;border-radius:5px;cursor:pointer}
+.hud button:hover,.hud button:focus-visible{background:#2a2a2a;outline:none}
+.hud .cnt{font-variant-numeric:tabular-nums;min-width:52px;text-align:center}
+body.overview .stage{position:static;display:grid;grid-template-columns:repeat(3,auto);gap:22px;justify-content:center;align-content:start;padding:28px}
+body.overview .frame{display:block;--s:.3;cursor:pointer;box-shadow:0 0 0 1px #2a2a2a}
+body.overview .frame.on{box-shadow:0 0 0 3px var(--red)}
+body.overview .hud{display:none}
+
+@page{size:1280px 720px;margin:0}
+@media print{
+  html,body{height:auto;background:#fff}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .stage{position:static;display:block}
+  .frame{display:block!important;--s:1;width:1280px;height:720px;box-shadow:none;break-after:page;page-break-after:always;overflow:hidden}
+  .frame:last-child{break-after:auto;page-break-after:auto}
+  .hud{display:none}
+}
+@media (prefers-reduced-motion:reduce){.hud{transition:none}}
+</style>
+</head>
+<body>
+<main class="stage" id="stage">
+
+<!-- 1 · Обложка -->
+<div class="frame"><section class="slide dark s-cover" aria-label="Слайд 1 из 9. Обложка">
+  <div class="kicker">Точка сборки · Кейс № 3 · М.Видео · Продуктовый чекпоинт · 15.10.2026</div>
+  <div class="cover-grid">
+    <div>
+      <div class="wordmark">attrx</div>
+      <h1 class="cover-h">Характеристики товара — из&nbsp;текста карточки. Каждое значение с&nbsp;цитатой и&nbsp;уверенностью</h1>
+      <p class="cover-lead">Гибрид для каталога М.Видео: правила и&nbsp;словари закрывают ядро, NER&nbsp;— свободный текст, LLM&nbsp;— только остаток. На выходе канонические значения; сомнительное уходит модератору, а&nbsp;его правки пополняют словари.</p>
+    </div>
+    <figure class="demo" aria-label="Пример: из текста реальной карточки без категории извлечены бренд, диагональ и ёмкость аккумулятора, у каждого значения есть цитата и калиброванная уверенность">
+      <div class="lblx">Карточка из датасета · SKU 30056016 · без категории</div>
+      <p class="src">Смартфон <u>OPPO</u> Reno5 Black (CPH2159)<br>…оснащен <u>6,43-дюймовым</u> безрамочным экраном… Емкость аккумулятора&nbsp;— <u>4310&nbsp;мАч</u>, поддерживается быстрая зарядка.</p>
+      <div class="arrow">attrx · категория «Смартфоны» — классификатор</div>
+      <div class="out">
+        <span class="a">Бренд</span><span class="v">OPPO</span><span class="c">1,00</span>
+        <span class="qq">цитата «OPPO» · правила · принято</span>
+        <span class="a">Диагональ экрана</span><span class="v">6,43″</span><span class="c">0,96</span>
+        <span class="qq">цитата «6,43-дюймовым» · правила · принято</span>
+        <span class="a">Ёмкость аккумулятора</span><span class="v">4&#8239;310 мА·ч</span><span class="c">0,97</span>
+        <span class="qq">цитата «4310 мАч» · правила · принято</span>
+      </div>
+    </figure>
+  </div>
+  <div class="foot"><span>Команда «Ъыъ»: Makhkets, jasperBLCK</span><span>Демо: <span class="mono">attrx serve</span> → порт 8000 · Swagger: /docs</span><span class="pg">01 / 09</span></div>
+</section></div>
+
+<!-- 2 · Проблема -->
+<div class="frame"><section class="slide" aria-label="Слайд 2 из 9. Проблема в деньгах">
+  <div class="kicker">Проблема · деньги</div>
+  <h2 class="h">Нет характеристики — нет товара в&nbsp;фильтре, а&nbsp;значит и&nbsp;в&nbsp;выручке</h2>
+  <figure class="chain">
+    <svg viewBox="0 0 1152 56" role="img" aria-label="Цепочка потерь: характеристика не заполнена, товар не попадает в фильтр и выдачу, меньше показов, кликов и заказов, недополученный GMV">
+      <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <rect class="box" x="0.6" y="0.6" width="255" height="54" rx="6"/>
+      <text class="t" x="128" y="24" text-anchor="middle">Характеристика</text><text class="t" x="128" y="42" text-anchor="middle">не заполнена</text>
+      <line class="ln" x1="258" y1="28" x2="295" y2="28" marker-end="url(#ah2)"/>
+      <rect class="box" x="299.6" y="0.6" width="255" height="54" rx="6"/>
+      <text class="t" x="427" y="24" text-anchor="middle">Товар не попадает</text><text class="t" x="427" y="42" text-anchor="middle">в фильтр и в выдачу</text>
+      <line class="ln" x1="557" y1="28" x2="594" y2="28" marker-end="url(#ah2)"/>
+      <rect class="box" x="598.6" y="0.6" width="255" height="54" rx="6"/>
+      <text class="t" x="726" y="24" text-anchor="middle">Меньше показов,</text><text class="t" x="726" y="42" text-anchor="middle">кликов и заказов</text>
+      <line class="ln" x1="856" y1="28" x2="893" y2="28" marker-end="url(#ah2)"/>
+      <rect class="red-fill" x="897" y="0" width="255" height="56" rx="6"/>
+      <text class="t on-red" x="1024" y="33" text-anchor="middle">Недополученный GMV</text>
+    </svg>
+  </figure>
+  <div class="p-grid">
+    <div>
+      <div class="hero-row"><div class="hero">56,5%</div>
+        <div class="hero-cap">кликов из поиска — по запросам, где покупатель назвал атрибут; 24,9% — характеристику кроме бренда и модели</div></div>
+      <div class="bars" role="img" aria-label="Клики по запросам с характеристикой: игровые ноутбуки 88 336, встраиваемые посудомоечные машины 45 см 75 371, смартфоны samsung 68 732, телевизоры 55 61 792, накопительные водонагреватели 50 л 28 465, iphone 17 pro max 512gb 4 691, холодильник черный 2 172">
+        <span class="q">«игровые ноутбуки»</span><span class="k">тип</span><span class="b"><i style="--w:1"></i><em>88&#8239;336</em></span>
+        <span class="q">«встраиваемые посудомоечные машины 45см»</span><span class="k">ширина</span><span class="b"><i style="--w:.853"></i><em>75&#8239;371</em></span>
+        <span class="q">«смартфоны samsung»</span><span class="k">бренд</span><span class="b"><i style="--w:.778"></i><em>68&#8239;732</em></span>
+        <span class="q">«телевизоры 55»</span><span class="k">диагональ</span><span class="b"><i style="--w:.700"></i><em>61&#8239;792</em></span>
+        <span class="q">«накопительные водонагреватели 50л»</span><span class="k">объём</span><span class="b"><i style="--w:.322"></i><em>28&#8239;465</em></span>
+        <span class="q">«iphone 17 pro max 512gb»</span><span class="k">память</span><span class="b"><i style="--w:.053"></i><em>4&#8239;691</em></span>
+        <span class="q">«холодильник черный»</span><span class="k">цвет</span><span class="b"><i style="--w:.025"></i><em>2&#8239;172</em></span>
+      </div>
+      <p class="small" style="margin-top:8px">Числа у&nbsp;полос — клики по&nbsp;точному запросу. Доли — разметка всех запросов словарём каталога (бренды, модели, значения, свойства); описательные запросы без значения не засчитаны — оценка снизу.</p>
+    </div>
+    <aside class="facts" aria-label="Масштаб данных кейса">
+      <div class="fact"><b>1&#8239;177&#8239;200</b><span>описаний карточек: название и&nbsp;текст продавца — вход решения</span></div>
+      <div class="fact"><b>546&#8239;069</b><span>офферов каталога с&nbsp;характеристиками в&nbsp;6&#8239;963 категориях — эталон</span></div>
+      <div class="fact"><b>30&#8239;991&#8239;350</b><span>кликов из поиска, 1&#8239;397&#8239;078 уникальных запросов — вес «что ищут»</span></div>
+      <div class="fact"><b>75%</b><span>карточек (880&#8239;632) без оффера и&nbsp;без кликов: есть только текст — холодный старт</span></div>
+      <div class="fact last"><b>77% / 23%</b><span>партнёры маркетплейса / М.Видео среди 241&#8239;355 карточек с&nbsp;эталоном</span></div>
+    </aside>
+  </div>
+  <p class="money"><b>Деньги:</b> дозаполненная характеристика → больше показов в&nbsp;фильтрах и&nbsp;атрибутной выдаче × CTR × конверсия × средний чек. CTR, конверсия и&nbsp;чек — данные М.Видео; эффект подтверждаем A/B по категориям.</p>
+  <div class="foot"><span>Источники: архив кейса; доли спроса — <span class="mono">docs/EDA.md</span> §6 (<span class="mono">attrx traffic</span>); клики по запросам — <span class="mono">docs/checkpoint/demand_stats.py</span>; объёмы — <span class="mono">attrx prepare</span></span><span class="pg">02 / 09</span></div>
+</section></div>
+
+<!-- 3 · Пользователи и JTBD -->
+<div class="frame"><section class="slide" aria-label="Слайд 3 из 9. Пользователи и их работы">
+  <div class="kicker">Для кого · jobs-to-be-done</div>
+  <h2 class="h">Четыре роли, одна работа: товар должен находиться по&nbsp;характеристикам</h2>
+  <div class="roles">
+    <article class="role">
+      <h3>Контент-менеджер каталога</h3>
+      <p class="jtbd">Когда приходит партия карточек, хочу проверять только сомнительные значения — с&nbsp;цитатой перед глазами, чтобы за&nbsp;смену пропустить больше SKU и&nbsp;не&nbsp;пустить ошибку в&nbsp;фильтры.</p>
+      <div class="gives"><span class="lbl">Что даёт attrx</span><ul><li>очередь «на&nbsp;проверку»: сначала то, что чаще ищут; с&nbsp;цитатой</li><li>правка в&nbsp;один клик → синоним в&nbsp;словаре</li></ul></div>
+      <div class="metric"><span class="lbl">Метрика роли</span>SKU в&nbsp;час на модератора; доля значений без ручной правки</div>
+    </article>
+    <article class="role">
+      <h3>Категорийный менеджер</h3>
+      <p class="jtbd">Когда развиваю категорию, хочу видеть, каких фильтров не&nbsp;хватает и&nbsp;сколько поиска они теряют, чтобы закрывать дыры там, где ищут.</p>
+      <div class="gives"><span class="lbl">Что даёт attrx</span><ul><li>заполненность атрибутов с&nbsp;весом поискового спроса</li><li>новая категория — сразу с&nbsp;предложениями на&nbsp;проверку</li></ul></div>
+      <div class="metric"><span class="lbl">Метрика роли</span>coverage обязательных атрибутов, взвешенный трафиком</div>
+    </article>
+    <article class="role">
+      <h3>Продавец маркетплейса</h3>
+      <p class="jtbd">Когда загружаю ассортимент, хочу не&nbsp;заполнять десятки полей руками, чтобы товар быстрее прошёл модерацию и&nbsp;начал продаваться.</p>
+      <div class="gives"><span class="lbl">Что даёт attrx</span><ul><li>характеристики из описания, которое продавец уже написал</li><li>список того, чего в&nbsp;карточке нет</li></ul></div>
+      <div class="metric"><span class="lbl">Метрика роли</span>доля карточек, принятых с&nbsp;первого раза; время до&nbsp;публикации</div>
+    </article>
+    <article class="role">
+      <h3>Поиск, рекомендации, матчинг</h3>
+      <p class="jtbd">Когда строю фильтры, ранжирование и&nbsp;склейку одинаковых SKU, хочу полные канонические значения с&nbsp;уверенностью, чтобы выбрать порог под&nbsp;свою задачу.</p>
+      <div class="gives"><span class="lbl">Что даёт attrx</span><ul><li>канон: единицы, синонимы, справочник</li><li>confidence у&nbsp;каждого значения; API и&nbsp;батч</li></ul></div>
+      <div class="metric"><span class="lbl">Метрика роли</span>precision принятых значений; доля SKU в&nbsp;фильтрах</div>
+    </article>
+  </div>
+  <p class="value-line"><b>Единица ценности одна:</b> верно заполненная характеристика, по&nbsp;которой ищут. attrx встаёт в&nbsp;PIM и&nbsp;модерацию через API и&nbsp;батч.</p>
+  <div class="foot"><span>Работы ролей — гипотезы; проверяем интервью с&nbsp;контент-командой М.Видео <span class="st plan">план</span></span><span class="pg">03 / 09</span></div>
+</section></div>
+
+<!-- 4 · Пайплайн -->
+<div class="frame"><section class="slide" aria-label="Слайд 4 из 9. Гибридный пайплайн">
+  <div class="kicker">Решение · гибридный пайплайн</div>
+  <h2 class="h">Ядро закрывают дешёвые правила. LLM&nbsp;— только для остатка и&nbsp;только с&nbsp;цитатой</h2>
+  <figure class="pipe">
+    <svg viewBox="0 0 1152 312" role="img" aria-label="Схема: карточка, затем правила и словари. Если атрибут закрыт уверенно, он идёт сразу в оценку уверенности и порог. Если нет, он уходит в хвост: NER, затем LLM, затем проверка заземления; прошедшие значения возвращаются в оценку уверенности, непрошедшие отбрасываются. После порога: принято в PIM, на проверку модератору или нет в тексте. Правки модератора возвращаются в словари.">
+      <defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+      <!-- основной путь -->
+      <rect class="box" x="0.6" y="34.6" width="150" height="80" rx="6"/>
+      <text class="t" x="75" y="64" text-anchor="middle">Карточка</text>
+      <text class="u" x="75" y="83" text-anchor="middle">текст и атрибуты</text>
+      <text class="u" x="75" y="99" text-anchor="middle">продавца → категория</text>
+      <line class="ln" x1="152" y1="74" x2="179" y2="74" marker-end="url(#ah4)"/>
+      <rect class="box" x="182.6" y="34.6" width="200" height="80" rx="6"/>
+      <text class="t" x="282" y="64" text-anchor="middle">Правила и словари</text>
+      <text class="u" x="282" y="83" text-anchor="middle">regex, единицы, синонимы,</text>
+      <text class="u" x="282" y="99" text-anchor="middle">атрибуты продавца</text>
+      <line class="ln" x1="384" y1="74" x2="403" y2="74" marker-end="url(#ah4)"/>
+      <polygon class="box" points="406,74 466,30 526,74 466,118"/>
+      <text class="e" x="466" y="71" text-anchor="middle">закрыт</text>
+      <text class="e" x="466" y="86" text-anchor="middle">уверенно?</text>
+      <line class="ln" x1="527" y1="74" x2="805" y2="74" marker-end="url(#ah4)"/>
+      <text class="e" x="666" y="65" text-anchor="middle">да — ядро, без LLM</text>
+      <text class="u" x="666" y="93" text-anchor="middle">≥ 0,6 и без конфликта</text>
+      <rect class="box" x="808.6" y="34.6" width="170" height="80" rx="6"/>
+      <text class="t" x="893" y="62" text-anchor="middle">Уверенность</text>
+      <text class="u" x="893" y="81" text-anchor="middle">noisy-OR + калибровка,</text>
+      <text class="u" x="893" y="97" text-anchor="middle">порог 0,70 (P ≥ 0,95)</text>
+      <polyline class="ln" points="980,74 992,74"/>
+      <polyline class="ln" points="992,28 992,120"/>
+      <line class="ln" x1="992" y1="28" x2="1003" y2="28" marker-end="url(#ah4)"/>
+      <line class="ln" x1="992" y1="74" x2="1003" y2="74" marker-end="url(#ah4)"/>
+      <line class="ln" x1="992" y1="120" x2="1003" y2="120" marker-end="url(#ah4)"/>
+      <rect class="box" x="1006.6" y="10.6" width="124" height="36" rx="5"/>
+      <text class="e" x="1068" y="25" text-anchor="middle">принято</text><text class="u" x="1068" y="40" text-anchor="middle">→ в PIM</text>
+      <rect class="box" x="1006.6" y="56.6" width="124" height="36" rx="5"/>
+      <text class="e" x="1068" y="71" text-anchor="middle">на проверку</text><text class="u" x="1068" y="86" text-anchor="middle">→ модератору</text>
+      <rect class="box" x="1006.6" y="102.6" width="124" height="36" rx="5"/>
+      <text class="e" x="1068" y="117" text-anchor="middle">нет в тексте</text><text class="u" x="1068" y="132" text-anchor="middle">→ не выдумываем</text>
+      <!-- хвост -->
+      <line class="ln" x1="466" y1="119" x2="466" y2="193" marker-end="url(#ah4)"/>
+      <text class="e" x="477" y="150">нет: пусто, слабо</text>
+      <text class="e" x="477" y="166">или конфликт</text>
+      <rect class="box" x="396.6" y="196.6" width="140" height="70" rx="6"/>
+      <text class="t" x="466" y="222" text-anchor="middle">NER</text>
+      <text class="u" x="466" y="240" text-anchor="middle">ruBERT-tiny2,</text>
+      <text class="u" x="466" y="255" text-anchor="middle">свободный текст</text>
+      <line class="ln" x1="538" y1="231" x2="563" y2="231" marker-end="url(#ah4)"/>
+      <rect class="box hot" x="566.6" y="196.6" width="200" height="70" rx="6"/>
+      <text class="t" x="666" y="222" text-anchor="middle">LLM в контуре</text>
+      <text class="u" x="666" y="240" text-anchor="middle">strict JSON, temperature 0,</text>
+      <text class="u" x="666" y="255" text-anchor="middle">обязательная цитата</text>
+      <line class="ln" x1="768" y1="231" x2="805" y2="231" marker-end="url(#ah4)"/>
+      <rect class="box" x="808.6" y="196.6" width="170" height="70" rx="6"/>
+      <text class="t" x="893" y="222" text-anchor="middle">Заземление</text>
+      <text class="u" x="893" y="240" text-anchor="middle">цитата найдена в тексте,</text>
+      <text class="u" x="893" y="255" text-anchor="middle">значение следует из неё</text>
+      <line class="ln" x1="893" y1="195" x2="893" y2="117" marker-end="url(#ah4)"/>
+      <text class="e" x="903" y="160">прошло</text>
+      <text class="u" x="903" y="176">только LLM → всегда</text>
+      <text class="u" x="903" y="191">на проверку</text>
+      <line class="ln" x1="980" y1="231" x2="1003" y2="231" marker-end="url(#ah4)"/>
+      <text class="u" x="1008" y="227">не прошло:</text>
+      <text class="u" x="1008" y="242">отброшено, в лог</text>
+      <!-- петля обратной связи -->
+      <polyline class="ln" points="1131,74 1143,74 1143,298 282,298 282,118" marker-end="url(#ah4)"/>
+      <text class="u" x="712" y="291" text-anchor="middle">правки модератора → feedback.jsonl → attrx learn → новые синонимы в словарях</text>
+    </svg>
+  </figure>
+  <div class="layers">
+    <div><h4>Категория и правила</h4><p>Без id категорию даёт классификатор (0,9998). Ядро — числа с&nbsp;единицами, 4&nbsp;822 бренда каталога, цвета: CPU, бесплатно.</p></div>
+    <div><h4>NER</h4><p>ruBERT-tiny2 на&nbsp;разметке из&nbsp;каталога. Только слабые атрибуты — не&nbsp;портит то, что закрыли правила.</p></div>
+    <div class="hotl"><h4>LLM</h4><p>Холодный старт и&nbsp;остаток, только об&nbsp;упомянутых атрибутах. On-prem или РФ-облако, кэш, лимиты.</p></div>
+    <div><h4>Заземление и порог</h4><p>Решает проверка: цитата найдена в&nbsp;тексте, значение следует из&nbsp;неё; порог 0,70; одна LLM — на&nbsp;проверку.</p></div>
+  </div>
+  <p class="share-line"><b>Весь holdout, 23&nbsp;391 карточка:</b> правила F1&nbsp;0,853 → +&nbsp;NER 0,858 (полнота по&nbsp;извлекаемому 0,918 → 0,927) при точности 0,954. На&nbsp;подвыборке 662: +&nbsp;LLM 0,849 = +&nbsp;NER 0,849 — значения одной LLM уходят на&nbsp;проверку.</p>
+  <div class="foot"><span>Схема = <span class="mono">src/attrx/pipeline.py</span>; порог 0,70 — <span class="mono">config/calibration.json</span> (<span class="mono">attrx calibrate</span>); в&nbsp;хвост — уверенность &lt; 0,6 (<span class="mono">LLM_ROUTE_THRESHOLD</span>); holdout — <span class="mono">submission/compare.json</span></span><span class="pg">04 / 09</span></div>
+</section></div>
+
+<!-- 5 · Доверие -->
+<div class="frame"><section class="slide" aria-label="Слайд 5 из 9. Контракт против галлюцинаций">
+  <div class="kicker">Доверие · антигаллюцинации и модерация</div>
+  <h2 class="h">Нет цитаты — нет значения. Одна LLM — только на&nbsp;проверку</h2>
+  <div class="t-grid">
+    <div class="card-src" aria-label="Текст реальной карточки смартфона с подсвеченными цитатами">
+      <div class="ttl">Смартфон <mark>Xiaomi<sup>бренд</sup></mark> <mark>A5</mark> <mark>3+64Gb<sup>память</sup></mark> <mark>зеленый<sup>цвет</sup></mark> (MZB0JRNRU)</div>
+      <p class="body">Смартфон Redmi A5 3+64Gb зелёный… Ищете надёжный и&nbsp;функциональный смартфон? <span class="gap">[…]</span><br>
+      Встроенная память: 64 ГБ — достаточно места… <span class="gap">[…]</span><br>
+      Дисплей: IPS, <mark class="r">диагональ 6,88 дюйма<sup>диагональ</sup></mark>, разрешение 1640x720… <span class="gap">[…]</span><br>
+      <mark>Аккумулятор: 5200 мАч<sup>аккумулятор</sup></mark> — длительное время работы…</p>
+      <div class="legend"><i></i>принято <i class="r"></i>на проверку · SKU 400633673, маркетплейс, категория — классификатор</div>
+    </div>
+    <div>
+    <table class="res" aria-label="Что извлёк attrx">
+      <thead><tr><th>Атрибут</th><th>Значение</th><th>Уверенность</th><th>Источник и&nbsp;цитата</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td>Бренд</td><td class="v">Xiaomi</td><td class="n"><span class="meter" style="--v:1"><i></i><b></b></span>1,00</td><td class="src">правила · «Xiaomi»</td><td class="stt"><span class="dot"></span>принято</td></tr>
+        <tr><td>Модель</td><td class="v">A5</td><td class="n"><span class="meter" style="--v:.995"><i></i><b></b></span>0,99</td><td class="src">правила · «A5»</td><td class="stt"><span class="dot"></span>принято</td></tr>
+        <tr><td>Встроенная память</td><td class="v">64 ГБ</td><td class="n"><span class="meter" style="--v:.97"><i></i><b></b></span>0,97</td><td class="src">продавец + правила + NER + LLM · «3+64Gb»</td><td class="stt"><span class="dot"></span>принято</td></tr>
+        <tr><td>Аккумулятор</td><td class="v">5&#8239;200 мА·ч</td><td class="n"><span class="meter" style="--v:.92"><i></i><b></b></span>0,92</td><td class="src">продавец · «Аккумулятор: 5200 мАч»</td><td class="stt"><span class="dot"></span>принято</td></tr>
+        <tr><td>Цвет</td><td class="v">зелёный</td><td class="n"><span class="meter" style="--v:.97"><i></i><b></b></span>0,97</td><td class="src">правила · «зеленый»</td><td class="stt"><span class="dot"></span>принято</td></tr>
+        <tr class="rv"><td>Диагональ</td><td class="v">6,88″</td><td class="n"><span class="meter low" style="--v:.83"><i></i><b></b></span>0,83</td><td class="src">только LLM · «диагональ 6,88 дюйма»: выше порога, но&nbsp;второго источника нет</td><td class="stt"><span class="dot"></span>на проверку</td></tr>
+      </tbody>
+    </table>
+    <p class="caught"><b>Holdout, подвыборка 662 карточки:</b> 61 ответ LLM без опоры в&nbsp;тексте отброшен проверкой заземления (так, у&nbsp;iPhone цитата «Sage» не&nbsp;дала «серебристый»); из&nbsp;71 значения одной LLM верны только 38% — поэтому они идут модератору, а&nbsp;не&nbsp;в&nbsp;каталог.</p>
+    </div>
+  </div>
+  <div class="contract">
+    <div><b><span>1</span>Схема</b>JSON Schema только с&nbsp;атрибутами категории; strict, temperature&nbsp;0</div>
+    <div><b><span>2</span>Справочники</b>допустимые значения в&nbsp;промпте; вне справочника — отброс и&nbsp;«кандидат в&nbsp;справочник»</div>
+    <div><b><span>3</span>Цитата</b>фрагмент карточки обязателен для&nbsp;каждого значения</div>
+    <div><b><span>4</span>Заземление</b>цитата найдена в&nbsp;тексте (допуск на&nbsp;окончания), значение следует из&nbsp;неё; иначе — в&nbsp;лог</div>
+    <div><b><span>5</span>Только LLM</b>никогда не&nbsp;принимается сама; с&nbsp;продавцом, правилами или NER — по&nbsp;порогу 0,70</div>
+  </div>
+  <p class="loop"><b>Петля:</b> правка модератора → <span class="mono">feedback.jsonl</span> → <span class="mono">attrx learn</span> → синоним в&nbsp;словаре <span class="st yes">есть</span> · значение LLM вне справочника → «кандидат в&nbsp;справочник» <span class="st yes">есть</span> · правки → эталон и&nbsp;дообучение NER <span class="st plan">план</span> · экран модератора собирается из&nbsp;безопасных компонентов, значения — из&nbsp;результата, а&nbsp;не&nbsp;из&nbsp;ответа LLM <span class="st yes">есть</span></p>
+  <div class="foot"><span>Реальная карточка train (SKU 400633673), прогон attrx 15.10: продавец + правила + NER + LLM (qwen3:4b-instruct, Ollama), калиброванная уверенность, порог 0,70; итоги LLM — <span class="mono">submission/REPORT.md</span> §4; правило — <span class="mono">pipeline.UNVERIFIED_ONLY</span></span><span class="pg">05 / 09</span></div>
+</section></div>
+
+<!-- 6 · Как измеряем -->
+<div class="frame"><section class="slide" aria-label="Слайд 6 из 9. Как измеряем">
+  <div class="kicker">Как измеряем</div>
+  <h2 class="h">Меряем то, что видит покупатель: каждый атрибут отдельно и&nbsp;с&nbsp;весом поискового спроса</h2>
+  <table class="mt">
+    <thead><tr><th>Метрика</th><th>Как считаем</th><th>Holdout · режим в&nbsp;сдаче</th><th>Цель</th><th>Артефакт</th></tr></thead>
+    <tbody>
+      <tr><td>P / R / F1 по&nbsp;атрибуту</td><td>эталон каталога: vendor, model, param — по&nbsp;каждому атрибуту и&nbsp;категории</td><td class="now">P 0,954 · R 0,779 · F1 0,858</td><td class="goal">P ≥ 0,95 у&nbsp;автопринятых, по&nbsp;каждому обязательному атрибуту</td><td class="art">metrics.json</td></tr>
+      <tr><td>Извлекаемый recall</td><td>только по&nbsp;значениям, которые есть в&nbsp;тексте (их 83%)</td><td class="now">0,927</td><td class="goal">≥ 0,90</td><td class="art">metrics.json</td></tr>
+      <tr><td>Coverage</td><td>слоты каталога до → после; новое там, где каталог пуст, — не&nbsp;ошибка</td><td class="now">80,7% → 88,1% (+5&#8239;488); на&nbsp;проверку 10,8%</td><td class="goal">рост без потери P ≥ 0,95</td><td class="art">metrics.json</td></tr>
+      <tr><td>Traffic-weighted F1</td><td>вес = доля кликов категории × спрос на&nbsp;атрибут</td><td class="now">0,937 (потолок текста ≈ 0,96)</td><td class="goal">≥ 0,90</td><td class="art">traffic.json</td></tr>
+      <tr><td>Справедливость</td><td>F1 по&nbsp;сегментам: продавцы, размер категории, длина описания</td><td class="now">М.Видео 0,873 · партнёры 0,853; head 0,870 · tail 0,818</td><td class="goal">продавцы ≤ 5&nbsp;п.п., head / tail ≤ 10&nbsp;п.п.</td><td class="art">segments.json</td></tr>
+      <tr><td>Калибровка</td><td>уверенность 0,9 → верны 9 из&nbsp;10; порог — под&nbsp;P ≥ 0,95</td><td class="now">ECE 0,019; при&nbsp;0,70 точность принятых 0,954, принято 94%; слой 0,70–0,80 верен лишь на&nbsp;57%</td><td class="goal">ECE ≤ 0,05</td><td class="art">calibration.json</td></tr>
+      <tr><td>Скорость и стоимость</td><td>карточек в&nbsp;секунду, доля вызовов LLM, ₽ на&nbsp;1000</td><td class="now">LLM для&nbsp;31% карточек, 3,3&nbsp;с на&nbsp;вызов; ~1&nbsp;500 карт./с на&nbsp;ядро без моделей</td><td class="goal">LLM ≤ 20% карточек — пока 31%: не&nbsp;выполнено</td><td class="art">cost.json</td></tr>
+    </tbody>
+  </table>
+  <div class="facts-row">
+    <div><b>241&#8239;355</b>карточек с&nbsp;эталоном — характеристики, которые работают в&nbsp;фильтрах сайта</div>
+    <div><b>23&#8239;391</b>карточка holdout — весь сплит с&nbsp;эталоном; отчёт v2, исправления — только с&nbsp;dev; весь dev → весь holdout F1 0,859 → 0,858</div>
+    <div><b>83%</b>эталона есть в&nbsp;тексте: потолок micro-F1 ≈ 0,91 (holdout 0,858)</div>
+    <div><b>≈ 0,96</b>потолок traffic-weighted F1: спрос — на&nbsp;бренд и&nbsp;модель, а&nbsp;они почти всегда в&nbsp;тексте</div>
+  </div>
+  <div class="foot"><span>Holdout — <span class="mono">submission/metrics.json</span>, <span class="mono">REPORT.md</span>; порог и&nbsp;калибровка выбраны на&nbsp;dev (<span class="mono">attrx calibrate</span>) и&nbsp;на&nbsp;holdout не&nbsp;подбирались. Цели — наши, сверяем с&nbsp;М.Видео</span><span class="pg">06 / 09</span></div>
+</section></div>
+
+<!-- 7 · Внедрение и экономика -->
+<div class="frame"><section class="slide" aria-label="Слайд 7 из 9. Внедрение и экономика">
+  <div class="kicker">Внедрение и экономика</div>
+  <h2 class="h">В прод — через тень: автопринятие только выше порога, LLM внутри контура</h2>
+  <div class="r-grid">
+    <div>
+      <div class="steps">
+        <div class="step"><span class="n">Шаг 0</span><h4>Офлайн-оценка</h4><p>Holdout эталона, разбор ошибок по&nbsp;атрибутам и&nbsp;сегментам.</p><span class="gate">Гейт: P ≥ 0,95 у&nbsp;автопринятых</span></div>
+        <div class="step cur"><span class="n">Шаг 1</span><h4>Тень, 2–4 недели</h4><p>Пишем предсказания рядом, не&nbsp;в&nbsp;каталог; сверяем с&nbsp;правками модераторов, калибруем порог по&nbsp;категориям.</p></div>
+        <div class="step"><span class="n">Шаг 2</span><h4>Автопринятие</h4><p>Выше порога — в&nbsp;PIM в&nbsp;топ-категориях по&nbsp;трафику; остальное — в&nbsp;очередь. Выборочный аудит каждый день.</p></div>
+        <div class="step"><span class="n">Шаг 3</span><h4>Все категории</h4><p>Холодный старт через LLM со&nbsp;статусом «на&nbsp;проверку»; правки дообучают NER и&nbsp;словари.</p></div>
+      </div>
+      <div class="integr">
+        <p><b>Интеграция с&nbsp;PIM.</b> <span class="mono">POST /api/extract/batch</span> (до&nbsp;1000 карточек) или <span class="mono">attrx extract</span> по&nbsp;выгрузке. Принятое — запись в&nbsp;PIM, «на&nbsp;проверку» — в&nbsp;очередь модерации.</p>
+        <p><b>Данные не&nbsp;покидают контур.</b> LLM — любой OpenAI-совместимый endpoint: vLLM / Ollama on-prem, GigaChat / YandexGPT без VPN. Без LLM работают правила, словари и&nbsp;классификатор.</p>
+        <p><b>Мониторинг и&nbsp;откат</b> <span class="st yes">есть</span>. <span class="mono">attrx monitor</span>: доля «на&nbsp;проверку» и&nbsp;«нет в&nbsp;тексте» по&nbsp;категориям, PSI категорий, доля вызовов LLM → алерт с&nbsp;действием. Выборочный аудит — в&nbsp;пилоте; precision ниже гейта — категория возвращается в&nbsp;тень.</p>
+        <p><b>Скорость.</b> Правила — ~1&nbsp;500 карточек/с на&nbsp;ядро, с&nbsp;NER — 421 на&nbsp;GPU (весь holdout, медиана 3 замеров). LLM — 3,3&nbsp;с на&nbsp;вызов, поэтому хвост в&nbsp;проде — асинхронно <span class="st plan">план</span>.</p>
+      </div>
+    </div>
+    <aside class="econ" aria-label="Стоимость 1000 карточек">
+      <h3>Стоимость 1000 карточек</h3>
+      <div class="f">
+        <var>C</var><sub>гибрид</sub> = 1000 · (<var>c</var><sub>CPU</sub> + <var>p</var><sub>LLM</sub> · <var>c</var><sub>LLM</sub>)<br>
+        <var>C</var><sub>LLM на всё</sub> = 1000 · <var>c</var><sub>LLM</sub><br>
+        <var>c</var><sub>LLM</sub> = <var>T</var><sub>вх</sub> · <var>P</var><sub>вх</sub> + <var>T</var><sub>вых</sub> · <var>P</var><sub>вых</sub>
+        <span class="res-line"><var>C</var><sub>гибрид</sub> / <var>C</var><sub>LLM на всё</sub> ≈ <var>p</var><sub>LLM</sub>, так как <var>c</var><sub>CPU</sub> ≪ <var>c</var><sub>LLM</sub></span>
+      </div>
+      <ul class="inputs">
+        <li><span><var>p</var><sub>LLM</sub> — доля карточек, где гибрид зовёт LLM (holdout)</span><span>31%</span></li>
+        <li><span>Токены и&nbsp;время вызова (qwen3:4b-instruct, GTX 1060)</span><span>969 / 52 · 3,3 с</span></li>
+        <li><span>Гибрид, ₽ за&nbsp;1000: своя GPU · GigaChat Lite · YandexGPT Lite</span><span>0,83 · 20,6 · 63,2</span></li>
+        <li><span>«LLM на&nbsp;каждую карточку», ₽ за&nbsp;1000: те же</span><span>5,6 · 84,6 · 260,2</span></li>
+        <li><span>Повторный прогон той же карточки</span><span>0 ₽, кэш</span></li>
+      </ul>
+    </aside>
+  </div>
+  <div class="foot"><span>API: <span class="mono">src/attrx/api/app.py</span> · замеры LLM и&nbsp;тарифы — <span class="mono">docs/LLM.md</span> §5–6, <span class="mono">config/llm_prices.yaml</span>, расчёт — <span class="mono">src/attrx/llm/cost.py</span>; скорость правил — <span class="mono">docs/EVALUATION.md</span> §8</span><span class="pg">07 / 09</span></div>
+</section></div>
+
+<!-- 8 · Отличия -->
+<div class="frame"><section class="slide dark" aria-label="Слайд 8 из 9. Отличия от решения «LLM на каждую карточку»">
+  <div class="kicker">Отличия</div>
+  <h2 class="h">Почему не «LLM на&nbsp;каждую карточку»</h2>
+  <table class="cmp">
+    <thead><tr><th>Критерий</th><th>LLM на&nbsp;каждую карточку</th><th class="us">attrx — гибрид</th></tr></thead>
+    <tbody>
+      <tr><td>Стоимость</td><td>вызов на&nbsp;каждую карточку, на&nbsp;всех атрибутах</td><td class="us">LLM только для остатка — 31% карточек; в&nbsp;4–7 раз дешевле, кэш, лимиты</td></tr>
+      <tr><td>Галлюцинации</td><td>значение принимается как есть</td><td class="us">цитата, заземление, справочник, калиброванный порог; значение одной LLM — только на&nbsp;проверку</td></tr>
+      <tr><td>Объяснимость</td><td>«так ответила модель»</td><td class="us">у&nbsp;каждого значения цитата, источник и&nbsp;уверенность</td></tr>
+      <tr><td>Без LLM и&nbsp;сети</td><td>не&nbsp;работает</td><td class="us">правила, словари и&nbsp;классификатор категории работают без LLM и&nbsp;сети</td></tr>
+      <tr><td>Воспроизводимость</td><td>ответы плавают между запусками</td><td class="us">правила детерминированы; LLM — temperature 0 и&nbsp;кэш</td></tr>
+      <tr><td>Оценка</td><td>десятки карточек, проверенных вручную</td><td class="us">эталон каталога: 241&#8239;355 карточек; веса по&nbsp;30,99 млн кликов</td></tr>
+      <tr><td>Хвост и&nbsp;продавцы</td><td>провалы не&nbsp;видны</td><td class="us">метрики по&nbsp;сегментам; holdout: М.Видео 0,873 · партнёры 0,853, head 0,870 · tail 0,818</td></tr>
+      <tr><td>Развитие</td><td>переписывать промпт</td><td class="us">правки модераторов → словари; NER учится на&nbsp;эталоне</td></tr>
+    </tbody>
+  </table>
+  <div class="assets">
+    <div><b>Эталон из каталога <span class="st yes">есть</span></b>характеристики, которые уже работают в&nbsp;фильтрах сайта</div>
+    <div><b>Веса спроса <span class="st yes">есть</span></b>какие атрибуты ищут в&nbsp;каждой категории — из&nbsp;реальных кликов</div>
+    <div><b>Разметка даром <span class="st yes">есть</span></b>NER обучен на&nbsp;230&#8239;866 значениях каталога, найденных в&nbsp;тексте</div>
+    <div><b>Словари из данных <span class="st yes">есть</span></b>4&#8239;822 бренда каталога с&nbsp;транслитом: «Атлант» ~ ATLANT</div>
+    <div><b>Generative UI <span class="st yes">есть</span></b>экран модератора собирается из&nbsp;безопасных компонентов</div>
+  </div>
+  <div class="foot"><span><span class="st yes">есть</span> — в&nbsp;репозитории сейчас; <span class="st plan">план</span> — до&nbsp;23.10. NER: <span class="mono">docs/NER.md</span>, словари: <span class="mono">attrx build-dicts</span></span><span class="pg">08 / 09</span></div>
+</section></div>
+
+<!-- 9 · План и риски -->
+<div class="frame"><section class="slide" aria-label="Слайд 9 из 9. План до 23.10 и риски">
+  <div class="kicker">План и риски</div>
+  <h2 class="h">До 23.10: честные метрики на&nbsp;holdout, каждый риск — с&nbsp;мерой</h2>
+  <div class="pr-grid">
+    <ol class="tl">
+      <li><b>14–15.10 · сделано</b>эталон и&nbsp;12 категорий; правила и&nbsp;словари каталога; калибровка и&nbsp;порог на&nbsp;dev; классификатор категории; NER; UI модератора; EDA</li>
+      <li class="now"><b>15.10 · финальный прогон</b>весь holdout, отчёт v2: точность принятых 0,954, F1 0,858, спрос с&nbsp;заполненным атрибутом 95,7% → 97,2% → <span class="mono">submission/</span>; v1 раскрыт</li>
+      <li><b>16–21.10 · LLM и&nbsp;качество</b>замер с&nbsp;моделью организаторов на&nbsp;ВМ; ежедневные прогоны ревью с&nbsp;17.10; правки по&nbsp;разбору ошибок — только на&nbsp;dev</li>
+      <li><b>22.10 · сдача</b>README с&nbsp;цифрами holdout, презентация, карточка решения; push в&nbsp;Gitea</li>
+      <li class="end"><b>23.10 · стоп-код</b>зачётное ревью репозитория, технический чекпоинт</li>
+    </ol>
+    <table class="rk">
+      <thead><tr><th>Риск из кейса</th><th>Мера</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td>Галлюцинации LLM</td><td>JSON Schema, справочники, цитата, проверка заземления, калиброванный порог; значение одной LLM — только на&nbsp;проверку</td><td class="sts"><span class="st yes">есть</span></td></tr>
+        <tr><td>Стоимость на&nbsp;масштабе</td><td>LLM только для слабых и&nbsp;упомянутых атрибутов, кэш, лимиты, on-prem: гибрид 0,83&nbsp;₽ против 5,6&nbsp;₽ за&nbsp;1000 на&nbsp;своей GPU; дистилляция в&nbsp;NER</td><td class="sts"><span class="st yes">есть</span> <span class="st plan">план</span></td></tr>
+        <tr><td>Оценка не&nbsp;видит хвост</td><td>метрики по&nbsp;атрибутам, категориям, head / torso / tail, извлекаемый recall. Holdout: tail 0,818, torso 0,844 против 0,870 у&nbsp;head; ручной аудит эталона</td><td class="sts"><span class="st yes">есть</span> <span class="st plan">план</span></td></tr>
+        <tr><td>Дрейф, новые категории</td><td>классификатор категории (0,9998 на&nbsp;holdout), generic, LLM со&nbsp;статусом «на&nbsp;проверку»; <span class="mono">attrx monitor</span>: review / missing / PSI категорий → алерт</td><td class="sts"><span class="st yes">есть</span></td></tr>
+        <tr><td>Несправедливость к&nbsp;продавцам</td><td>справочник брендов всего каталога, F1 по&nbsp;сегментам. Holdout: партнёры 0,853 против 0,873 у&nbsp;М.Видео (в&nbsp;базовой линии 0,45 против 0,65)</td><td class="sts"><span class="st yes">есть</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="asks"><b>Нужно от М.Видео:</b> официальный список обязательных атрибутов по&nbsp;категориям · CTR, конверсия и&nbsp;средний чек для&nbsp;оценки эффекта · выгрузка правок модераторов для&nbsp;петли · какой LLM-контур разрешён в&nbsp;проде.</p>
+  <div class="foot"><span>План — <span class="mono">docs/PLAN.md</span>; риски и&nbsp;меры с&nbsp;путями к&nbsp;коду — <span class="mono">docs/RISKS.md</span></span><span class="pg">09 / 09</span></div>
+</section></div>
+
+</main>
+<nav class="hud" aria-label="Навигация по слайдам">
+  <button type="button" id="prev" aria-label="Предыдущий слайд">←</button>
+  <span class="cnt" id="cnt">1 / 9</span>
+  <button type="button" id="next" aria-label="Следующий слайд">→</button>
+  <button type="button" id="ovr" aria-label="Обзор всех слайдов">Обзор</button>
+</nav>
+<script>
+(() => {
+  const frames = [...document.querySelectorAll('.frame')];
+  const N = frames.length, root = document.documentElement, cnt = document.getElementById('cnt');
+  let i = 0;
+  const fit = () => root.style.setProperty('--s', Math.min(innerWidth / 1280, (innerHeight - 8) / 720).toFixed(4));
+  const show = n => {
+    i = Math.max(0, Math.min(N - 1, n));
+    frames.forEach((f, k) => f.classList.toggle('on', k === i));
+    cnt.textContent = `${i + 1} / ${N}`;
+    if (location.hash !== `#${i + 1}`) history.replaceState(null, '', `#${i + 1}`);
+  };
+  const overview = on => {
+    document.body.classList.toggle('overview', on);
+    if (on) frames[i].scrollIntoView({block: 'center'});
+  };
+  addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (document.body.classList.contains('overview')) {
+      if (k === 'Escape' || k === 'o' || k === 'O' || k === 'Enter') { overview(false); e.preventDefault(); }
+      return;
+    }
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) { show(i + 1); e.preventDefault(); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) { show(i - 1); e.preventDefault(); }
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(N - 1);
+    else if (/^[1-9]$/.test(k)) show(+k - 1);
+    else if (k === 'o' || k === 'O' || k === 'Escape') overview(k !== 'Escape');
+    else if ((k === 'f' || k === 'F') && document.fullscreenEnabled) {
+      document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen();
+    }
+  });
+  frames.forEach((f, k) => f.addEventListener('click', () => {
+    if (document.body.classList.contains('overview')) { show(k); overview(false); }
+  }));
+  document.getElementById('prev').onclick = () => show(i - 1);
+  document.getElementById('next').onclick = () => show(i + 1);
+  document.getElementById('ovr').onclick = () => overview(true);
+  addEventListener('resize', fit);
+  addEventListener('hashchange', () => show((parseInt(location.hash.slice(1), 10) || 1) - 1));
+  fit();
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>

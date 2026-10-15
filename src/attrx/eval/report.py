@@ -9,7 +9,7 @@ from pathlib import Path
 from ..io import write_predictions
 from ..schema import Card, ExtractionResult
 from ..taxonomy import Taxonomy
-from .metrics import _canon, evaluate, threshold_sweep
+from .metrics import _as_list, evaluate, gold_matches, match_key, threshold_sweep
 
 MODES: dict[str, frozenset[str]] = {
     "правила": frozenset({"rules"}),
@@ -80,13 +80,17 @@ def errors(results: list[ExtractionResult], gold: dict, tax: Taxonomy) -> list[d
         if r.card_id not in gold:
             continue
         cat = tax.categories[r.category]
+        g = gold[r.card_id]
+        brand = (_as_list(g.get("brand")) or [None])[0]
         for a in r.attributes:
             spec = cat.attributes[a.attribute]
-            pred = _canon(a.value, spec, tax) if a.status == "accepted" else None
-            truth = _canon(gold[r.card_id].get(a.attribute), spec, tax)
-            if pred == truth:
+            pred = match_key(a.value, spec, tax, brand) if a.status == "accepted" else None
+            truth = _as_list(g.get(a.attribute))
+            if (pred is None and not truth) or (pred is not None and truth
+                                                 and gold_matches(a.value, truth, spec, tax, brand)):
                 continue
-            kind = "missed" if pred is None else "extra" if truth is None else "wrong"
+            # extra — значение там, где в каталоге пусто (на неполном эталоне это new_fill, а не обязательно ошибка)
+            kind = "missed" if pred is None else "extra" if not truth else "wrong"
             rows.append({"card_id": r.card_id, "category": r.category, "attribute": a.attribute, "kind": kind,
                          "predicted": a.value, "gold": gold[r.card_id].get(a.attribute), "status": a.status,
                          "confidence": a.confidence, "sources": ",".join(a.sources), "evidence": a.evidence or ""})

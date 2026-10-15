@@ -1,271 +1,186 @@
-// Реестр компонентов generative UI. LLM выбирает тип и параметры, данные берём только из result.
-// Весь текст выводится через textContent — никакого innerHTML с данными.
-export function h(tag, attrs = {}, ...children) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v == null) continue;
-    if (k === "class") el.className = v;
-    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
-    else el.setAttribute(k, v);
-  }
-  for (const c of children.flat(Infinity)) if (c != null) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
-  return el;
+// Реестр компонентов generative UI. LLM (или подбор по ключевым словам) выбирает тип и параметры
+// из фиксированного набора (src/attrx/genui/schema.py), а данные компоненты берут только из result:
+// модель не может показать характеристику, которой нет. Текст выводится через textContent.
+import { fmt, h, icon, shownValue, put, valueText } from "./js/dom.js";
+import { attributeList, meter, statusMark } from "./js/attrs.js";
+import { snippet } from "./js/evidence.js";
+import { SOURCE, STATUS } from "./js/copy.js";
+
+export { h } from "./js/dom.js";
+
+let blkN = 0;
+function blk(type, title, body, note) {
+  const id = "blk-" + ++blkN;
+  return h("section", { class: "blk blk--" + type, "aria-labelledby": title ? id : null },
+    title ? h("h3", { class: "blk__title", id }, title) : null,
+    note ? h("p", { class: "blk__note" }, note) : null,
+    body);
 }
 
-const STATUS = { accepted: "принято", review: "проверить", missing: "нет в тексте" };
-const SOURCE = { seller: "продавец", rules: "правила", ml: "ML", llm: "LLM", human: "модератор" };
-const SOURCE_ORDER = ["seller", "rules", "ml", "llm", "human"];
-export const pct = (x) => Math.round(x * 100) + "%";
-const card = (title, ...body) => h("div", { class: "c" }, title ? h("h3", {}, title) : null, ...body);
-const LOW = 0.7;
-const CATEGORY = { smartphone: "Смартфоны", laptop: "Ноутбуки", headphones: "Наушники", generic: "Прочее" };
-const GROUP = { brand: "Основные", model: "Основные", screen: "Экран", storage: "Память и производительность", ram: "Память и производительность",
-  cpu: "Память и производительность", battery: "Питание", color: "Внешний вид" };
-const NS = "http://www.w3.org/2000/svg";
-const svg = (tag, attrs) => { const el = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v); return el; };
-// Кольцо прогресса: dashoffset анимируется после монтирования (см. render)
-function ring(p, label) {
-  const r = 40, C = 2 * Math.PI * r;
-  const s = svg("svg", { viewBox: "0 0 96 96" });
-  s.append(svg("circle", { class: "ring__bg", cx: 48, cy: 48, r }),
-    svg("circle", { class: "ring__fg " + level(p), cx: 48, cy: 48, r, "stroke-dasharray": C, "stroke-dashoffset": C, "data-off": C * (1 - p) }));
-  return h("div", { class: "ring" }, s, h("div", { class: "ring__txt" }, h("b", {}, h("span", { "data-count": Math.round(p * 100) }, "0"), "%"), h("span", {}, label)));
-}
-const checkIcon = () => { const s = svg("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2.5", "stroke-linecap": "round", "stroke-linejoin": "round" }); s.append(svg("path", { d: "M5 12.5l4.5 4.5L19 7" })); return s; };
-let toastTimer;
-export function toast(msg) {
-  const t = document.getElementById("toast");
-  if (!t) return;
-  t.lastElementChild.textContent = msg;
-  t.classList.add("is-show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("is-show"), 2800);
+function pick(r, c, ctx) {
+  let list = r.attributes;
+  const f = c.filter && c.filter !== "all" ? c.filter : ctx?.filter || null;
+  if (f) list = list.filter((a) => a.status === f);
+  if (c.attributes?.length) list = list.filter((a) => c.attributes.includes(a.attribute));
+  return list;
 }
 
-// Отбор атрибутов по параметрам компонента: filter → attributes → sort → limit
-const pick = (r, c) => {
-  let a = [...r.attributes];
-  if (c.filter === "low_confidence") a = a.filter((x) => x.confidence < LOW || x.status !== "accepted");
-  else if (c.filter && c.filter !== "all") a = a.filter((x) => x.status === c.filter);
-  if (c.attributes) a = a.filter((x) => c.attributes.includes(x.attribute));
-  if (c.sort === "confidence_asc") a.sort((x, y) => x.confidence - y.confidence);
-  if (c.sort === "confidence_desc") a.sort((x, y) => y.confidence - x.confidence);
-  if (c.sort === "name") a.sort((x, y) => x.title.localeCompare(y.title, "ru"));
-  if (c.limit) a = a.slice(0, c.limit);
-  return a;
-};
-const level = (v) => (v >= LOW ? "ok" : v >= 0.4 ? "mid" : "low");
-const chip = (a) => h("span", { class: "chip chip--" + a.status }, STATUS[a.status] + " · " + pct(a.confidence));
-const emptyNote = (text) => h("p", { class: "muted empty-note" }, text);
-const bar = (a) => h("div", { class: "bar" },
-  h("span", {}, a.title),
-  h("div", { class: "bar__track" }, h("div", { class: "bar__fill " + level(a.confidence), style: "width:0", "data-w": pct(a.confidence) })),
-  h("b", {}, pct(a.confidence)));
+const titleOf = (r, key) => r.attributes.find((a) => a.attribute === key)?.title || key;
+const unitOf = (r, key) => r.attributes.find((a) => a.attribute === key)?.unit || null;
+const altText = valueText;
+const pyValue = (v) => String(v).trim().replace(/^['"]|['"]$/g, "");
 
-// Разбор предупреждений пайплайна «attr: конфликт значений, альтернативы: a, b»
-const conflictsOf = (r) => {
+/** Предупреждения пайплайна → понятные записи. Формат строк задаёт src/attrx/pipeline.py. */
+export function parseWarnings(r) {
   const out = [];
-  for (const w of r.warnings) {
-    const m = /^(\w+): конфликт значений, альтернативы: (.+)$/.exec(w);
-    if (m) out.push({ attribute: m[1], alternatives: m[2].split(", ") });
+  for (const w of r.warnings || []) {
+    let m = /^llm: отброшено незаземл[её]нное значение (\w+)=(.+)$/u.exec(w);
+    if (m) {
+      out.push({ kind: "rejected", attr: m[1], value: pyValue(m[2]) });
+      continue;
+    }
+    m = /^(\w+): конфликт значений, альтернативы: (.*)$/u.exec(w);
+    if (m) {
+      out.push({ kind: "conflict", attr: m[1], alts: m[2].split(",").map((x) => x.trim()).filter(Boolean) });
+      continue;
+    }
+    if (/категория определена неуверенно/u.test(w)) out.push({ kind: "category", text: "Категория определена неуверенно: проверьте, к какой категории относится товар" });
+    else out.push({ kind: "other", text: w.replace(/^llm:\s*/u, "LLM: ") });
   }
   return out;
-};
+}
+
+const ALERT_ICON = { info: "info", success: "check-circle", warning: "warning", danger: "warning-circle" };
 
 export const registry = {
-  alert: (c) => h("div", { class: "alert alert--" + (c.level || "info") }, c.title ? h("b", {}, c.title + " ") : null, c.text || ""),
+  alert: (c) => h("div", { class: "alert alert--" + (c.level || "info"), role: c.level === "danger" ? "alert" : null },
+    icon(ALERT_ICON[c.level] || "info", 16, "alert__icon"), h("p", { class: "alert__text" }, c.text || "")),
 
-  // Шапка товара: категория, название, кольцо заполненности — как верх страницы товара
-  summary: (c, r, ctx) => {
+  summary(c, r, ctx) {
     const n = (s) => r.attributes.filter((a) => a.status === s).length;
-    const total = r.attributes.length || 1, done = n("accepted"), p = done / total;
-    const stat = (v, label, cls) => h("span", { class: "stat stat--" + cls }, h("i"), h("b", {}, v), h("span", { class: "muted" }, label));
-    return h("div", { class: "c hero" },
-      h("div", { class: "hero__main" },
-        h("div", { class: "hero__eyebrow" }, h("span", { class: "plate" }, CATEGORY[r.category] || r.category),
-          h("span", { class: "muted" }, "карточка " + r.card_id + " · категория определена на " + pct(r.category_confidence)),
-          r.llm_used ? h("span", { class: "chip chip--review" }, "LLM") : null),
-        h("h2", { class: "hero__title" }, ctx?.card?.title || r.card_id),
-        h("div", { class: "hero__stats" }, stat(done, "принято", "ok"), stat(n("review"), "на проверку", "mid"), stat(n("missing"), "нет в тексте", "low")),
-        c.text ? h("p", { class: "muted", style: "margin:12px 0 0" }, c.text) : null),
-      ring(p, "заполнено"));
+    const req = r.attributes.filter((a) => a.required !== false);
+    const filled = req.filter((a) => a.status !== "missing").length;
+    const order = ["accepted", "review", "missing"];
+    const bar = h("div", { class: "sum__bar", role: "img",
+      "aria-label": order.map((s) => STATUS[s].label + " " + n(s)).join(", ") + " из " + r.attributes.length },
+    order.map((s) => (n(s) ? h("span", { class: "sum__seg sum__seg--" + s, style: { flexGrow: String(n(s)) } }) : null)));
+    const items = order.map((s) => h("button", {
+      class: "sum__item sum__item--" + s, type: "button", "aria-pressed": String(ctx?.filter === s),
+      "data-tip": ctx?.filter === s ? "Показать все характеристики" : "Показать только «" + STATUS[s].label + "»",
+      onclick: () => ctx?.setFilter?.(ctx.filter === s ? null : s),
+    }, icon(STATUS[s].icon, 16), h("span", { class: "sum__num" }, fmt.int(n(s))), h("span", { class: "sum__label" }, STATUS[s].label)));
+    return blk("summary", c.title, h("div", { class: "sum" }, bar,
+      h("div", { class: "sum__row" }, h("div", { class: "sum__items", role: "group", "aria-label": "Фильтр по статусу" }, items),
+        h("p", { class: "sum__aside" }, "Обязательных заполнено ", h("strong", null, filled + " из " + req.length)))), c.text);
   },
 
-  kpi: (c, r) => {
-    const n = (s) => r.attributes.filter((a) => a.status === s).length;
-    const mean = r.attributes.length ? r.attributes.reduce((s, a) => s + a.confidence, 0) / r.attributes.length : 0;
-    const tile = (v, label, cls, key) => h("div", { class: "tile tile--" + cls + (c.filter === key ? " is-focus" : "") },
-      h("b", { class: "tile__num", "data-count": typeof v === "number" ? v : null }, typeof v === "number" ? "0" : v), h("span", {}, label));
-    return card(c.title, h("div", { class: "tiles" },
-      tile(n("accepted"), "заполнено автоматически", "ok", "accepted"),
-      tile(n("review"), "на проверку", "mid", "review"),
-      tile(n("missing"), "нет в тексте", "low", "missing"),
-      tile(pct(mean), "средняя уверенность", "plain", "all")),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
+  attribute_table(c, r, ctx) {
+    const list = pick(r, c, ctx);
+    const body = list.length
+      ? [h("div", { class: "ahead", "aria-hidden": "true" },
+        h("span", null, "Характеристика"), h("span", null, "Значение"), h("span", null, "Уверенность"), h("span", null, "Статус"), h("span", null, "Источник")),
+      attributeList(list, ctx)]
+      : h("p", { class: "blk__empty" }, "Нет характеристик с таким статусом.");
+    return blk("table", c.title || "Характеристики", body, c.text || (ctx?.hint && list.length ? ctx.hint : null));
   },
 
-  // Характеристики группами, как блок «Характеристики» на странице товара mvideo.ru
-  attribute_table: (c, r) => {
-    const rows = pick(r, c);
-    const compact = c.variant === "compact";
-    const row = (a) => h("tr", {},
-      h("td", { class: "k" }, h("span", {}, a.title)),
-      h("td", { class: "v" }, a.display ?? "—", chip(a),
-        compact ? null : h("span", { class: "src" }, a.sources.map((s) => SOURCE[s] || s).join(", ")),
-        !compact && a.evidence ? h("span", { class: "ev" }, "«" + a.evidence + "»") : null));
-    const groups = new Map();
-    for (const a of rows) { const g = GROUP[a.attribute] || "Прочее"; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(a); }
-    const body = groups.size > 1 && !c.sort
-      ? [...groups].map(([g, list]) => [h("h4", {}, g), h("table", { class: "specs" }, list.map(row))])
-      : h("table", { class: "specs" }, rows.map(row));
-    return card(c.title || "Характеристики", rows.length ? body : emptyNote("Под этот фильтр ничего не попало"),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
+  confidence_chart(c, r, ctx) {
+    const list = pick(r, { ...c, filter: c.filter || "all" }, null).filter((a) => a.status !== "missing");
+    const thr = ctx?.threshold ?? 0.7;
+    const body = list.length
+      ? h("div", { class: "cbars", style: { "--t": String(thr) } },
+        h("div", { class: "cbars__axis", "aria-hidden": "true" }, h("span", null, "0"), h("span", { class: "cbars__thr" }, "порог " + fmt.conf(thr)), h("span", null, "1")),
+        list.map((a) => h("div", { class: "cbar cbar--" + a.status, onpointerenter: () => ctx?.focusEvidence?.(a.attribute, { scroll: true }) },
+          h("span", { class: "cbar__label" }, a.title),
+          h("span", { class: "cbar__track", "aria-hidden": "true" }, h("span", { class: "cbar__fill", style: { "--v": String(a.confidence) } })),
+          h("span", { class: "cbar__num" }, fmt.conf(a.confidence)))))
+      : h("p", { class: "blk__empty" }, "Нет найденных значений.");
+    return blk("confidence", c.title || "Уверенность относительно порога", body,
+      c.text || "Ниже красной линии значение не принимается автоматически и уходит на проверку.");
   },
 
-  attribute_cards: (c, r) => {
-    const rows = pick(r, c);
-    return card(c.title, rows.length ? h("div", { class: "acards" }, rows.map((a) => h("div", { class: "acard acard--" + a.status },
-      h("span", { class: "acard__k" }, a.title),
-      h("b", { class: "acard__v" }, a.display ?? "—"),
-      h("div", { class: "acard__meta" }, chip(a), h("span", { class: "src" }, a.sources.map((s) => SOURCE[s] || s).join(", "))),
-      a.evidence && c.variant !== "compact" ? h("q", { class: "acard__ev" }, a.evidence) : null))) : emptyNote("Под этот фильтр ничего не попало"),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
-  },
-
-  confidence_chart: (c, r) => {
-    const rows = pick(r, c);
-    return card(c.title || "Уверенность", rows.length ? h("div", { class: "bars" }, rows.map(bar)) : emptyNote("Нет данных"),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
-  },
-
-  evidence: (c, r) => {
-    const rows = pick(r, c).filter((a) => a.evidence);
-    return card(c.title || "Откуда взяли значения", rows.length ? h("ul", { class: "evidence" }, rows.map((a) =>
-      h("li", {}, h("b", {}, a.title + ": "), a.display ?? "—", h("span", { class: "arrow" }, "←"), h("q", {}, a.evidence), chip(a))))
-      : emptyNote("Для выбранных характеристик цитат нет — значения не из текста"),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
-  },
-
-  // Текст карточки с подсветкой цитат: строим через split/append, без innerHTML
-  highlight: (c, r, ctx) => {
-    const text = [ctx.card?.title, ctx.card?.description].filter(Boolean).join("\n\n");
-    const rows = pick(r, c).filter((a) => a.evidence);
-    if (!text) return card(c.title || "Текст карточки", emptyNote("Текст карточки недоступен"));
-    const marks = [];
-    const low = text.toLowerCase();
-    for (const a of rows) {
-      const i = low.indexOf(String(a.evidence).toLowerCase());
-      if (i >= 0) marks.push({ s: i, e: i + a.evidence.length, a });
-    }
-    marks.sort((x, y) => x.s - y.s);
-    const out = h("p", { class: "hl" });
-    let pos = 0;
-    for (const m of marks) {
-      if (m.s < pos) continue;
-      out.append(text.slice(pos, m.s), h("mark", { class: "hl__m hl__m--" + level(m.a.confidence), title: m.a.title + " · " + pct(m.a.confidence) }, text.slice(m.s, m.e)));
-      pos = m.e;
-    }
-    out.append(text.slice(pos));
-    return card(c.title || "Текст карточки", out, h("p", { class: "muted hl__legend" }, marks.length + " цитат подсвечено: зелёный — уверенно, жёлтый — спорно, красный — слабо"));
-  },
-
-  conflicts: (c, r) => {
-    const cf = conflictsOf(r);
-    const multi = r.attributes.filter((a) => a.sources.length > 1 && !cf.some((x) => x.attribute === a.attribute));
-    const byKey = Object.fromEntries(r.attributes.map((a) => [a.attribute, a]));
-    const rows = cf.map(({ attribute, alternatives }) => {
-      const a = byKey[attribute] || { title: attribute, display: "—", confidence: 0, status: "review", sources: [] };
-      return h("div", { class: "cf" },
-        h("div", { class: "cf__name" }, h("b", {}, a.title), chip(a)),
-        h("div", { class: "cf__vals" },
-          h("span", { class: "cf__v cf__v--win" }, a.display ?? "—", h("small", {}, "выбрано · " + a.sources.map((s) => SOURCE[s] || s).join(", "))),
-          alternatives.map((alt) => h("span", { class: "cf__v" }, alt, h("small", {}, "альтернатива")))));
+  evidence(c, r, ctx) {
+    const list = pick(r, c, null).filter((a) => a.status !== "missing");
+    const items = list.map((a) => {
+      const loc = ctx?.located?.get(a.attribute);
+      return h("li", { class: "evi", onpointerenter: () => ctx?.focusEvidence?.(a.attribute, { scroll: true }) },
+        h("div", { class: "evi__head" }, h("span", { class: "evi__attr" }, a.title), h("span", { class: "evi__val" }, shownValue(a) ?? ""), statusMark(a.status, ctx?.threshold, { withTip: false })),
+        loc && ctx?.full ? h("blockquote", { class: "evi__quote" }, snippet(ctx.full, loc, 48))
+          : h("p", { class: "evi__none" }, a.evidence ? "«" + a.evidence + "»" : "Цитаты нет"));
     });
-    return card(c.title || "Расхождения источников",
-      rows.length ? rows : h("div", { class: "alert alert--success" }, "Конфликтов между продавцом и текстом не найдено"),
-      multi.length ? h("p", { class: "muted" }, "Подтверждено двумя источниками: " + multi.map((a) => a.title).join(", ")) : null,
-      c.text ? h("p", { class: "muted" }, c.text) : null);
+    return blk("evidence", c.title || "Откуда взяты значения", items.length ? h("ul", { class: "evlist" }, items) : h("p", { class: "blk__empty" }, "Цитат нет."), c.text);
   },
 
-  source_breakdown: (c, r) => {
-    const counts = {};
-    for (const a of pick(r, c)) for (const s of a.sources) counts[s] = (counts[s] || 0) + 1;
-    const total = Object.values(counts).reduce((x, y) => x + y, 0) || 1;
-    const keys = SOURCE_ORDER.filter((k) => counts[k]);
-    return card(c.title || "Источники значений",
-      h("div", { class: "stack" }, keys.map((k) => h("div", { class: "stack__seg stack__seg--" + k, style: "flex-grow:" + counts[k], title: SOURCE[k] + ": " + counts[k] }))),
-      h("div", { class: "legend" }, keys.map((k) => h("span", {}, h("i", { class: "dot dot--" + k }), SOURCE[k] + " · " + counts[k] + " (" + pct(counts[k] / total) + ")"))),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
+  review_queue(c, r, ctx) {
+    const list = pick(r, { ...c, filter: c.filter || "review" }, null);
+    if (!list.length) return blk("review", c.title || "На проверку", h("p", { class: "blk__empty" }, "Проверять нечего: всё принято автоматически."), c.text);
+    const ul = attributeList(list, ctx);
+    queueMicrotask(() => ul._rows?.[0]?.open(true));
+    return blk("review", c.title || "На проверку", ul, c.text);
   },
 
-  review_queue: (c, r, ctx) => {
-    const rows = pick(r, { ...c, filter: c.filter || "review" });
-    return card(c.title || "На проверку", rows.length ? rows.map((a) => reviewRow(r.card_id, a, ctx)) : h("div", { class: "alert alert--success" }, "Очередь пуста"),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
+  conflicts(c, r, ctx) {
+    const wanted = c.attributes?.length ? new Set(c.attributes) : null;
+    const items = [];
+    for (const a of r.attributes) {
+      if (!a.alternatives?.length || (wanted && !wanted.has(a.attribute))) continue;
+      items.push(h("li", { class: "cf", onpointerenter: () => ctx?.focusEvidence?.(a.attribute, { scroll: true }) },
+        icon("scales", 18, "cf__icon"),
+        h("div", { class: "cf__body" },
+          h("p", { class: "cf__title" }, a.title, ": источники расходятся"),
+          h("div", { class: "cf__alts" },
+            h("span", { class: "chip chip--chosen", "data-tip": "Выбрано пайплайном" }, icon("check", 12), shownValue(a) ?? "нет", " ", h("small", null, a.sources.map((s) => SOURCE[s]?.label || s).join(", "))),
+            a.alternatives.map((alt) => h("span", { class: "chip" }, altText(alt.value, alt.unit || a.unit), " ",
+              h("small", null, (alt.sources || []).map((s) => SOURCE[s]?.label || s).join(", "), alt.confidence != null ? " " + fmt.conf(alt.confidence) : "")))))));
+    }
+    const seen = new Set(r.attributes.filter((a) => a.alternatives?.length).map((a) => a.attribute));
+    for (const w of parseWarnings(r)) {
+      if (w.attr && wanted && !wanted.has(w.attr)) continue;
+      if (w.kind === "conflict" && !seen.has(w.attr)) {
+        items.push(h("li", { class: "cf", onpointerenter: () => ctx?.focusEvidence?.(w.attr, { scroll: true }) }, icon("scales", 18, "cf__icon"),
+          h("div", { class: "cf__body" }, h("p", { class: "cf__title" }, titleOf(r, w.attr), ": источники расходятся"),
+            h("div", { class: "cf__alts" }, h("span", { class: "cf__note" }, "Не выбраны:"), w.alts.map((v) => h("span", { class: "chip" }, altText(v, unitOf(r, w.attr))))))));
+      } else if (w.kind === "rejected") {
+        items.push(h("li", { class: "cf cf--rejected" }, icon("prohibit", 18, "cf__icon"),
+          h("div", { class: "cf__body" },
+            h("p", { class: "cf__title" }, "LLM предложила ", h("s", null, "«" + w.value + "»"), " для «" + titleOf(r, w.attr) + "»"),
+            h("p", { class: "cf__text" }, "Этого нет в тексте карточки, значение отброшено проверкой цитаты. Так видно, что модель не может дописать характеристику от себя."))));
+      } else if (w.kind === "category" || w.kind === "other") {
+        items.push(h("li", { class: "cf cf--note" }, icon("warning", 18, "cf__icon"), h("div", { class: "cf__body" }, h("p", { class: "cf__text" }, w.text))));
+      }
+    }
+    return blk("conflicts", c.title || "Спорные и отброшенные значения",
+      items.length ? h("ul", { class: "cflist" }, items) : h("p", { class: "blk__empty" }, "Источники не спорят, отброшенных значений нет."), c.text);
   },
 
-  checklist: (c, r) => {
-    const rows = pick(r, { ...c, filter: c.filter || "low_confidence" });
-    return card(c.title || "Чеклист модератора", rows.length ? h("ul", { class: "checks" }, rows.map((a) => {
-      const box = h("input", { type: "checkbox", id: "chk-" + a.attribute });
-      const li = h("li", {}, box, h("label", { for: "chk-" + a.attribute }, h("b", {}, a.title), " — ", a.status === "missing" ? "найти значение вручную" : "сверить «" + (a.display ?? "—") + "»", chip(a)));
-      box.addEventListener("change", () => li.classList.toggle("is-done", box.checked));
-      return li;
-    })) : h("div", { class: "alert alert--success" }, "Всё заполнено — проверять нечего"),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
+  metrics(c, r, ctx) {
+    const body = h("div", { class: "mm" }, h("p", { class: "blk__empty" }, "Загрузка метрик…"));
+    (ctx?.getReport ? ctx.getReport() : Promise.reject(new Error("нет данных"))).then((rep) => {
+      const m = rep?.metrics;
+      if (!m?.micro) {
+        put(body, h("p", { class: "blk__empty" }, "Метрик ещё нет: запустите make report (attrx report-real) на эталоне."));
+        return;
+      }
+      const cell = (label, v, f = fmt.p3) => h("div", { class: "mm__cell" }, h("span", { class: "mm__num" }, f(v)), h("span", { class: "mm__label" }, label));
+      put(body, 
+        h("div", { class: "mm__row" }, cell("точность", m.micro.precision), cell("полнота", m.micro.recall), cell("F1", m.micro.f1),
+          cell("F1 по спросу", m.traffic_weighted_f1), cell("покрытие", m.coverage, fmt.pct)),
+        h("p", { class: "mm__foot" }, "Эталон: " + fmt.count(m.n_cards || 0, "карточка", "карточки", "карточек") + (rep._meta?.note ? ". " + rep._meta.note.split(".")[0] : ""),
+          h("a", { class: "link", href: "#/quality" }, "Открыть «Качество»")));
+    }).catch(() => put(body, h("p", { class: "blk__empty" }, "Метрики недоступны.")));
+    return blk("metrics", c.title || "Качество на эталоне", body, c.text);
   },
-
-  metrics: (c, r, ctx) => card(c.title || "Качество на gold-разметке",
-    h("p", { class: "muted" }, c.text || "Сводные метрики — во вкладке «Метрики»."),
-    h("button", { class: "btn btn--ghost", onclick: () => document.querySelector('[data-tab="metrics"]').click() }, "Открыть метрики")),
 };
 
-export function reviewRow(cardId, a, ctx) {
-  const input = h("input", { value: a.value ?? "", placeholder: "верное значение" });
-  const btn = h("button", { class: "btn btn--ghost", type: "button", onclick: async () => {
-    btn.disabled = true;
-    try {
-      await ctx.feedback({ card_id: cardId, attribute: a.attribute, predicted: a.value, corrected: input.value, raw: a.evidence });
-    } catch (e) { btn.disabled = false; return toast("Не сохранилось: " + e.message); }
-    btn.replaceChildren(checkIcon(), input.value === String(a.value ?? "") ? "Подтверждено" : "Исправлено");
-    btn.classList.add("is-done");
-    toast(a.title + " → «" + input.value + "» ушло в feedback.jsonl");
-  } }, "Подтвердить");
-  return h("div", { class: "rq" },
-    h("div", { class: "rq__name" }, h("b", {}, a.title), h("span", { class: "chip chip--" + a.status }, pct(a.confidence)),
-      a.evidence ? h("div", { class: "muted" }, "«" + a.evidence + "»") : null),
-    input, btn);
-}
-
+/** Рендер спецификации экрана. Неизвестные типы пропускаются (схема на сервере их и так не пропустит). */
 export function render(root, spec, result, ctx) {
   root.replaceChildren();
-  root.className = "ui-root" + (spec.layout === "grid" ? " grid" : "");
-  root.append(h("div", { class: "ui-title", style: "--i:0" },
-    h("div", {}, h("h2", {}, spec.title), spec.subtitle ? h("p", { class: "muted" }, spec.subtitle) : null),
-    h("span", { class: "ui-title__by" + (spec.generated_by === "llm" ? " is-llm" : "") }, spec.generated_by === "llm" ? "экран собран LLM" : "шаблонный экран")));
-  spec.components.forEach((c, i) => {
+  root.classList.toggle("rbody--grid", spec.layout === "grid");
+  for (const c of spec.components) {
     const fn = registry[c.type];
-    if (!fn) return;
-    const el = fn(c, result, ctx);
-    el.style.setProperty("--i", i + 1);
-    if (c.span === 2) el.classList.add("span-2");
-    root.append(el);
-  });
-  // анимации «после появления»: бары растут, счётчики набегают
-  requestAnimationFrame(() => {
-    root.querySelectorAll(".bar__fill").forEach((f) => (f.style.width = f.dataset.w));
-    root.querySelectorAll(".ring__fg").forEach((f) => (f.style.strokeDashoffset = f.dataset.off));
-    root.querySelectorAll("[data-count]").forEach((el) => countUp(el, +el.dataset.count));
-  });
+    if (fn) root.append(fn(c, result, ctx));
+  }
+  return root;
 }
 
-function countUp(el, to, ms = 600) {
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return (el.textContent = to);
-  const t0 = performance.now();
-  const step = (t) => {
-    const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3);
-    el.textContent = Math.round(to * e);
-    if (k < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
+export { meter, statusMark };

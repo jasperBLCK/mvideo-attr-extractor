@@ -1,0 +1,72 @@
+# Цены LLM для оценки «стоимость на 1000 карточек» (attrx.llm.cost, attrx llm-bench, docs/LLM.md).
+# Токенные тарифы — ₽ за 1000 токенов (input — промпт, output — ответ), с НДС, синхронный режим.
+# Снято 14.10.2026. Пересчёт $ → ₽ по курсу ЦБ на 15.10.2026.
+currency: RUB
+usd_rub: 83.95
+
+providers:
+  organizers:
+    title: Шлюз организаторов хакатона (OPENAI_API_KEY/OPENAI_BASE_URL на ВМ)
+    input_per_1k: null      # неизвестно: ключ выдан командам бесплатно, с дневным лимитом; модель и тариф не раскрыты
+    output_per_1k: null
+    note: цена неизвестна — для оценки используйте строку ближайшего по классу провайдера; лимит дневной (LLM_DAILY_MAX_CALLS)
+
+  gigachat-lite:
+    title: GigaChat Lite (Сбер)
+    input_per_1k: 0.065
+    output_per_1k: 0.065
+    source: https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs (юрлица, pay-as-you-go, ред. 07.10.2026; асинхронно вдвое дешевле)
+  gigachat-pro:
+    title: GigaChat Pro (Сбер)
+    input_per_1k: 0.5
+    output_per_1k: 0.5
+    source: https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs
+  gigachat-max:
+    title: GigaChat Max (Сбер)
+    input_per_1k: 0.65
+    output_per_1k: 0.65
+    source: https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs
+
+  yandexgpt-lite:
+    title: YandexGPT Lite (Yandex AI Studio)
+    input_per_1k: 0.2
+    output_per_1k: 0.2
+    source: https://aistudio.yandex.ru/docs/ru/ai-studio/pricing (асинхронный и batch-режимы дешевле)
+  yandexgpt-pro:
+    title: YandexGPT Pro 5.1 (Yandex AI Studio)
+    input_per_1k: 0.8
+    output_per_1k: 0.8
+    source: https://aistudio.yandex.ru/docs/ru/ai-studio/pricing
+  yandex-qwen3.6-35b:
+    title: Qwen3.6 35B в Yandex AI Studio (открытая модель как сервис)
+    input_per_1k: 0.2
+    output_per_1k: 0.3
+    source: https://aistudio.yandex.ru/docs/ru/ai-studio/pricing
+
+  openai-gpt-4o-mini:
+    title: OpenAI gpt-4o-mini (справочно — класс моделей, которые часто стоят за OpenAI-совместимыми шлюзами)
+    input_per_1k_usd: 0.00015
+    output_per_1k_usd: 0.0006
+    source: https://developers.openai.com/api/docs/pricing ($0.15 / $0.60 за 1M токенов)
+
+  # On-prem: платим не за токены, а за время GPU. Стоимость карточки = (амортизация + электричество) за час
+  # × время на карточку. Время на карточку берётся из замера (attrx llm-bench), если не задано throughput.
+  onprem-gtx1060:
+    title: On-prem — стенд команды (GTX 1060 6 ГБ, Ollama, Vulkan), замер
+    hourly:
+      capex_rub: 35000            # системный блок с б/у GTX 1060 6 ГБ (допущение по рынку б/у)
+      amortization_years: 3
+      utilization: 1.0            # доля часов в работе (24/7 — 1.0)
+      power_kw: 0.2               # потребление системы под нагрузкой (GPU 120 Вт + платформа)
+      electricity_rub_per_kwh: 8.0
+    note: одна GPU, запросы по одному (LLM_CONCURRENCY=1), время на карточку — из замера
+  onprem-l4-vllm:
+    title: On-prem прод — сервер 1× NVIDIA L4 24 ГБ, vLLM, 7–8B-модель (ОЦЕНКА, не замер)
+    hourly:
+      capex_rub: 1200000          # сервер + L4 (допущение)
+      amortization_years: 3
+      utilization: 0.7
+      power_kw: 0.45
+      electricity_rub_per_kwh: 8.0
+    throughput_cards_per_hour: 6000   # допущение: vLLM с непрерывным батчингом, ~1.5K токенов промпта и ~0.15K ответа на карточку
+    note: оценка по допущениям; уточнить замером vLLM на целевом железе

@@ -1,0 +1,229 @@
+{
+ "mode": "+ NER",
+ "split": "holdout",
+ "threshold": 0.69,
+ "ece": 0.0124,
+ "n": 8474,
+ "bins": [
+  {
+   "lo": 0.1,
+   "hi": 0.2,
+   "confidence": 0.1913,
+   "accuracy": 0.3103,
+   "n": 58
+  },
+  {
+   "lo": 0.2,
+   "hi": 0.3,
+   "confidence": 0.2768,
+   "accuracy": 0.1667,
+   "n": 12
+  },
+  {
+   "lo": 0.3,
+   "hi": 0.4,
+   "confidence": 0.3237,
+   "accuracy": 0.4,
+   "n": 10
+  },
+  {
+   "lo": 0.4,
+   "hi": 0.5,
+   "confidence": 0.4374,
+   "accuracy": 0.5221,
+   "n": 113
+  },
+  {
+   "lo": 0.5,
+   "hi": 0.6,
+   "confidence": 0.5513,
+   "accuracy": 0.544,
+   "n": 125
+  },
+  {
+   "lo": 0.6,
+   "hi": 0.7,
+   "confidence": 0.6678,
+   "accuracy": 0.6441,
+   "n": 177
+  },
+  {
+   "lo": 0.7,
+   "hi": 0.8,
+   "confidence": 0.7454,
+   "accuracy": 0.6481,
+   "n": 287
+  },
+  {
+   "lo": 0.8,
+   "hi": 0.9,
+   "confidence": 0.8401,
+   "accuracy": 0.8668,
+   "n": 578
+  },
+  {
+   "lo": 0.9,
+   "hi": 1.0,
+   "confidence": 0.986,
+   "accuracy": 0.9807,
+   "n": 7114
+  }
+ ],
+ "fit": {
+  "fit_split": "dev",
+  "method": "isotonic (PAV) по группам «категория/атрибут/источники» -> «источники|тип атрибута» -> «*|тип», блоки сглажены к точности родительской группы (вес 3); группа — от 80 точек",
+  "threshold_rule": "наименьший порог, при котором на отложенных половинах dev (2-fold кросс-фиттинг) нижняя граница 95% ДИ Уилсона точности принятых значений >= target_precision и в каждой ячейке «категория/атрибут/источники» с >= 20 принятыми точность >= cell_floor",
+  "cross_fit": {
+   "folds": 2,
+   "points": 9294,
+   "precision_at_threshold": 0.9669,
+   "precision_lower95_at_threshold": 0.9629,
+   "worst_cell_at_threshold": [
+    "vacuum/battery_time/rules",
+    0.75
+   ],
+   "coverage_at_threshold": 0.9365,
+   "ece": 0.0113,
+   "raw_precision_at_same_threshold": 0.9601,
+   "raw_coverage_at_same_threshold": 0.9339,
+   "sweep": [
+    {
+     "threshold": 0.3,
+     "precision": 0.9485,
+     "coverage": 0.9801,
+     "accepted": 9109,
+     "tp": 8640,
+     "worst_cell": "headphones/battery_life/rules",
+     "worst_cell_precision": 0.4706
+    },
+    {
+     "threshold": 0.35,
+     "precision": 0.9485,
+     "coverage": 0.9798,
+     "accepted": 9106,
+     "tp": 8637,
+     "worst_cell": "headphones/battery_life/rules",
+     "worst_cell_precision": 0.4706
+    },
+    {
+     "threshold": 0.4,
+     "precision": 0.9512,
+     "coverage": 0.9748,
+     "accepted": 9060,
+     "tp": 8618,
+     "worst_cell": "headphones/battery_life/rules",
+     "worst_cell_precision": 0.4468
+    },
+    {
+     "threshold": 0.45,
+     "precision": 0.9526,
+     "coverage": 0.9709,
+     "accepted": 9024,
+     "tp": 8596,
+     "worst_cell": "headphones/battery_life/rules",
+     "worst_cell_precision": 0.3793
+    },
+    {
+     "threshold": 0.5,
+     "precision": 0.9536,
+     "coverage": 0.9685,
+     "accepted": 9001,
+     "tp": 8583,
+     "worst_cell": "headphones/battery_life/rules",
+     "worst_cell_precision": 0.3793
+    },
+    {
+     "threshold": 0.55,
+     "precision": 0.9553,
+     "coverage": 0.9631,
+     "accepted": 8951,
+     "tp": 8551,
+     "worst_cell": "headphones/battery_life/rules",
+     "worst_cell_precision": 0.3793
+    },
+    {
+     "threshold": 0.6,
+     "precision": 0.9597,
+     "coverage": 0.9528,
+     "accepted": 8855,
+     "tp": 8498,
+     "worst_cell": "fridge/total_volume/rules",
+     "worst_cell_precision": 0.7308
+    },
+    {
+     "threshold": 0.65,
+     "precision": 0.9628,
+     "coverage": 0.945,
+     "accepted": 8783,
+     "tp": 8456,
+     "worst_cell": "fridge/total_volume/rules",
+     "worst_cell_precision": 0.6389
+    },
+    {
+     "threshold": 0.7,
+     "precision": 0.9671,
+     "coverage": 0.9359,
+     "accepted": 8698,
+     "tp": 8412,
+     "worst_cell": "vacuum/battery_time/rules",
+     "worst_cell_precision": 0.75
+    },
+    {
+     "threshold": 0.75,
+     "precision": 0.9697,
+     "coverage": 0.9279,
+     "accepted": 8624,
+     "tp": 8363,
+     "worst_cell": "vacuum/battery_time/rules",
+     "worst_cell_precision": 0.75
+    },
+    {
+     "threshold": 0.8,
+     "precision": 0.9741,
+     "coverage": 0.9066,
+     "accepted": 8426,
+     "tp": 8208,
+     "worst_cell": "vacuum/battery_time/rules",
+     "worst_cell_precision": 0.75
+    },
+    {
+     "threshold": 0.85,
+     "precision": 0.9792,
+     "coverage": 0.871,
+     "accepted": 8095,
+     "tp": 7927,
+     "worst_cell": "vacuum/battery_time/rules",
+     "worst_cell_precision": 0.8095
+    },
+    {
+     "threshold": 0.9,
+     "precision": 0.9822,
+     "coverage": 0.8329,
+     "accepted": 7741,
+     "tp": 7603,
+     "worst_cell": "vacuum/battery_time/rules",
+     "worst_cell_precision": 0.8
+    },
+    {
+     "threshold": 0.95,
+     "precision": 0.9871,
+     "coverage": 0.7607,
+     "accepted": 7070,
+     "tp": 6979,
+     "worst_cell": "generic/model/ml+rules",
+     "worst_cell_precision": 0.8276
+    },
+    {
+     "threshold": 0.69,
+     "precision": 0.9669,
+     "coverage": 0.9365,
+     "accepted": 8704,
+     "tp": 8416,
+     "worst_cell": "vacuum/battery_time/rules",
+     "worst_cell_precision": 0.75
+    }
+   ]
+  }
+ },
+ "note": "уверенность пайплайна (калибровка выучена на dev) против доли верных на holdout; значения с эталоном, любой статус"
+}

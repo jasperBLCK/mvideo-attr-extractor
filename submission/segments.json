@@ -1,30 +1,104 @@
 {
-  "есть атрибуты продавца": {
-    "n_cards": 16,
-    "precision": 1.0,
-    "recall": 0.9885,
-    "f1": 0.9942,
-    "coverage": 0.9348
+ "seller_type": {
+  "marketplace": {
+   "n_cards": 1306,
+   "precision": 0.9501,
+   "recall": 0.7374,
+   "f1": 0.8303,
+   "recall_extractable": 0.9241,
+   "macro_f1": 0.5998,
+   "coverage": 0.7221,
+   "catalog_fill": 0.8506,
+   "union_fill": 0.9126,
+   "new_fills": 333
   },
-  "нет атрибутов продавца": {
-    "n_cards": 4,
-    "precision": 1.0,
-    "recall": 1.0,
-    "f1": 1.0,
-    "coverage": 0.85
-  },
-  "короткое описание (<80 симв.)": {
-    "n_cards": 18,
-    "precision": 1.0,
-    "recall": 0.9892,
-    "f1": 0.9946,
-    "coverage": 0.92
-  },
-  "длинное описание (>=80 симв.)": {
-    "n_cards": 2,
-    "precision": 1.0,
-    "recall": 1.0,
-    "f1": 1.0,
-    "coverage": 0.9167
+  "mvideo": {
+   "n_cards": 1110,
+   "precision": 0.967,
+   "recall": 0.7634,
+   "f1": 0.8532,
+   "recall_extractable": 0.9417,
+   "macro_f1": 0.6564,
+   "coverage": 0.752,
+   "catalog_fill": 0.9378,
+   "union_fill": 0.9494,
+   "new_fills": 70
   }
+ },
+ "size_band": {
+  "head": {
+   "n_cards": 1801,
+   "precision": 0.965,
+   "recall": 0.764,
+   "f1": 0.8528,
+   "recall_extractable": 0.9435,
+   "macro_f1": 0.6683,
+   "coverage": 0.7569,
+   "catalog_fill": 0.9179,
+   "union_fill": 0.9481,
+   "new_fills": 274
+  },
+  "tail": {
+   "n_cards": 187,
+   "precision": 0.951,
+   "recall": 0.7462,
+   "f1": 0.8362,
+   "recall_extractable": 0.9106,
+   "macro_f1": 0.6478,
+   "coverage": 0.6773,
+   "catalog_fill": 0.7915,
+   "union_fill": 0.8478,
+   "new_fills": 37
+  },
+  "torso": {
+   "n_cards": 428,
+   "precision": 0.9266,
+   "recall": 0.6789,
+   "f1": 0.7837,
+   "recall_extractable": 0.8816,
+   "macro_f1": 0.521,
+   "coverage": 0.6576,
+   "catalog_fill": 0.8215,
+   "union_fill": 0.8772,
+   "new_fills": 92
+  }
+ },
+ "desc_band": {
+  "long": {
+   "n_cards": 445,
+   "precision": 0.9671,
+   "recall": 0.84,
+   "f1": 0.8991,
+   "recall_extractable": 0.9495,
+   "macro_f1": 0.6807,
+   "coverage": 0.8283,
+   "catalog_fill": 0.9178,
+   "union_fill": 0.9489,
+   "new_fills": 69
+  },
+  "medium": {
+   "n_cards": 1588,
+   "precision": 0.953,
+   "recall": 0.7456,
+   "f1": 0.8366,
+   "recall_extractable": 0.9236,
+   "macro_f1": 0.6525,
+   "coverage": 0.7336,
+   "catalog_fill": 0.8849,
+   "union_fill": 0.9262,
+   "new_fills": 298
+  },
+  "short": {
+   "n_cards": 383,
+   "precision": 0.975,
+   "recall": 0.6735,
+   "f1": 0.7967,
+   "recall_extractable": 0.9531,
+   "macro_f1": 0.4008,
+   "coverage": 0.6513,
+   "catalog_fill": 0.9162,
+   "union_fill": 0.9346,
+   "new_fills": 36
+  }
+ }
 }

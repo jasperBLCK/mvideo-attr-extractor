@@ -8,6 +8,8 @@ COPY config ./config
 COPY web ./web
 COPY data/sample ./data/sample
 COPY submission ./submission
+# классификатор категории (7,8 МБ, npz без pickle) — нужен для карточек без категории; NER-модель в образ не входит
+COPY models/category ./models/category
 RUN mkdir -p outputs
 EXPOSE 8000
 CMD ["attrx", "serve", "--port", "8000"]

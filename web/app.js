@@ -1,4 +1,4 @@
-import { h, render, reviewRow } from "./components.js?v=2";
+import { h, render, reviewRow, toast } from "./components.js?v=3";
 
 const $ = (s) => document.querySelector(s);
 const api = async (path, body) => {
@@ -9,6 +9,16 @@ const api = async (path, body) => {
 const ctx = { feedback: (fb) => api("/api/feedback", fb), card: null };
 let lastResult = null;
 let samples = [];
+
+// Волна от точки нажатия на кнопках (как на mvideo.ru): элемент удаляется по окончании анимации
+document.addEventListener("pointerdown", (e) => {
+  const b = e.target.closest(".btn, .search__btn, .tab, .presets button");
+  if (!b || b.disabled) return;
+  const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height);
+  const s = h("span", { class: "ripple", style: `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px` });
+  s.addEventListener("animationend", () => s.remove());
+  b.append(s);
+});
 
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
   document.querySelectorAll(".tab, .tabpane").forEach((x) => x.classList.remove("is-active"));
@@ -69,6 +79,7 @@ $("#presets").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-intent]");
   if (!b) return;
   $("#intent").value = b.dataset.intent;
+  document.querySelectorAll("#presets button").forEach((x) => x.classList.toggle("is-active", x === b));
   $("#intent-form").requestSubmit();
 });
 
@@ -138,7 +149,8 @@ async function loadMetrics() {
 
 (async () => {
   const hl = await api("/api/health");
-  $("#health").textContent = hl.llm_enabled ? "LLM: " + hl.llm_model + " @ " + hl.llm_host : "LLM выключена · только правила";
+  $("#health").classList.toggle("is-on", hl.llm_enabled);
+  $("#health span").textContent = hl.llm_enabled ? "LLM · " + hl.llm_model + " @ " + hl.llm_host : "LLM выключена · только правила";
   samples = await api("/api/samples");
   for (const s of samples) $("#sample").append(h("option", { value: s.id }, s.id + " · " + s.title.slice(0, 50)));
 })();

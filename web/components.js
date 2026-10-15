@@ -8,7 +8,7 @@ export function h(tag, attrs = {}, ...children) {
     else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
     else el.setAttribute(k, v);
   }
-  for (const c of children.flat()) if (c != null) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  for (const c of children.flat(Infinity)) if (c != null) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
   return el;
 }
 
@@ -18,6 +18,29 @@ const SOURCE_ORDER = ["seller", "rules", "ml", "llm", "human"];
 export const pct = (x) => Math.round(x * 100) + "%";
 const card = (title, ...body) => h("div", { class: "c" }, title ? h("h3", {}, title) : null, ...body);
 const LOW = 0.7;
+const CATEGORY = { smartphone: "Смартфоны", laptop: "Ноутбуки", headphones: "Наушники", generic: "Прочее" };
+const GROUP = { brand: "Основные", model: "Основные", screen: "Экран", storage: "Память и производительность", ram: "Память и производительность",
+  cpu: "Память и производительность", battery: "Питание", color: "Внешний вид" };
+const NS = "http://www.w3.org/2000/svg";
+const svg = (tag, attrs) => { const el = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v); return el; };
+// Кольцо прогресса: dashoffset анимируется после монтирования (см. render)
+function ring(p, label) {
+  const r = 40, C = 2 * Math.PI * r;
+  const s = svg("svg", { viewBox: "0 0 96 96" });
+  s.append(svg("circle", { class: "ring__bg", cx: 48, cy: 48, r }),
+    svg("circle", { class: "ring__fg " + level(p), cx: 48, cy: 48, r, "stroke-dasharray": C, "stroke-dashoffset": C, "data-off": C * (1 - p) }));
+  return h("div", { class: "ring" }, s, h("div", { class: "ring__txt" }, h("b", {}, h("span", { "data-count": Math.round(p * 100) }, "0"), "%"), h("span", {}, label)));
+}
+const checkIcon = () => { const s = svg("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2.5", "stroke-linecap": "round", "stroke-linejoin": "round" }); s.append(svg("path", { d: "M5 12.5l4.5 4.5L19 7" })); return s; };
+let toastTimer;
+export function toast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.lastElementChild.textContent = msg;
+  t.classList.add("is-show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("is-show"), 2800);
+}
 
 // Отбор атрибутов по параметрам компонента: filter → attributes → sort → limit
 const pick = (r, c) => {
@@ -52,17 +75,20 @@ const conflictsOf = (r) => {
 export const registry = {
   alert: (c) => h("div", { class: "alert alert--" + (c.level || "info") }, c.title ? h("b", {}, c.title + " ") : null, c.text || ""),
 
-  summary: (c, r) => {
+  // Шапка товара: категория, название, кольцо заполненности — как верх страницы товара
+  summary: (c, r, ctx) => {
     const n = (s) => r.attributes.filter((a) => a.status === s).length;
-    return card(null, h("div", { class: "summary" },
-      h("span", { class: "plate" }, r.category),
-      h("span", { class: "muted" }, "категория определена с уверенностью " + pct(r.category_confidence)),
-      r.llm_used ? h("span", { class: "chip chip--review" }, "LLM") : null,
-      h("div", { class: "summary__kpi" },
-        h("div", { class: "kpi" }, h("b", {}, n("accepted")), h("span", {}, "принято")),
-        h("div", { class: "kpi" }, h("b", {}, n("review")), h("span", {}, "на проверку")),
-        h("div", { class: "kpi" }, h("b", {}, n("missing")), h("span", {}, "нет в тексте")))),
-      c.text ? h("p", { class: "muted" }, c.text) : null);
+    const total = r.attributes.length || 1, done = n("accepted"), p = done / total;
+    const stat = (v, label, cls) => h("span", { class: "stat stat--" + cls }, h("i"), h("b", {}, v), h("span", { class: "muted" }, label));
+    return h("div", { class: "c hero" },
+      h("div", { class: "hero__main" },
+        h("div", { class: "hero__eyebrow" }, h("span", { class: "plate" }, CATEGORY[r.category] || r.category),
+          h("span", { class: "muted" }, "карточка " + r.card_id + " · категория определена на " + pct(r.category_confidence)),
+          r.llm_used ? h("span", { class: "chip chip--review" }, "LLM") : null),
+        h("h2", { class: "hero__title" }, ctx?.card?.title || r.card_id),
+        h("div", { class: "hero__stats" }, stat(done, "принято", "ok"), stat(n("review"), "на проверку", "mid"), stat(n("missing"), "нет в тексте", "low")),
+        c.text ? h("p", { class: "muted", style: "margin:12px 0 0" }, c.text) : null),
+      ring(p, "заполнено"));
   },
 
   kpi: (c, r) => {
@@ -78,14 +104,21 @@ export const registry = {
       c.text ? h("p", { class: "muted" }, c.text) : null);
   },
 
+  // Характеристики группами, как блок «Характеристики» на странице товара mvideo.ru
   attribute_table: (c, r) => {
     const rows = pick(r, c);
     const compact = c.variant === "compact";
-    return card(c.title || "Характеристики", rows.length ? h("table", { class: "specs" }, rows.map((a) => h("tr", {},
+    const row = (a) => h("tr", {},
       h("td", { class: "k" }, h("span", {}, a.title)),
       h("td", { class: "v" }, a.display ?? "—", chip(a),
         compact ? null : h("span", { class: "src" }, a.sources.map((s) => SOURCE[s] || s).join(", ")),
-        !compact && a.evidence ? h("span", { class: "ev" }, "«" + a.evidence + "»") : null)))) : emptyNote("Под этот фильтр ничего не попало"),
+        !compact && a.evidence ? h("span", { class: "ev" }, "«" + a.evidence + "»") : null));
+    const groups = new Map();
+    for (const a of rows) { const g = GROUP[a.attribute] || "Прочее"; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(a); }
+    const body = groups.size > 1 && !c.sort
+      ? [...groups].map(([g, list]) => [h("h4", {}, g), h("table", { class: "specs" }, list.map(row))])
+      : h("table", { class: "specs" }, rows.map(row));
+    return card(c.title || "Характеристики", rows.length ? body : emptyNote("Под этот фильтр ничего не попало"),
       c.text ? h("p", { class: "muted" }, c.text) : null);
   },
 
@@ -189,10 +222,14 @@ export const registry = {
 
 export function reviewRow(cardId, a, ctx) {
   const input = h("input", { value: a.value ?? "", placeholder: "верное значение" });
-  const btn = h("button", { class: "btn btn--ghost", onclick: async () => {
+  const btn = h("button", { class: "btn btn--ghost", type: "button", onclick: async () => {
     btn.disabled = true;
-    await ctx.feedback({ card_id: cardId, attribute: a.attribute, predicted: a.value, corrected: input.value, raw: a.evidence });
-    btn.textContent = "Сохранено"; btn.classList.add("is-done");
+    try {
+      await ctx.feedback({ card_id: cardId, attribute: a.attribute, predicted: a.value, corrected: input.value, raw: a.evidence });
+    } catch (e) { btn.disabled = false; return toast("Не сохранилось: " + e.message); }
+    btn.replaceChildren(checkIcon(), input.value === String(a.value ?? "") ? "Подтверждено" : "Исправлено");
+    btn.classList.add("is-done");
+    toast(a.title + " → «" + input.value + "» ушло в feedback.jsonl");
   } }, "Подтвердить");
   return h("div", { class: "rq" },
     h("div", { class: "rq__name" }, h("b", {}, a.title), h("span", { class: "chip chip--" + a.status }, pct(a.confidence)),
@@ -205,7 +242,7 @@ export function render(root, spec, result, ctx) {
   root.className = "ui-root" + (spec.layout === "grid" ? " grid" : "");
   root.append(h("div", { class: "ui-title", style: "--i:0" },
     h("div", {}, h("h2", {}, spec.title), spec.subtitle ? h("p", { class: "muted" }, spec.subtitle) : null),
-    h("span", { class: "ui-title__by" }, spec.generated_by === "llm" ? "интерфейс собран LLM" : "шаблонный интерфейс")));
+    h("span", { class: "ui-title__by" + (spec.generated_by === "llm" ? " is-llm" : "") }, spec.generated_by === "llm" ? "экран собран LLM" : "шаблонный экран")));
   spec.components.forEach((c, i) => {
     const fn = registry[c.type];
     if (!fn) return;
@@ -217,6 +254,7 @@ export function render(root, spec, result, ctx) {
   // анимации «после появления»: бары растут, счётчики набегают
   requestAnimationFrame(() => {
     root.querySelectorAll(".bar__fill").forEach((f) => (f.style.width = f.dataset.w));
+    root.querySelectorAll(".ring__fg").forEach((f) => (f.style.strokeDashoffset = f.dataset.off));
     root.querySelectorAll("[data-count]").forEach((el) => countUp(el, +el.dataset.count));
   });
 }

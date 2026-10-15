@@ -1,0 +1,1376 @@
+{
+ "created": "2026-10-14T23:41:54",
+ "format": "attrx-category/1",
+ "config": {
+  "max_classes": 1000,
+  "alpha": 2e-06,
+  "search": true,
+  "epochs": 5,
+  "keep_root": 20000,
+  "keep_leaf": 4000,
+  "seed": 0,
+  "n_jobs": 2,
+  "target_precision": 0.99,
+  "vocab_docs": 120000,
+  "ctx_chars": 300,
+  "char_ngrams": [
+   2,
+   5
+  ],
+  "block_weights": [
+   1.0,
+   1.0,
+   0.5
+  ],
+  "model": "SGDClassifier(hinge) OvR × 2 этапа"
+ },
+ "data": {
+  "labeled": 294822,
+  "dropped_unknown_category_id": 1746,
+  "train": 236028,
+  "dev": 29290,
+  "holdout": 29504,
+  "by_source_holdout": {
+   "offer": 24141,
+   "clicks_seo": 5363
+  }
+ },
+ "taxonomy": {
+  "path": "config/taxonomy.yaml",
+  "sha256_12": "6e397a85cc7a",
+  "categories": [
+   "smartphone",
+   "laptop",
+   "tv",
+   "washing_machine",
+   "fridge",
+   "headphones",
+   "vacuum",
+   "tablet",
+   "smartwatch",
+   "kettle",
+   "air_fryer",
+   "split_system",
+   "generic"
+  ],
+  "mapped_leaves": 25,
+  "unmapped_leaves": [
+   "4167",
+   "6192"
+  ]
+ },
+ "label_space": {
+  "roots": 91,
+  "classes": 1087,
+  "leaf_classes": 1000,
+  "other_classes": 87,
+  "train_share_in_leaf_classes": 0.9573,
+  "leaves_in_train": 2975
+ },
+ "selection_dev": [
+  {
+   "alpha": 2e-06,
+   "dev_leaf_top1": 0.9834,
+   "dev_root_acc": 0.9941,
+   "dev_nll_root": 0.02904,
+   "dev_nll_leaf": 0.16628,
+   "nnz": 3882961,
+   "fit_s": 55.5
+  },
+  {
+   "alpha": 5e-06,
+   "dev_leaf_top1": 0.9833,
+   "dev_root_acc": 0.9943,
+   "dev_nll_root": 0.02995,
+   "dev_nll_leaf": 0.15518,
+   "nnz": 4096508,
+   "fit_s": 49.6
+  },
+  {
+   "alpha": 1e-05,
+   "dev_leaf_top1": 0.9832,
+   "dev_root_acc": 0.9934,
+   "dev_nll_root": 0.03487,
+   "dev_nll_leaf": 0.13582,
+   "nnz": 4266971,
+   "fit_s": 80.7
+  }
+ ],
+ "calibration": {
+  "root": 0.32163,
+  "nll_root": 0.02904,
+  "leaf": 0.99932,
+  "nll_leaf": 0.16628,
+  "nll_separate": 0.17773,
+  "nll_final_leaf": 0.17399
+ },
+ "threshold": {
+  "value": 0.9,
+  "rule": "max(порог точности ≥ target_precision на dev, min_confidence)",
+  "target_precision": 0.99,
+  "precision_threshold": 0.57,
+  "min_confidence": 0.9,
+  "dev_coverage": 0.9997,
+  "dev_accuracy": 0.9998
+ },
+ "holdout": {
+  "n": 29504,
+  "taxonomy": {
+   "model": {
+    "n": 29504,
+    "accuracy": 0.9998,
+    "macro_f1": 0.9979,
+    "per_class": {
+     "air_fryer": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 61,
+      "predicted": 61
+     },
+     "fridge": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 259,
+      "predicted": 259
+     },
+     "generic": {
+      "precision": 0.9999,
+      "recall": 0.9998,
+      "f1": 0.9999,
+      "support": 26662,
+      "predicted": 26659
+     },
+     "headphones": {
+      "precision": 0.9926,
+      "recall": 1.0,
+      "f1": 0.9963,
+      "support": 268,
+      "predicted": 270
+     },
+     "kettle": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 165,
+      "predicted": 165
+     },
+     "laptop": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 252,
+      "predicted": 252
+     },
+     "smartphone": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 806,
+      "predicted": 806
+     },
+     "smartwatch": {
+      "precision": 0.9792,
+      "recall": 1.0,
+      "f1": 0.9895,
+      "support": 141,
+      "predicted": 144
+     },
+     "split_system": {
+      "precision": 1.0,
+      "recall": 0.9796,
+      "f1": 0.9897,
+      "support": 49,
+      "predicted": 48
+     },
+     "tablet": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 162,
+      "predicted": 162
+     },
+     "tv": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 285,
+      "predicted": 285
+     },
+     "vacuum": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 238,
+      "predicted": 238
+     },
+     "washing_machine": {
+      "precision": 1.0,
+      "recall": 0.9936,
+      "f1": 0.9968,
+      "support": 156,
+      "predicted": 155
+     }
+    }
+   },
+   "keyword_baseline": {
+    "n": 29504,
+    "accuracy": 0.9212,
+    "macro_f1": 0.7904,
+    "per_class": {
+     "air_fryer": {
+      "precision": 0.9104,
+      "recall": 1.0,
+      "f1": 0.9531,
+      "support": 61,
+      "predicted": 67
+     },
+     "fridge": {
+      "precision": 0.6434,
+      "recall": 0.9961,
+      "f1": 0.7818,
+      "support": 259,
+      "predicted": 401
+     },
+     "generic": {
+      "precision": 0.9996,
+      "recall": 0.9154,
+      "f1": 0.9557,
+      "support": 26662,
+      "predicted": 24415
+     },
+     "headphones": {
+      "precision": 0.7896,
+      "recall": 0.9664,
+      "f1": 0.8691,
+      "support": 268,
+      "predicted": 328
+     },
+     "kettle": {
+      "precision": 0.9874,
+      "recall": 0.9515,
+      "f1": 0.9691,
+      "support": 165,
+      "predicted": 159
+     },
+     "laptop": {
+      "precision": 0.4544,
+      "recall": 0.9683,
+      "f1": 0.6185,
+      "support": 252,
+      "predicted": 537
+     },
+     "smartphone": {
+      "precision": 0.4034,
+      "recall": 1.0,
+      "f1": 0.5749,
+      "support": 806,
+      "predicted": 1998
+     },
+     "smartwatch": {
+      "precision": 0.7862,
+      "recall": 0.8085,
+      "f1": 0.7972,
+      "support": 141,
+      "predicted": 145
+     },
+     "split_system": {
+      "precision": 0.5269,
+      "recall": 1.0,
+      "f1": 0.6901,
+      "support": 49,
+      "predicted": 93
+     },
+     "tablet": {
+      "precision": 0.5231,
+      "recall": 0.9074,
+      "f1": 0.6637,
+      "support": 162,
+      "predicted": 281
+     },
+     "tv": {
+      "precision": 0.5481,
+      "recall": 1.0,
+      "f1": 0.7081,
+      "support": 285,
+      "predicted": 520
+     },
+     "vacuum": {
+      "precision": 0.6247,
+      "recall": 1.0,
+      "f1": 0.769,
+      "support": 238,
+      "predicted": 381
+     },
+     "washing_machine": {
+      "precision": 0.8659,
+      "recall": 0.9936,
+      "f1": 0.9254,
+      "support": 156,
+      "predicted": 179
+     }
+    }
+   }
+  },
+  "leaf": {
+   "top1": 0.9839,
+   "top3": 0.9899,
+   "root_accuracy": 0.9952,
+   "in_label_space_share": 0.9558,
+   "exact_leaf_top1": 0.9885,
+   "unseen_in_train": 0
+  },
+  "segments": {
+   "source_offer": {
+    "n": 24141,
+    "taxonomy_accuracy": 0.9999,
+    "keyword_taxonomy_accuracy": 0.9308,
+    "leaf_top1": 0.9843
+   },
+   "source_clicks_seo": {
+    "n": 5363,
+    "taxonomy_accuracy": 0.9991,
+    "keyword_taxonomy_accuracy": 0.8781,
+    "leaf_top1": 0.9825
+   },
+   "seller_mvideo": {
+    "n": 5731,
+    "taxonomy_accuracy": 1.0,
+    "keyword_taxonomy_accuracy": 0.8707,
+    "leaf_top1": 0.9885
+   },
+   "seller_marketplace": {
+    "n": 18402,
+    "taxonomy_accuracy": 0.9999,
+    "keyword_taxonomy_accuracy": 0.9498,
+    "leaf_top1": 0.983
+   },
+   "title_seen_in_train": {
+    "n": 7519,
+    "taxonomy_accuracy": 1.0,
+    "keyword_taxonomy_accuracy": 0.9476,
+    "leaf_top1": 0.9987
+   },
+   "title_novel": {
+    "n": 21985,
+    "taxonomy_accuracy": 0.9997,
+    "keyword_taxonomy_accuracy": 0.9122,
+    "leaf_top1": 0.9789
+   },
+   "class_head_1000plus": {
+    "n": 13698,
+    "taxonomy_accuracy": 0.9999,
+    "keyword_taxonomy_accuracy": 0.9771,
+    "leaf_top1": 0.9972
+   },
+   "class_torso_100_999": {
+    "n": 11925,
+    "taxonomy_accuracy": 0.9997,
+    "keyword_taxonomy_accuracy": 0.8777,
+    "leaf_top1": 0.9763
+   },
+   "class_tail_lt100": {
+    "n": 3881,
+    "taxonomy_accuracy": 0.9992,
+    "keyword_taxonomy_accuracy": 0.8573,
+    "leaf_top1": 0.9608
+   }
+  },
+  "reliability_taxonomy": {
+   "bins": [
+    {
+     "bin": "0.6–0.7",
+     "n": 3,
+     "mean_confidence": 0.6576,
+     "accuracy": 0.3333
+    },
+    {
+     "bin": "0.7–0.8",
+     "n": 2,
+     "mean_confidence": 0.7416,
+     "accuracy": 1.0
+    },
+    {
+     "bin": "0.8–0.9",
+     "n": 2,
+     "mean_confidence": 0.8544,
+     "accuracy": 1.0
+    },
+    {
+     "bin": "0.9–1.0",
+     "n": 29497,
+     "mean_confidence": 0.9999,
+     "accuracy": 0.9998
+    }
+   ],
+   "ece": 0.0001
+  },
+  "reliability_leaf": {
+   "bins": [
+    {
+     "bin": "0.0–0.1",
+     "n": 10,
+     "mean_confidence": 0.0881,
+     "accuracy": 0.1
+    },
+    {
+     "bin": "0.1–0.2",
+     "n": 36,
+     "mean_confidence": 0.147,
+     "accuracy": 0.25
+    },
+    {
+     "bin": "0.2–0.3",
+     "n": 38,
+     "mean_confidence": 0.2533,
+     "accuracy": 0.4474
+    },
+    {
+     "bin": "0.3–0.4",
+     "n": 48,
+     "mean_confidence": 0.3465,
+     "accuracy": 0.4583
+    },
+    {
+     "bin": "0.4–0.5",
+     "n": 60,
+     "mean_confidence": 0.4468,
+     "accuracy": 0.5833
+    },
+    {
+     "bin": "0.5–0.6",
+     "n": 80,
+     "mean_confidence": 0.5495,
+     "accuracy": 0.7
+    },
+    {
+     "bin": "0.6–0.7",
+     "n": 110,
+     "mean_confidence": 0.6508,
+     "accuracy": 0.6909
+    },
+    {
+     "bin": "0.7–0.8",
+     "n": 276,
+     "mean_confidence": 0.7589,
+     "accuracy": 0.8913
+    },
+    {
+     "bin": "0.8–0.9",
+     "n": 1233,
+     "mean_confidence": 0.8633,
+     "accuracy": 0.9732
+    },
+    {
+     "bin": "0.9–1.0",
+     "n": 27613,
+     "mean_confidence": 0.9929,
+     "accuracy": 0.9911
+    }
+   ],
+   "ece": 0.0089
+  },
+  "coverage_accuracy": [
+   {
+    "threshold": 0.3,
+    "coverage": 1.0,
+    "accuracy": 0.9998,
+    "n": 29504
+   },
+   {
+    "threshold": 0.4,
+    "coverage": 1.0,
+    "accuracy": 0.9998,
+    "n": 29504
+   },
+   {
+    "threshold": 0.5,
+    "coverage": 1.0,
+    "accuracy": 0.9998,
+    "n": 29504
+   },
+   {
+    "threshold": 0.6,
+    "coverage": 1.0,
+    "accuracy": 0.9998,
+    "n": 29504
+   },
+   {
+    "threshold": 0.7,
+    "coverage": 0.9999,
+    "accuracy": 0.9998,
+    "n": 29501
+   },
+   {
+    "threshold": 0.8,
+    "coverage": 0.9998,
+    "accuracy": 0.9998,
+    "n": 29499
+   },
+   {
+    "threshold": 0.9,
+    "coverage": 0.9998,
+    "accuracy": 0.9998,
+    "n": 29497
+   },
+   {
+    "threshold": 0.95,
+    "coverage": 0.9996,
+    "accuracy": 0.9999,
+    "n": 29491
+   },
+   {
+    "threshold": 0.99,
+    "coverage": 0.9977,
+    "accuracy": 0.9999,
+    "n": 29436
+   }
+  ],
+  "at_threshold": {
+   "threshold": 0.9,
+   "coverage": 0.9998,
+   "accuracy": 0.9998,
+   "review_share": 0.0002
+  },
+  "errors": {
+   "n_taxonomy_errors": 7,
+   "taxonomy_errors": [
+    {
+     "sku_id": "20075242",
+     "title": "Облачный кондиционер Daichi A20AVQ1/A20FV1",
+     "true_leaf": "Сплит-системы",
+     "true_category": "split_system",
+     "predicted_leaf": "Напольные мобильные кондиционеры",
+     "predicted_category": "generic",
+     "confidence": 0.9996,
+     "keyword_baseline": "split_system",
+     "source": "clicks_seo"
+    },
+    {
+     "sku_id": "30077304",
+     "title": "Восстановленные смарт-часы Apple Watch Series 9 41mm Silver Aluminum Case with Blue Sport Band, размер S/M (M…",
+     "true_leaf": "Apple Watch",
+     "true_category": "generic",
+     "predicted_leaf": "Смарт-часы",
+     "predicted_category": "smartwatch",
+     "confidence": 0.6443,
+     "keyword_baseline": "smartwatch",
+     "source": "clicks_seo"
+    },
+    {
+     "sku_id": "30079141",
+     "title": "Смарт-часы Apple Watch S10 46mm SL Rose Gold Plum",
+     "true_leaf": "Apple Watch",
+     "true_category": "generic",
+     "predicted_leaf": "Смарт-часы",
+     "predicted_category": "smartwatch",
+     "confidence": 0.9998,
+     "keyword_baseline": "smartwatch",
+     "source": "clicks_seo"
+    },
+    {
+     "sku_id": "400230406",
+     "title": "Смарт-часы Honor Choice BAND 6 черный",
+     "true_leaf": "Фитнес-браслеты",
+     "true_category": "generic",
+     "predicted_leaf": "Смарт-часы",
+     "predicted_category": "smartwatch",
+     "confidence": 0.9999,
+     "keyword_baseline": "smartwatch",
+     "source": "clicks_seo"
+    },
+    {
+     "sku_id": "400554646",
+     "title": "Проводные студийные диджейские наушники Axelvox Axelvox DJ35 Проводные студийные диджейские наушники",
+     "true_leaf": "DJ наушники проводные",
+     "true_category": "generic",
+     "predicted_leaf": "Наушники",
+     "predicted_category": "headphones",
+     "confidence": 0.6911,
+     "keyword_baseline": "headphones",
+     "source": "offer"
+    },
+    {
+     "sku_id": "401212459",
+     "title": "Bluetooth гарнитура Logitech G733 Lightspeed",
+     "true_leaf": "Bluetooth гарнитуры",
+     "true_category": "generic",
+     "predicted_leaf": "Наушники для компьютеров",
+     "predicted_category": "headphones",
+     "confidence": 0.9561,
+     "keyword_baseline": "headphones",
+     "source": "offer"
+    },
+    {
+     "sku_id": "4266783",
+     "title": "Демо КБТ HAIER HW70-BP12929E White DEMO",
+     "true_leaf": "Стиральные машины",
+     "true_category": "washing_machine",
+     "predicted_leaf": "Прочее: Мототовары",
+     "predicted_category": "generic",
+     "confidence": 0.9414,
+     "keyword_baseline": "smartphone",
+     "source": "clicks_seo"
+    }
+   ],
+   "top_leaf_confusions": [
+    {
+     "true": "Подушки декоративные",
+     "predicted": "Подушки",
+     "n": 36
+    },
+    {
+     "true": "Подушки",
+     "predicted": "Подушки декоративные",
+     "n": 9
+    },
+    {
+     "true": "Шкафы для спальни",
+     "predicted": "Шкафы",
+     "n": 8
+    },
+    {
+     "true": "Зеркала",
+     "predicted": "Зеркала для ванной",
+     "n": 7
+    },
+    {
+     "true": "Блендеры",
+     "predicted": "Погружные блендеры",
+     "n": 5
+    },
+    {
+     "true": "Смартфоны",
+     "predicted": "iPhone",
+     "n": 5
+    },
+    {
+     "true": "Наборы ручного инструмента",
+     "predicted": "Кисти малярные",
+     "n": 5
+    },
+    {
+     "true": "Микроволновые печи с грилем",
+     "predicted": "Микроволновые печи соло",
+     "n": 4
+    },
+    {
+     "true": "Погружные блендеры",
+     "predicted": "Блендеры",
+     "n": 4
+    },
+    {
+     "true": "Прочее: Игрушки, игры и творчество",
+     "predicted": "Развивающие игрушки",
+     "n": 4
+    },
+    {
+     "true": "Прочее: Автомобильная безопасность",
+     "predicted": "Прочее: Устройства для \"Умного дома\"",
+     "n": 3
+    },
+    {
+     "true": "Светильники потолочные",
+     "predicted": "Люстры",
+     "n": 3
+    },
+    {
+     "true": "Светильники потолочные",
+     "predicted": "Светильники встраиваемые",
+     "n": 3
+    },
+    {
+     "true": "Светильники потолочные",
+     "predicted": "Компоненты для трековых систем",
+     "n": 3
+    },
+    {
+     "true": "Папка",
+     "predicted": "Папка для тетрадей",
+     "n": 3
+    }
+   ],
+   "worst_leaves_by_recall": [
+    {
+     "leaf": "Подушки декоративные",
+     "id": "60701",
+     "support": 105,
+     "recall": 0.6571
+    },
+    {
+     "leaf": "Прочее: Ручной инструмент и наборы",
+     "id": "other:31713",
+     "support": 49,
+     "recall": 0.7551
+    },
+    {
+     "leaf": "Прочее: Аксессуары для домашней техники",
+     "id": "other:34821",
+     "support": 29,
+     "recall": 0.7586
+    },
+    {
+     "leaf": "Прочее: Аксессуары для фото и видеотехники",
+     "id": "other:42",
+     "support": 20,
+     "recall": 0.8
+    },
+    {
+     "leaf": "Прочее: Мелкая кухонная техника",
+     "id": "other:3",
+     "support": 36,
+     "recall": 0.8056
+    },
+    {
+     "leaf": "Прочее: Освещение",
+     "id": "other:9375",
+     "support": 27,
+     "recall": 0.8148
+    },
+    {
+     "leaf": "Прочее: Посуда",
+     "id": "other:53",
+     "support": 45,
+     "recall": 0.8222
+    },
+    {
+     "leaf": "Прочее: Строительные расходные материалы и оснастка",
+     "id": "other:9491",
+     "support": 34,
+     "recall": 0.8235
+    },
+    {
+     "leaf": "Прочее: Канцелярия",
+     "id": "other:27763",
+     "support": 29,
+     "recall": 0.8276
+    },
+    {
+     "leaf": "Прочее: Аксессуары для дома",
+     "id": "other:50",
+     "support": 32,
+     "recall": 0.8438
+    }
+   ]
+  }
+ },
+ "unlabeled": {
+  "n": 20430,
+  "sampling": "category_id IS NULL AND md5(sku_id) < '060…' (~2,3% карточек без категории)",
+  "taxonomy_distribution": {
+   "generic": 0.8824,
+   "smartphone": 0.0345,
+   "laptop": 0.022,
+   "tv": 0.0113,
+   "headphones": 0.0112,
+   "vacuum": 0.0089,
+   "fridge": 0.0071,
+   "tablet": 0.0057,
+   "kettle": 0.0056,
+   "smartwatch": 0.0056,
+   "washing_machine": 0.0037,
+   "split_system": 0.0013,
+   "air_fryer": 0.0006
+  },
+  "keyword_taxonomy_distribution": {
+   "generic": 0.7054,
+   "smartphone": 0.131,
+   "laptop": 0.0783,
+   "tv": 0.0166,
+   "headphones": 0.0151,
+   "vacuum": 0.0151,
+   "fridge": 0.0107,
+   "tablet": 0.0087,
+   "smartwatch": 0.006,
+   "kettle": 0.0056,
+   "washing_machine": 0.004,
+   "split_system": 0.0027,
+   "air_fryer": 0.0007
+  },
+  "agreement_with_keywords": 0.8201,
+  "confident_share": 0.9988,
+  "review_share_by_threshold": {
+   "0.5": 0.0,
+   "0.7": 0.0005,
+   "0.9": 0.0012,
+   "0.95": 0.003,
+   "0.99": 0.0104
+  },
+  "leaf_confidence_quantiles": {
+   "0.1": 0.8362,
+   "0.25": 0.9852,
+   "0.5": 0.9988
+  },
+  "confidence_quantiles": {
+   "0.1": 0.9992,
+   "0.25": 0.9999,
+   "0.5": 1.0,
+   "0.75": 1.0
+  },
+  "top_leaves": [
+   {
+    "leaf": "Коврики для мыши [826]",
+    "share": 0.0399
+   },
+   {
+    "leaf": "Чехлы для смартфонов [1189]",
+    "share": 0.0359
+   },
+   {
+    "leaf": "Смартфоны [761]",
+    "share": 0.0263
+   },
+   {
+    "leaf": "Фотошторы [56758]",
+    "share": 0.0261
+   },
+   {
+    "leaf": "Ноутбуки [987]",
+    "share": 0.022
+   },
+   {
+    "leaf": "Косметички [33865]",
+    "share": 0.0185
+   },
+   {
+    "leaf": "Прочее: Игрушки, игры и творчество [other:31034]",
+    "share": 0.0161
+   },
+   {
+    "leaf": "Городские рюкзаки [9328]",
+    "share": 0.0136
+   },
+   {
+    "leaf": "Прочее: Товары для спорта [other:8410]",
+    "share": 0.0134
+   },
+   {
+    "leaf": "Кабели для смартфонов, телефонов [57274]",
+    "share": 0.0129
+   },
+   {
+    "leaf": "Прочее: Товары для дома [other:26087]",
+    "share": 0.0117
+   },
+   {
+    "leaf": "Телевизоры [1682]",
+    "share": 0.0113
+   },
+   {
+    "leaf": "Матрасы [36480]",
+    "share": 0.0103
+   },
+   {
+    "leaf": "Наушники [31607]",
+    "share": 0.0099
+   },
+   {
+    "leaf": "Салатники и миски [27022]",
+    "share": 0.0099
+   }
+  ],
+  "examples": [
+   {
+    "sku_id": "40062462",
+    "title": "DVD-диск . м/ф Фикситека.Приборы",
+    "description": "Мультсериал -Фиксики- представляет новую тематическую коллекцию -Фикситека-, в которую входит более сотни раз…",
+    "predicted_leaf": "Диски DVD",
+    "path": "Хобби › DVD и Blu-ray диски › Диски DVD",
+    "taxonomy_category": "generic",
+    "confidence": 0.9998,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Диски DVD (0.96)",
+     "Прочее: Мототовары (0.01)",
+     "Прочее: Компьютерные аксессуары (0.01)"
+    ]
+   },
+   {
+    "sku_id": "401754172",
+    "title": "Кабель для компьютера FAST Кабель для принтера OKI B401d-euro",
+    "description": "Надежный кабель для принтера OKI B401d-euro - ваш надежный помощник в печати! Устали от постоянных обрывов пе…",
+    "predicted_leaf": "Кабели для компьютера",
+    "path": "Компьютерные аксессуары › Кабели и разветвители для ноутбуков › Кабели для компьютера",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "laptop",
+    "top3": [
+     "Кабели для компьютера (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Кабели акустические (0.00)"
+    ]
+   },
+   {
+    "sku_id": "4184513",
+    "title": "Чехол Pero для Samsung Galaxy М32 (PCLS-0076-BK) черный",
+    "description": "Клип-кейс Pero Liquid Silicone предназначен для смартфона Samsung M32. Накладка выполнена из силикона, а изну…",
+    "predicted_leaf": "Чехлы для смартфонов",
+    "path": "Аксессуары для телефонов › Чехлы для телефонов › Чехлы для смартфонов",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Чехлы для смартфонов (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401696700",
+    "title": "Брелок для авто Нет модели",
+    "description": "Брелок для ключей Хавал - стильный автоаксессуар и прекрасное дополнение к ключу вашего автомобиля. Материал:…",
+    "predicted_leaf": "Брелоки",
+    "path": "Аксессуары › Бижутерия › Брелоки",
+    "taxonomy_category": "generic",
+    "confidence": 0.9995,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Брелоки (0.39)",
+     "Прочее: Аксессуары для автомобилей (0.24)",
+     "Прочее: Автомобильная безопасность (0.11)"
+    ]
+   },
+   {
+    "sku_id": "400953999",
+    "title": "Аксессуар для банных печей Schott Robax Seguin SUPER 9, 800х507 мм",
+    "description": "Огнеупорное жаропрочное стекло для камина Seguin SUPER 9, 800×507 мм. Огнеупорное жаропрочное стекло — это сп…",
+    "predicted_leaf": "Аксессуары для банных печей",
+    "path": "Товары для дачи и сада › Товары для бани › Аксессуары для банных печей",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Аксессуары для банных печей (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Товары для спорта (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401950110",
+    "title": "Аксессуар для кукол GSS -",
+    "description": "Кукла-младенец из мягкой резины с черной кожей и афро-прической. Лучшие товары из Китая",
+    "predicted_leaf": "Прочее: Игрушки, игры и творчество",
+    "path": "Игрушки, игры и творчество",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Прочее: Игрушки, игры и творчество (0.98)",
+     "Прочее: Товары для дачи и сада (0.01)",
+     "Прочее: Товары для спорта (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401999409",
+    "title": "Смарт-часы Google G. Google Pixel Watch 4 45mm Matte Blackcase (Obsidian band)",
+    "description": "Google Pixel Watch 4 (45 мм) — Элегантность, Мощь и Искусственный Интеллект на вашем запястье Ключевые преиму…",
+    "predicted_leaf": "Смарт-часы",
+    "path": "Гаджеты › Смарт-часы › Смарт-часы",
+    "taxonomy_category": "smartwatch",
+    "confidence": 0.9988,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Смарт-часы (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   },
+   {
+    "sku_id": "20039563",
+    "title": "Вытяжка Shindo Reya 60 SS",
+    "description": "Вытяжка Shindo Reya 60 создана на основе высокопроизводительного мотора, способного быстро очистить воздух в …",
+    "predicted_leaf": "Вытяжки кухонные",
+    "path": "Встраиваемая техника › Встраиваемые вытяжки › Вытяжки кухонные",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Вытяжки кухонные (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401513815",
+    "title": "Кейс, чехол, сумка, папка для ноутбука UNIMALL -",
+    "description": "Сумка для ноутбука 14 дюймов предназначена для переноски.",
+    "predicted_leaf": "Кейсы для ноутбуков",
+    "path": "Компьютерные аксессуары › Сумки для ноутбуков › Кейсы для ноутбуков",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "laptop",
+    "top3": [
+     "Кейсы для ноутбуков (1.00)",
+     "Ретрансляторы Wi-Fi сигнала (0.00)",
+     "Аксессуары для клавиатур и мышей (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401520853",
+    "title": "Аксессуар для мотоэкипировки UNIMALL Пара одиночных увеличивающих кодов [Серебристый]",
+    "description": "Пара одиночных подъемных кодов для руля.",
+    "predicted_leaf": "Прочее: Игрушки, игры и творчество",
+    "path": "Игрушки, игры и творчество",
+    "taxonomy_category": "generic",
+    "confidence": 0.9981,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Прочее: Игрушки, игры и творчество (0.41)",
+     "Прочее: Хобби (0.07)",
+     "Прочее: Товары для спорта (0.06)"
+    ]
+   },
+   {
+    "sku_id": "50148183",
+    "title": "Защитное стекло Red Line для BQS-4072 Strike Mini 4 (УТ000013290)",
+    "description": "С закалённым стеклом Red Line экран смартфона BQS-4072 Strike Mini 4 будет надёжно защищён от царапин, потёрт…",
+    "predicted_leaf": "Защитные стекла",
+    "path": "Аксессуары для телефонов › Пленки и стекла для телефонов › Защитные стекла",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Защитные стекла (0.99)",
+     "Туристический eSIM (0.00)",
+     "Bluetooth гарнитуры (0.00)"
+    ]
+   },
+   {
+    "sku_id": "20111387",
+    "title": "Уцененный термопот Galaxy LINE GL0617, отличный",
+    "description": "Внешний вид: «Отличный». Новый товар. Витринный/демонстрационный образец. Товар может иметь: мелкие потертост…",
+    "predicted_leaf": "Термопоты",
+    "path": "Мелкая кухонная техника › Электрочайники › Термопоты",
+    "taxonomy_category": "generic",
+    "confidence": 0.9999,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Термопоты (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   },
+   {
+    "sku_id": "10024586",
+    "title": "Беспроводная акустика LG XBOOM Go PL7 Black",
+    "description": "Портативная колонка LG Xboom Go PL7 подключается к смартфону или другому источнику аудиоконтента по Bluetooth…",
+    "predicted_leaf": "Беспроводная акустика",
+    "path": "Портативное аудио › Портативная акустика › Беспроводная акустика",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Беспроводная акустика (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Музыкальные системы Midi (0.00)"
+    ]
+   },
+   {
+    "sku_id": "400071044",
+    "title": "Кастрюля Gastrorag PE20-11.5",
+    "description": "Кастрюля Gastrorag PE20-11.5 изготовлена из нержавеющей стали и дополнена ручками, сделанными из того же мате…",
+    "predicted_leaf": "Кастрюли для кухни",
+    "path": "Посуда › Кастрюли › Кастрюли для кухни",
+    "taxonomy_category": "generic",
+    "confidence": 0.9999,
+    "keyword_baseline": "fridge",
+    "top3": [
+     "Кастрюли для кухни (1.00)",
+     "Мультиварки (0.00)",
+     "Прочее: Мототовары (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401776688",
+    "title": "Уцененная посудомоечная машина Gorenje GS520E15W, как новый",
+    "description": "Внешний вид: «Как новый». Новый товар. Витринный/демонстрационный образец. Идеальное состояние, не имеет цара…",
+    "predicted_leaf": "Посудомоечные машины",
+    "path": "Крупная кухонная техника › Посудомоечные машины › Посудомоечные машины",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Посудомоечные машины (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   }
+  ],
+  "disagreement_examples": [
+   {
+    "sku_id": "4125784",
+    "title": "Защитное стекло для смартфона, телефона BoraSCO Camera HG 2шт. для Sams.Gal.A01/M01 (39475)",
+    "description": "Защитное стекло BoraSCO Camera HG убережёт объективы смартфона от случайных повреждений. Вы сможете спокойно …",
+    "predicted_leaf": "Защитные стекла",
+    "path": "Аксессуары для телефонов › Пленки и стекла для телефонов › Защитные стекла",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Защитные стекла (1.00)",
+     "Bluetooth гарнитуры (0.00)",
+     "Прочее: Мототовары (0.00)"
+    ]
+   },
+   {
+    "sku_id": "4198419",
+    "title": "Мультиварка Polaris PMC 5040 Wi Fi IQ Home Bl",
+    "description": "Мультиварка Polaris PMC 5040 Wi Fi IQ Home в черном корпусе оснащена 24-часовым таймером отложенного старта. …",
+    "predicted_leaf": "Мультиварки",
+    "path": "Мелкая кухонная техника › Мультиварки › Мультиварки",
+    "taxonomy_category": "generic",
+    "confidence": 0.9999,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Мультиварки (0.99)",
+     "Йогуртницы (0.00)",
+     "Су-вид (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401647374",
+    "title": "Ремешок для смарт-часов GSS -",
+    "description": "Ремешок шерстяной для Apple Watch 42 мм. Лучшие товары из Китая",
+    "predicted_leaf": "Ремешки для смарт-часов и фитнес-браслетов",
+    "path": "Гаджеты › Аксессуары для смарт-часов и фитнес-браслетов › Ремешки для смарт-часов и фитнес-браслетов",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "smartwatch",
+    "top3": [
+     "Ремешки для смарт-часов и фитнес-браслетов (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401891650",
+    "title": "Ремешок для смарт-часов GSS -",
+    "description": "Ремешок для Apple Watch из нержавеющей стали. Лучшие товары из Китая",
+    "predicted_leaf": "Ремешки для смарт-часов и фитнес-браслетов",
+    "path": "Гаджеты › Аксессуары для смарт-часов и фитнес-браслетов › Ремешки для смарт-часов и фитнес-браслетов",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "smartwatch",
+    "top3": [
+     "Ремешки для смарт-часов и фитнес-браслетов (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   },
+   {
+    "sku_id": "10012488",
+    "title": "Акустическая система ION Audio Block Rocker Sport",
+    "description": "Музыкальный центр ION Audio Block Rocker Sport – отличное решение для проведения собственных вечеринок Open A…",
+    "predicted_leaf": "Музыкальные системы Midi",
+    "path": "Аудиотехника и DJ оборудование › Музыкальные центры › Музыкальные системы Midi",
+    "taxonomy_category": "generic",
+    "confidence": 0.9964,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Музыкальные системы Midi (0.88)",
+     "Беспроводная акустика (0.02)",
+     "Системы водяного охлаждения (0.01)"
+    ]
+   },
+   {
+    "sku_id": "30048700",
+    "title": "Мобильный телефон BQ mobile BQ-3595 Elegant красный",
+    "description": "Мобильный телефон BQ mobile BQ-3595 гармонично сочетает традиционный дизайн и современные функции. Это малень…",
+    "predicted_leaf": "Телефоны мобильные",
+    "path": "Смартфоны и связь › Мобильные телефоны › Телефоны мобильные",
+    "taxonomy_category": "generic",
+    "confidence": 0.9988,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Телефоны мобильные (0.94)",
+     "Прочее: Мототовары (0.01)",
+     "Прочее: Аксессуары для игровых приставок (0.01)"
+    ]
+   },
+   {
+    "sku_id": "30060920",
+    "title": "Чехол Red Line iPad Pro 11 2018/2020, красный/силикон.",
+    "description": "Чехол Red Line – стильный и тонкий аксессуар, который надёжно защищает устройство от механических повреждений…",
+    "predicted_leaf": "Чехлы для планшетов",
+    "path": "Аксессуары для планшетов › Чехлы и кейсы для планшетов › Чехлы для планшетов",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "tablet",
+    "top3": [
+     "Чехлы для планшетов (1.00)",
+     "Чехлы для смартфонов (0.00)",
+     "Прочее: Мототовары (0.00)"
+    ]
+   },
+   {
+    "sku_id": "401176466",
+    "title": "Чехол для смартфона, телефона Mcover iPhone 11 Pro Max с принтом Аниме",
+    "description": "Силиконовый чехол для телефона с ярким принтом в стиле аниме и манги — идеальный вариант для тех, кто хочет в…",
+    "predicted_leaf": "Чехлы для смартфонов",
+    "path": "Аксессуары для телефонов › Чехлы для телефонов › Чехлы для смартфонов",
+    "taxonomy_category": "generic",
+    "confidence": 1.0,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Чехлы для смартфонов (1.00)",
+     "Прочее: Мототовары (0.00)",
+     "Прочее: Аксессуары для игровых приставок (0.00)"
+    ]
+   }
+  ],
+  "review_examples": [
+   {
+    "sku_id": "10007653",
+    "title": "Телевизор Loewe Connect 40 DR+ 54445O50 Cappuccino+Black",
+    "description": "Телевизор Loewe Connect 40 DR+ 54445O50 Cappuccino+Black с Ultra HD-экраном обеспечивает высокий уровень каче…",
+    "predicted_leaf": "Телевизоры",
+    "path": "Телевизоры и цифровое ТВ › Телевизоры › Телевизоры",
+    "taxonomy_category": "tv",
+    "confidence": 0.6842,
+    "keyword_baseline": "tv",
+    "top3": [
+     "Телевизоры (0.68)",
+     "Прочее: Аксессуары для телевизоров (0.27)",
+     "Прочее: Мототовары (0.01)"
+    ]
+   },
+   {
+    "sku_id": "30029439",
+    "title": "Смартфон TP-Link Neffos Neffos Y5L Pearl White (TP801A)",
+    "description": "Neffos Y5L – смартфон, предназначенный для повседневного общения. Это компактное устройство, которым удобно п…",
+    "predicted_leaf": "Смартфоны",
+    "path": "Смартфоны и связь › Смартфоны › Смартфоны",
+    "taxonomy_category": "smartphone",
+    "confidence": 0.86,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Смартфоны (0.86)",
+     "Прочее: Мототовары (0.02)",
+     "Прочее: Гаджеты (0.01)"
+    ]
+   },
+   {
+    "sku_id": "30030483",
+    "title": "Смартфон BQ mobile Strike Mini Black Brushed (BQ-4072)",
+    "description": "BQ-4072 Strike Mini – компактный бюджетный смартфон, который легко поместится в кармане верхней одежды или в …",
+    "predicted_leaf": "Смартфоны",
+    "path": "Смартфоны и связь › Смартфоны › Смартфоны",
+    "taxonomy_category": "smartphone",
+    "confidence": 0.8666,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Смартфоны (0.87)",
+     "Прочее: Мототовары (0.02)",
+     "Прочее: Аксессуары для фото и видеотехники (0.01)"
+    ]
+   },
+   {
+    "sku_id": "400089652",
+    "title": "Система охранной сигнализации CARCAM WI-FI ALARM KIT H1 TUYA SMART LIFE",
+    "description": "Охранная система Carcam H1 с поддержкой Wi-Fi может работать автономно или интегрируется в систему умного дом…",
+    "predicted_leaf": "Прочее: Устройства для \"Умного дома\"",
+    "path": "Устройства для \"Умного дома\"",
+    "taxonomy_category": "generic",
+    "confidence": 0.6803,
+    "keyword_baseline": "smartphone",
+    "top3": [
+     "Сплит-системы (0.31)",
+     "Прочее: Устройства для \"Умного дома\" (0.10)",
+     "Датчики движения (0.07)"
+    ]
+   },
+   {
+    "sku_id": "401539749",
+    "title": "Наушники-плеер UNIMALL GM",
+    "description": "Игровые наушники с микрофоном UNIMALL Ares.",
+    "predicted_leaf": "Наушники",
+    "path": "Наушники › Наушники › Наушники",
+    "taxonomy_category": "headphones",
+    "confidence": 0.8312,
+    "keyword_baseline": "headphones",
+    "top3": [
+     "Наушники (0.61)",
+     "Наушники игровые (0.22)",
+     "Прочее: Видеотехника (0.09)"
+    ]
+   },
+   {
+    "sku_id": "30014419",
+    "title": "Нетбук Acer AOHAPPY2-N578Qoo",
+    "description": "Aspire One Happy Новая линейка стильных нетбуков Acer Aspire One Happy Нетбуки, способные раскрасить жизнь яр…",
+    "predicted_leaf": "Прочее: Мототовары",
+    "path": "Мототовары",
+    "taxonomy_category": "generic",
+    "confidence": 0.5518,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Ноутбуки (0.42)",
+     "Прочее: Мототовары (0.12)",
+     "Прочее: Аксессуары для игровых приставок (0.07)"
+    ]
+   },
+   {
+    "sku_id": "4058816",
+    "title": "Пылесос косметический Luazon 2545162 LMP-01 20 Вт, 2 фильтра",
+    "description": "Косметический пылесос Luazon 2545162 LMP-01 20 Вт с двумя фильтрами поможет содержать в чистоте вашу рабочую …",
+    "predicted_leaf": "Роботы-пылесосы",
+    "path": "Пылесосы и аксессуары › Роботы-пылесосы › Роботы-пылесосы",
+    "taxonomy_category": "vacuum",
+    "confidence": 0.6285,
+    "keyword_baseline": "vacuum",
+    "top3": [
+     "Роботы-пылесосы (0.50)",
+     "Пылесосы строительные (0.20)",
+     "Пылесосы напольные (0.13)"
+    ]
+   },
+   {
+    "sku_id": "400122959",
+    "title": "Портал Firelight Scala Classic сланец скалистый белый / белый дуб",
+    "description": "Камин Firelight Porto Long цвета «черный сланец» обладает каркасом из МДФ. Отделка выполнена из фальшкамня. У…",
+    "predicted_leaf": "Осушители воздуха",
+    "path": "Климатическая техника › Увлажнители и очистители воздуха › Осушители воздуха",
+    "taxonomy_category": "generic",
+    "confidence": 0.7385,
+    "keyword_baseline": "generic",
+    "top3": [
+     "Сплит-системы (0.26)",
+     "Осушители воздуха (0.08)",
+     "Терморегуляторы для теплых полов (0.08)"
+    ]
+   }
+  ]
+ },
+ "throughput": {
+  "cards": 20430,
+  "batch_cards_per_s": 1425,
+  "single_ms_p50": 1.287,
+  "single_ms_p95": 2.02,
+  "keyword_baseline_cards_per_s": 7458,
+  "process": "1 процесс, CPU, холодный кэш"
+ },
+ "artifact": {
+  "dir": "models/category",
+  "files_mb": {
+   "model.npz": 6.64,
+   "vocab.json.gz": 0.89,
+   "meta.json": 0.29
+  },
+  "total_mb": 7.82,
+  "weights_nnz": 3882961,
+  "features": 259834,
+  "format": "npz (int8 веса, CSR) + JSON, без pickle"
+ },
+ "timings_s": {
+  "load": 16.9,
+  "features": 28.7,
+  "fit_alpha_2e-06": 131.2,
+  "fit_alpha_5e-06": 149.8,
+  "fit_alpha_1e-05": 199.9,
+  "holdout": 26.9,
+  "unlabeled": 21.5,
+  "total": 578.1,
+  "peak_rss_gb": 4.84
+ }
+}

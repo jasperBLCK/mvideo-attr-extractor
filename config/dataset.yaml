@@ -4,6 +4,9 @@ id: id
 title: title
 description: description
 category: category
+# необязательные: id категории каталога и продавец (есть в data/sample/real_cards.jsonl)
+category_id: category_id
+seller: seller
 # seller_attrs: колонка с JSON/dict ИЛИ префикс колонок (например "attr_")
 seller_attrs: seller_attrs
 seller_attrs_prefix: null

@@ -6,7 +6,7 @@
 
 ## База знаний — читать отсюда, а не пересобирать заново
 **[.claude/context/INDEX.md](.claude/context/INDEX.md)** — оглавление: правила хакатона и критерии оценки, требования кейса,
-стратегия победы, данные, PRD, архитектура, технологии, хранилища, оркестратор, карта проекта, решения, статус.
+критерии → подтверждения, данные, PRD, архитектура, технологии, хранилища, оркестратор, карта проекта, решения, статус.
 Перед любой задачей открой INDEX.md и только нужные файлы из него. Обновляй соответствующий файл, когда меняешь то, что он описывает.
 
 ## Что нельзя забывать
@@ -27,11 +27,16 @@ export PATH="$HOME/.local/bin:$PATH"            # uv
 uv venv -p 3.11 .venv && uv pip install -p .venv/bin/python -e ".[dev]"   # [ml] — torch/transformers для NER
 .venv/bin/pytest -q && .venv/bin/ruff check .   # то же гоняет CI (+ attrx demo)
 .venv/bin/attrx prepare                         # data/raw -> data/processed
-.venv/bin/attrx demo | serve | extract | eval | report | train-ner | split | learn
+.venv/bin/attrx demo | serve | extract | eval-real | report-real | verify | monitor | train-ner --distant | calibrate | learn
+make report                                     # финальный отчёт на holdout -> submission/ (только осознанно!)
 AGENT_BROWSER_EXECUTABLE_PATH=/usr/bin/chromium agent-browser ...   # скриншоты/QA UI
 ~~~
 Docker на этой машине требует root (пользователь не в группе docker) — локально запускать нативно.
 
+Локальный стенд (user-юниты, не в автозапуске): `systemctl --user start|stop|restart attrx ollama-attrx` →
+http://127.0.0.1:8000 (LLM qwen3:4b-instruct через Ollama/Vulkan, NER на GPU). Юниты: `~/.config/systemd/user/`.
+После правок кода — `systemctl --user restart attrx`.
+
 ## Навыки проекта (.claude/skills)
-`frontend-design` (Anthropic), `agent-browser` (браузер для QA), `find-skills` (поиск новых навыков), `grill-me` → `grilling`
-(стресс-тест плана интервью). Источники и хэши — `skills-lock.json`.
+`frontend-design` (Anthropic), `interface-design` (интерфейсы-инструменты), `agent-browser` (браузер для QA),
+`find-skills` (поиск новых навыков), `grill-me` → `grilling` (стресс-тест плана интервью). Источники и хэши — `skills-lock.json`.

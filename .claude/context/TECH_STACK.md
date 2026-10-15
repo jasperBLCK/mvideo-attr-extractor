@@ -61,10 +61,10 @@ Extras (`pyproject.toml`):
 
 | Что | Как устроено | Почему |
 |---|---|---|
-| Docker | `Dockerfile`: python:3.11-slim, `pip install -e .`, копирует `src`, `config`, `web`, `data/sample`, `submission`; `attrx serve --port 8000` | демо на ВМ :8000 одной командой |
-| ⚠ ограничения образа | только базовые зависимости (нет torch → NER выключен); `models/` не копируется и не монтируется в compose → классификатора категории в контейнере нет, работает фолбэк по ключевым словам | — |
+| Docker | `Dockerfile`: python:3.11-slim, `pip install -e .`, копирует `src`, `config`, `web`, `data/sample`, `submission`, `models/category`; `attrx serve --host 0.0.0.0 --port 8000` | демо на ВМ :8000 одной командой |
+| ⚠ ограничения образа | только базовые зависимости (нет torch → NER выключен); классификатор категории в образе есть (`models/category`), NER-модели нет | — |
 | docker compose | `app`: порт 8000, тома `./outputs`, `./config`, `./data`; `.env` необязателен; пробрасывает `OPENAI_API_KEY` / `OPENAI_BASE_URL`; `LLM_LOCAL_URL=http://host.docker.internal:11434/v1` (`host-gateway`). Профиль `llm`: `ollama` (11434, том `ollama`, KEEP_ALIVE 10m, CONTEXT 4096, NUM_PARALLEL 1) + `ollama-pull` (качает `LLM_LOCAL_MODEL`, по умолчанию qwen3:4b-instruct); GPU — раскомментировать `deploy` | LLM в контуре, данные не уходят |
-| CI | GitHub Actions `.github/workflows/ci.yml`: Python 3.11, `pip install -e ".[dev]"`, `ruff check .`, `pytest -q`, `attrx demo` | `main` всегда зелёный |
+| CI | GitHub Actions `.github/workflows/ci.yml`: Python 3.11, `uv sync --frozen --extra dev` по `uv.lock`, `ruff`, `pytest`, `attrx demo`, `attrx verify`, `attrx monitor` | `main` всегда зелёный, цифры сдачи воспроизводимы |
 | Репозитории | рабочий — GitHub `jasperBLCK/mvideo-attr-extractor`; сдача — `git push gitea main` | правило хакатона |
 | Локальная LLM (эта машина) | `ollama-attrx` — **transient** user-юнит systemd (создан `systemd-run --user`, после перезагрузки запускать заново — команда в [docs/LLM.md §7](../../docs/LLM.md)): `~/.local/opt/ollama-attrx/bin/ollama serve` (Ollama 0.33.3 + Vulkan-бэкенд), `OLLAMA_HOST=127.0.0.1:11434`, `OLLAMA_VULKAN=1`, `OLLAMA_KEEP_ALIVE=10m`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_CONTEXT_LENGTH=4096`, `LLAMA_ARG_FIT_TARGET=512`. Модели в `~/.ollama/models`: qwen3:4b-instruct, qwen2.5:7b-instruct, qwen3.5:4b, mistral. `systemctl --user status ollama-attrx`, логи — `journalctl --user -u ollama-attrx` | CPU без AVX → только GPU; CUDA 13 не поддерживает Pascal, CUDA-12-сборка медленнее Vulkan (8,1 против 6,9 с на карточку) |
 | Машина команды | Pentium Gold G5400 (4 потока, без AVX), 31 ГБ RAM, GTX 1060 6 ГБ; Docker только от root → запускаем нативно | — |

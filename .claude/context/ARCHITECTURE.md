@@ -127,7 +127,8 @@ data/*   ─► только pandas / pyarrow / duckdb: от пайплайна 
 ## 6. Грабли (на 15.10)
 
 - `NerExtractor.load` ленивый: без `ML_ENABLED` или без весов в `models/ner` возвращает None, не импортируя torch (`Extractor()` стартует за ~0,4 с).
-- `/api/review/queue` и `/api/metrics` читают сначала `outputs/` (последний `attrx extract` / `demo`), потом `submission/`:
+- `/api/review/queue` читает сначала `outputs/` (последний `attrx extract` / `demo`), потом `submission/`; `/api/metrics` — наоборот,
+  сначала `submission/` (`?source=outputs` — демо):
   после `attrx demo` в очереди 400 реальных карточек holdout из `data/sample`.
 - `get_settings()` каждый раз создаёт новый `Settings`; LLM-клиент — синглтон `get_client()`; таксономия и калибратор —
   `lru_cache`: после правки YAML — перезапуск процесса.

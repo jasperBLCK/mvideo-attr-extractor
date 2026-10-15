@@ -148,7 +148,7 @@ mvideo-attr-extractor/
 | `extract -i <файл> [--llm on\|off]` | карточки (CSV/JSON/JSONL/Parquet по `config/dataset.yaml`) → предсказания | `outputs/predictions.jsonl` + `.csv` |
 | `eval --gold <jsonl>` | метрики предсказаний по эталону + кривая порога | `outputs/metrics.json` |
 | `demo [--llm …]` | `extract` + `eval` на `data/sample/cards.jsonl` (синтетика, 20 карточек) | `outputs/` |
-| `serve [--port 8000] [--reload]` | API + UI на 0.0.0.0:8000 | — |
+| `serve [--host 127.0.0.1] [--port 8000] [--reload]` | API + UI (по умолчанию только 127.0.0.1; на ВМ — `--host 0.0.0.0`, `make serve-public`) | — |
 | `learn` | правки модераторов → синонимы справочников | `config/dictionaries/learned.yaml` |
 | `prepare [--steps yml,clicks,cards,taxonomy,sample]` | `data/raw` → `data/processed` | `data/processed/`, `data/sample/real_*` |
 | `build-gold` | эталон из каталога | `gold.parquet`, `gold_{dev,holdout}.jsonl`, `data/sample/real_gold.jsonl` |

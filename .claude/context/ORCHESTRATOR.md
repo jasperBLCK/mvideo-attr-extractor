@@ -89,7 +89,7 @@ API держит один `Extractor` на процесс (`api/app.py:extractor
   `категория/атрибут/источники[|conflict]` → `источники|тип[|conflict]` → `*|тип` (тип: brand, model, color, cpu, enum,
   number, bool, string). Кривой нет — сырая оценка.
 - `attrx calibrate` (только dev, 2-fold кросс-фиттинг для порога) → `config/calibration.json`. Сейчас (финал 15.10): источники seller + rules + ml (NER),
-  порог **0.69** (dev out-of-fold precision принятых 0.967, ECE 0.011; holdout 0.959, ECE 0.012); сочетания без своей кривой — монотонно
+  порог **0.70** (отчёт v2; dev out-of-fold precision принятых 0.967, ECE 0.012; весь holdout 0.954, ECE 0.019); сочетания без своей кривой — монотонно
   (согласие источника не снижает уверенность); правило — нижняя 95% граница Уилсона точности принятых ≥ 0.95 и в каждой ячейке
   с ≥ 20 принятыми точность ≥ 0.75.
 - После подключения NER и LLM: `attrx calibrate --sources seller,rules,ml,llm` — иначе сочетания с ml/llm получают

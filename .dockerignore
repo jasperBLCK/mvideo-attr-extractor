@@ -1,0 +1,16 @@
+# В образ идут только код, конфиги, UI, сэмпл данных, отчёт и классификатор категории (см. Dockerfile).
+.git
+.venv
+.claude
+**/__pycache__
+.pytest_cache
+.ruff_cache
+*.egg-info
+.env
+data/raw
+data/processed
+models/ner
+outputs
+notebooks
+docs
+tests

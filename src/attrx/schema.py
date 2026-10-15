@@ -16,6 +16,8 @@ class Card(BaseModel):
     description: str = ""
     seller_attrs: dict[str, Any] = Field(default_factory=dict)
     category: str | None = None
+    category_id: str | None = None  # id категории в дереве каталога (YML), если известен
+    seller: str | None = None  # продавец (М.Видео или партнёр маркетплейса) — для сегментов справедливости
 
     def full_text(self) -> str:
         seller = "; ".join(f"{k}: {v}" for k, v in self.seller_attrs.items())
@@ -43,6 +45,12 @@ class AttributeValue(BaseModel):
     status: Status
     sources: list[Source] = Field(default_factory=list)
     evidence: str | None = None
+    # [start, end) цитаты в Card.full_text() — для подсветки в UI; None, если цитату не удалось локализовать
+    evidence_span: tuple[int, int] | None = None
+    # проигравшие кандидаты при конфликте: [{"value": ..., "confidence": ..., "sources": [...]}]
+    alternatives: list[dict[str, Any]] = Field(default_factory=list)
+    required: bool = True  # обязательный атрибут категории
+    traffic_weight: float = 1.0  # вес атрибута по поисковому спросу (query_clicks)
 
 
 class ExtractionResult(BaseModel):
@@ -52,6 +60,9 @@ class ExtractionResult(BaseModel):
     attributes: list[AttributeValue]
     llm_used: bool = False
     warnings: list[str] = Field(default_factory=list)
+    category_title: str | None = None
+    category_path: list[str] = Field(default_factory=list)  # путь в дереве каталога: ["Смартфоны и гаджеты", "Смартфоны"]
+    timings_ms: dict[str, float] = Field(default_factory=dict)  # время по этапам: {"rules": 0.4, "llm": 820.0}
 
     def as_flat(self) -> dict[str, Any]:
         return {a.attribute: a.value for a in self.attributes if a.status == "accepted"}

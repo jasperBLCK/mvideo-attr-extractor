@@ -19,8 +19,21 @@ def match_key(key: str, category: CategorySpec) -> str | None:
     return None
 
 
+def seller_spans(card: Card) -> dict[str, tuple[int, int]]:
+    """Смещения «ключ: значение» каждого поля продавца в Card.full_text() (блок после названия и описания)."""
+    head = "\n".join(x for x in (card.title, card.description) if x)
+    pos = len(head) + 1 if head else 0
+    out: dict[str, tuple[int, int]] = {}
+    for k, v in card.seller_attrs.items():
+        seg = f"{k}: {v}"
+        out[str(k)] = (pos, pos + len(seg))
+        pos += len(seg) + 2  # "; "
+    return out
+
+
 def extract(card: Card, category: CategorySpec, tax: Taxonomy) -> list[Candidate]:
     out: list[Candidate] = []
+    spans = seller_spans(card) if card.seller_attrs else {}
     for key, raw in card.seller_attrs.items():
         attr = match_key(str(key), category)
         if attr is None or raw in (None, ""):
@@ -30,5 +43,5 @@ def extract(card: Card, category: CategorySpec, tax: Taxonomy) -> list[Candidate
             continue
         value, quality = res
         out.append(Candidate(attribute=attr, value=value, raw=f"{key}: {raw}", source="seller",
-                             score=SELLER_BASE_SCORE * quality))
+                             score=SELLER_BASE_SCORE * quality, span=spans.get(str(key))))
     return out

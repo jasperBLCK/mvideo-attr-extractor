@@ -1,44 +1,174 @@
-# Таксономия: категории -> обязательные атрибуты.
-# type: enum (значение из справочника), number (число + единица), string (свободная строка, напр. модель)
-# aliases: как этот атрибут называют продавцы в своих полях
-# traffic_weight: насколько часто по атрибуту фильтруют (для trafic-weighted метрик). Заглушка до данных от М.Видео.
-# ВНИМАНИЕ: точный перечень обязательных полей придёт с датасетом — обновить здесь.
+# Таксономия: категории каталога М.Видео -> обязательные атрибуты.
+#
+# Категория:
+#   category_ids — id листовых категорий YML-фида (data/processed/categories.parquet), которые она покрывает;
+#                  карточка с известным category_id попадает сюда с уверенностью 1.0 (иначе — keywords).
+#   keywords     — запасной путь, если category_id неизвестен (cold start, внешний продавец).
+# Атрибут:
+#   type   — enum (значение из справочника config/dictionaries/<dictionary>.yaml), number (число + единица),
+#            string (свободная строка: модель, процессор), bool (да/нет; keywords — признаки «да» в тексте)
+#   unit/kind — каноническая единица и тип величины для нормализации (normalize.UNIT_PATTERNS)
+#   aliases — как атрибут называют продавцы в блоке «Характеристики:» (ключи из taxonomy_candidates.json)
+#   gold    — откуда брать эталон в YML-фиде: vendor | model | имена param (базовые, без «_search»), по приоритету;
+#             у каждого param сначала берётся точный вариант `_search`, бакет фильтра («6.6" и более») — только
+#             если он не диапазон (см. eval/gold.py)
+#   traffic_weight — вес по поисковому спросу внутри категории (по умолчанию; переопределяется
+#             config/traffic_weights.yaml из query_clicks, см. eval/metrics.py)
+#
+# Состав выбран по данным (taxonomy_candidates.json, top_queries.parquet): топ категорий по доле кликов;
+# в каждой — бренд, модель и 3–5 характеристик с высокой заполненностью в каталоге × спросом в запросах
+# × извлекаемостью из текста. Смартфоны и ноутбуки — ровно обязательный перечень кейса.
 
 categories:
   smartphone:
     title: Смартфоны
+    category_ids: ["761", "914"]  # Смартфоны, iPhone
     keywords: [смартфон, smartphone, телефон, iphone, galaxy, redmi, poco, pixel]
     attributes:
-      brand:    {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand, manufacturer], traffic_weight: 1.0}
-      model:    {title: Модель, type: string, aliases: [модель, model, серия], traffic_weight: 0.6}
-      storage:  {title: Объём встроенной памяти, type: number, unit: ГБ, kind: memory, aliases: [встроенная память, объем памяти, объём памяти, память, rom, storage, внутренняя память], traffic_weight: 0.9}
-      screen:   {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, aliases: [диагональ, диагональ экрана, экран, screen, display], traffic_weight: 0.7}
-      battery:  {title: Ёмкость аккумулятора, type: number, unit: мА·ч, kind: battery, aliases: [аккумулятор, емкость аккумулятора, ёмкость аккумулятора, батарея, battery], traffic_weight: 0.5}
-      color:    {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color, colour, цвет корпуса], traffic_weight: 0.8}
+      brand:    {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand, manufacturer, торговая марка], traffic_weight: 1.0}
+      model:    {title: Модель, type: string, kind: model, gold: [model, Серия, Модель], aliases: [модель, model, серия, модель телефона, модель смартфона], traffic_weight: 0.9}
+      storage:  {title: Объём встроенной памяти, type: number, unit: ГБ, kind: memory, gold: ["Встроенная память (ROM)", "Встроенная память"], aliases: [встроенная память, объем памяти, объём памяти, память, rom, storage, внутренняя память, объем встроенной памяти, объём встроенной памяти, встроенная память (rom), встроенная память (гб)], traffic_weight: 0.8}
+      screen:   {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, gold: [Диагональ, Экран], aliases: [диагональ, диагональ экрана, экран, screen, display, диагональ дисплея, размер экрана], traffic_weight: 0.5}
+      battery:  {title: Ёмкость аккумулятора, type: number, unit: мА·ч, kind: battery, gold: [Емкость аккумулятора], aliases: [аккумулятор, емкость аккумулятора, ёмкость аккумулятора, батарея, battery, емкость батареи, ёмкость батареи], traffic_weight: 0.4}
+      color:    {title: Цвет, type: enum, dictionary: colors, gold: [Цвет, Цвет производителя], aliases: [цвет, color, colour, цвет корпуса, цвет товара], traffic_weight: 0.6}
 
   laptop:
     title: Ноутбуки
+    category_ids: ["987"]
     keywords: [ноутбук, laptop, notebook, macbook, ультрабук, vivobook, ideapad, thinkpad, zenbook]
     attributes:
-      brand:    {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
-      cpu:      {title: Процессор, type: string, kind: cpu, aliases: [процессор, cpu, модель процессора, processor], traffic_weight: 0.8}
-      ram:      {title: Объём оперативной памяти, type: number, unit: ГБ, kind: ram, aliases: [оперативная память, озу, ram, объем оперативной памяти, объём оперативной памяти], traffic_weight: 0.9}
-      storage:  {title: Накопитель, type: number, unit: ГБ, kind: storage_drive, aliases: [накопитель, ssd, объем ssd, объём ssd, жесткий диск, storage], traffic_weight: 0.8}
-      screen:   {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, aliases: [диагональ, диагональ экрана, экран, screen], traffic_weight: 0.7}
-      color:    {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color, цвет корпуса], traffic_weight: 0.5}
+      brand:    {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand, торговая марка], traffic_weight: 1.0}
+      cpu:      {title: Процессор, type: string, kind: cpu, gold: [Процессор, Модель процессора], aliases: [процессор, cpu, модель процессора, processor, тип процессора], traffic_weight: 0.8}
+      ram:      {title: Объём оперативной памяти, type: number, unit: ГБ, kind: ram, gold: ["Оперативная память (RAM)", "Оперативная память"], aliases: [оперативная память, озу, ram, объем оперативной памяти, объём оперативной памяти, оперативная память (гб)], traffic_weight: 0.8}
+      storage:  {title: Накопитель, type: number, unit: ГБ, kind: storage_drive, gold: ["Общий объем накопителя", "Объём SSD"], aliases: [накопитель, ssd, объем ssd, объём ssd, жесткий диск, storage, объем накопителя, объём накопителя, общий объем накопителя], traffic_weight: 0.7}
+      screen:   {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, gold: ["Диагональ экрана", "Диагональ/разрешение"], aliases: [диагональ, диагональ экрана, экран, screen, диагональ дисплея], traffic_weight: 0.7}
+      color:    {title: Цвет, type: enum, dictionary: colors, gold: [Цвет], aliases: [цвет, color, цвет корпуса], traffic_weight: 0.4}
+
+  tv:
+    title: Телевизоры
+    category_ids: ["1682"]
+    keywords: [телевизор, smart tv, qled, oled tv]
+    attributes:
+      brand:        {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:        {title: Модель, type: string, kind: model, gold: [model, Модель], aliases: [модель, model], traffic_weight: 0.5}
+      screen:       {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, gold: [Диагональ, Экран], aliases: [диагональ, диагональ экрана, экран, диагональ (дюйм)], traffic_weight: 1.0}
+      resolution:   {title: Разрешение экрана, type: enum, dictionary: resolutions, gold: [Разрешение, "Разрешение экрана"], aliases: [разрешение, разрешение экрана, resolution], traffic_weight: 0.5}
+      refresh_rate: {title: Частота обновления, type: number, unit: Гц, kind: refresh_hz, gold: ["Частота обновления"], aliases: [частота обновления, частота обновления экрана, refresh rate], traffic_weight: 0.3}
+      os:           {title: Smart TV платформа, type: enum, dictionary: tv_os, gold: ["Операционная система"], aliases: [операционная система, ос, платформа smart tv, smart tv], traffic_weight: 0.5}
+
+  washing_machine:
+    title: Стиральные машины
+    category_ids: ["2447", "2451", "501"]  # + активаторного типа, встраиваемые
+    keywords: [стиральная машина, стиральная машинка, стиральной машины]
+    attributes:
+      brand: {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model: {title: Модель, type: string, kind: model, gold: [model], aliases: [модель, model], traffic_weight: 0.4}
+      type:  {title: Тип машины, type: enum, dictionary: washer_types, gold: ["Тип стиральной машины"], aliases: [тип, тип стиральной машины, тип загрузки, загрузка], traffic_weight: 0.9}
+      load:  {title: Максимальная загрузка, type: number, unit: кг, kind: load_kg, gold: ["Максимальная загрузка"], aliases: [максимальная загрузка, загрузка белья, макс. загрузка, вместимость, максимальная загрузка белья], traffic_weight: 0.6}
+      spin:  {title: Скорость отжима, type: number, unit: об/мин, kind: rpm, gold: ["Максимальная скорость отжима"], aliases: [скорость отжима, отжим, максимальная скорость отжима, обороты отжима], traffic_weight: 0.4}
+      depth: {title: Глубина, type: number, unit: см, kind: length_cm, gold: [Глубина], aliases: [глубина], traffic_weight: 0.7}
+
+  fridge:
+    title: Холодильники
+    category_ids: ["666", "495"]  # + встраиваемые
+    keywords: [холодильник]
+    attributes:
+      brand:        {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:        {title: Модель, type: string, kind: model, gold: [model], aliases: [модель, model], traffic_weight: 0.4}
+      chambers:     {title: Количество камер, type: enum, dictionary: chambers, gold: ["Количество камер"], aliases: [количество камер, число камер, камер], traffic_weight: 1.0}
+      no_frost:     {title: Система размораживания, type: enum, dictionary: defrost, gold: ["Размораживание морозильной камеры", "Размораживание холодильной камеры"], aliases: [размораживание, система размораживания, разморозка, no frost, размораживание морозильной камеры, размораживание холодильной камеры], traffic_weight: 0.6}
+      height:       {title: Высота, type: number, unit: см, kind: length_cm, gold: [Высота], aliases: [высота], traffic_weight: 0.5}
+      total_volume: {title: Общий объём, type: number, unit: л, kind: volume_l, gold: ["Общий объем"], aliases: [общий объем, общий объём, объем, объём, полезный объем, общий полезный объем], traffic_weight: 0.4}
+      color:        {title: Цвет, type: enum, dictionary: colors, gold: [Цвет], aliases: [цвет, color, цвет корпуса], traffic_weight: 0.4}
 
   headphones:
     title: Наушники
+    category_ids: ["31607", "1115", "25042", "4167", "923"]  # + игровые, с костной проводимостью, для компьютеров
     keywords: [наушники, гарнитура, buds, airpods, earbuds, headphones, tws]
     attributes:
-      brand: {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
-      color: {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color], traffic_weight: 0.6}
+      brand:        {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:        {title: Модель, type: string, kind: model, gold: [model, Модель, Серия], aliases: [модель, model], traffic_weight: 0.8}
+      connection:   {title: Тип подключения, type: enum, dictionary: connection_types, gold: ["Тип подключения", "Тип подключения наушников"], aliases: [тип подключения, подключение, беспроводные, тип соединения], traffic_weight: 0.9}
+      type:         {title: Тип наушников, type: enum, dictionary: headphone_types, gold: ["Тип наушников"], aliases: [тип наушников, конструкция, вид наушников, тип], traffic_weight: 0.5}
+      battery_life: {title: Время работы от аккумулятора, type: number, unit: ч, kind: time_h, gold: ["Время работы от аккумулятора до"], aliases: [время работы, время работы от аккумулятора, время автономной работы, автономность], traffic_weight: 0.3}
+      color:        {title: Цвет, type: enum, dictionary: colors, gold: [Цвет], aliases: [цвет, color], traffic_weight: 0.5}
 
-  # Фолбэк для категорий, которых нет в таксономии (cold start): только универсальные атрибуты,
-  # остальное — LLM-предложения со статусом "на проверку".
+  vacuum:
+    title: Пылесосы
+    category_ids: ["3088", "2455", "2457"]  # вертикальные, напольные, роботы
+    keywords: [пылесос, робот-пылесос]
+    attributes:
+      brand:        {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:        {title: Модель, type: string, kind: model, gold: [model], aliases: [модель, model], traffic_weight: 0.5}
+      type:         {title: Тип пылесоса, type: enum, dictionary: vacuum_types, gold: ["Тип пылесоса"], aliases: [тип пылесоса, тип, вид уборки, тип уборки], traffic_weight: 0.9}
+      dust_volume:  {title: Объём пылесборника, type: number, unit: л, kind: volume_l, gold: ["Объем контейнера для пыли", "Объем пылесборника"], aliases: [объем контейнера, объём контейнера, объем пылесборника, объём пылесборника, объем контейнера для пыли, пылесборник], traffic_weight: 0.4}
+      battery_time: {title: Время работы от аккумулятора, type: number, unit: мин, kind: time_min, gold: ["Время работы от аккумулятора до", "Время работы от аккумулятора"], aliases: [время работы, время работы от аккумулятора, время автономной работы, автономность], traffic_weight: 0.5}
+      color:        {title: Цвет, type: enum, dictionary: colors, gold: [Цвет], aliases: [цвет, color], traffic_weight: 0.3}
+
+  tablet:
+    title: Планшеты
+    category_ids: ["930"]
+    keywords: [планшет, ipad, tablet, matepad, galaxy tab]
+    attributes:
+      brand:   {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:   {title: Модель, type: string, kind: model, gold: [model, Серия, Модель], aliases: [модель, model, серия], traffic_weight: 0.8}
+      storage: {title: Объём встроенной памяти, type: number, unit: ГБ, kind: memory, gold: ["Встроенная память (ROM)", "Встроенная память"], aliases: [встроенная память, объем памяти, объём памяти, память, rom, storage, внутренняя память], traffic_weight: 0.6}
+      screen:  {title: Диагональ экрана, type: number, unit: дюйм, kind: diagonal, gold: [Диагональ, Экран], aliases: [диагональ, диагональ экрана, экран, screen, display], traffic_weight: 0.6}
+      ram:     {title: Объём оперативной памяти, type: number, unit: ГБ, kind: ram, gold: ["Оперативная память (RAM)", "Оперативная память"], aliases: [оперативная память, озу, ram, объем оперативной памяти, объём оперативной памяти], traffic_weight: 0.4}
+      color:   {title: Цвет, type: enum, dictionary: colors, gold: [Цвет], aliases: [цвет, color, цвет корпуса], traffic_weight: 0.4}
+
+  smartwatch:
+    title: Смарт-часы
+    category_ids: ["1233", "1254", "5548", "2948"]  # + спортивные часы, часы с GPS, Apple Watch
+    keywords: [смарт-часы, смарт часы, умные часы, smart watch, apple watch, galaxy watch]
+    attributes:
+      brand:         {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:         {title: Модель, type: string, kind: model, gold: [model, Модель, Серия], aliases: [модель, model, серия], traffic_weight: 0.8}
+      case_size:     {title: Размер корпуса, type: number, unit: мм, kind: size_mm, gold: ["Размер корпуса", Размер], aliases: [размер корпуса, размер, диаметр корпуса], traffic_weight: 0.4}
+      case_material: {title: Материал корпуса, type: enum, dictionary: materials, gold: ["Материал корпуса"], aliases: [материал корпуса, материал], traffic_weight: 0.3}
+      color:         {title: Цвет, type: enum, dictionary: colors, gold: [Цвет, "Цвет корпуса"], aliases: [цвет, color, цвет корпуса], traffic_weight: 0.5}
+
+  kettle:
+    title: Электрические чайники
+    category_ids: ["482", "6192"]  # + электрочайник-термос
+    keywords: [электрочайник, чайник электрический, электрический чайник]
+    attributes:
+      brand:    {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:    {title: Модель, type: string, kind: model, gold: [model], aliases: [модель, model], traffic_weight: 0.3}
+      volume:   {title: Объём, type: number, unit: л, kind: volume_l, gold: ["Максимальный объем"], aliases: [объем, объём, вместимость, максимальный объем, объем воды, объём воды], traffic_weight: 0.5}
+      power:    {title: Мощность, type: number, unit: Вт, kind: power_w, gold: ["Потребляемая мощность"], aliases: [мощность, потребляемая мощность, максимальная мощность], traffic_weight: 0.3}
+      material: {title: Материал корпуса, type: enum, dictionary: materials, gold: ["Материал корпуса"], aliases: [материал корпуса, материал, материал колбы], traffic_weight: 0.8}
+      color:    {title: Цвет, type: enum, dictionary: colors, gold: [Цвет], aliases: [цвет, color], traffic_weight: 0.4}
+
+  air_fryer:
+    title: Аэрогрили
+    category_ids: ["764"]
+    keywords: [аэрогриль, аэрофритюрница, air fryer]
+    attributes:
+      brand:       {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:       {title: Модель, type: string, kind: model, gold: [model], aliases: [модель, model], traffic_weight: 0.4}
+      bowl_volume: {title: Объём чаши, type: number, unit: л, kind: volume_l, gold: ["Объем чаши"], aliases: [объем чаши, объём чаши, объем, объём, вместимость], traffic_weight: 0.5}
+      power:       {title: Мощность, type: number, unit: Вт, kind: power_w, gold: [Мощность, "Потребляемая мощность"], aliases: [мощность, потребляемая мощность, максимальная мощность], traffic_weight: 0.3}
+      color:       {title: Цвет, type: enum, dictionary: colors, gold: [Цвет], aliases: [цвет, color], traffic_weight: 0.3}
+
+  split_system:
+    title: Сплит-системы
+    category_ids: ["599"]
+    keywords: [сплит-система, сплит система, кондиционер]
+    attributes:
+      brand:         {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
+      model:         {title: Модель, type: string, kind: model, gold: [model], aliases: [модель, model], traffic_weight: 0.4}
+      inverter:      {title: Инверторная технология, type: bool, gold: ["Инверторная технология"], keywords: [инверторн, inverter, dc-инвертор, dc inverter], aliases: [инверторная технология, инвертор, тип компрессора, инверторный], traffic_weight: 1.0}
+      cooling_power: {title: Мощность охлаждения, type: number, unit: кВт, kind: power_kw, gold: ["Производ-ть по холоду"], aliases: [мощность охлаждения, производительность по холоду, холодопроизводительность, мощность в режиме охлаждения], traffic_weight: 0.4}
+      btu:           {title: Охлаждающая способность, type: number, unit: BTU, kind: btu, gold: ["Охлаждающая способность"], aliases: [охлаждающая способность, btu], traffic_weight: 0.5}
+      area:          {title: Рекомендуемая площадь, type: number, unit: м², kind: area_m2, gold: ["Рекомендуемая площадь (высота 2.6 м)", "Рекомендуемая площадь помещения"], aliases: [площадь, рекомендуемая площадь, площадь помещения, обслуживаемая площадь, площадь охлаждения], traffic_weight: 0.5}
+
+  # Фолбэк для категорий вне таксономии (длинный хвост, cold start): только универсальные атрибуты,
+  # остальное — LLM-предложения со статусом «на проверку».
   generic:
     title: Прочее
     keywords: []
     attributes:
-      brand: {title: Бренд, type: enum, dictionary: brands, aliases: [бренд, производитель, марка, brand], traffic_weight: 1.0}
-      color: {title: Цвет, type: enum, dictionary: colors, aliases: [цвет, color], traffic_weight: 0.5}
+      brand: {title: Бренд, type: enum, dictionary: brands, gold: [vendor], aliases: [бренд, производитель, марка, brand, торговая марка], traffic_weight: 1.0}
+      model: {title: Модель, type: string, kind: model, gold: [model], aliases: [модель, model], traffic_weight: 0.5}
+      color: {title: Цвет, type: enum, dictionary: colors, gold: [Цвет, "Цвет корпуса"], aliases: [цвет, color, цвет корпуса], traffic_weight: 0.5}

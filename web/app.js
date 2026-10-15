@@ -1,120 +1,163 @@
-import { h, render, reviewRow } from "./components.js";
+// Точка входа консоли модератора attrx. Без сборки: ES-модули отдаёт FastAPI из web/.
+// Разделы: #/card (проверка карточки), #/review (очередь), #/quality (качество). Ctrl/⌘ K — палитра.
+import { get } from "./js/api.js";
+import { $, $$, h, icon, isTyping, keyOf, put } from "./js/dom.js";
+import { mountWorkbench } from "./js/workbench.js";
+import { mountReview } from "./js/review.js";
+import { mountQuality } from "./js/quality.js";
+import { initPalette } from "./js/palette.js";
+import { initHelp } from "./js/help.js";
+import { getTheme, hideTip, initTooltips, isMac, nextTheme, onThemeChange, setTheme, themeLabel, toast } from "./js/ui.js";
 
-const $ = (s) => document.querySelector(s);
-const api = async (path, body) => {
-  const r = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
-  if (!r.ok) throw new Error(r.status + " " + (await r.text()));
-  return r.json();
+const app = {
+  health: null,
+  threshold: 0.7,
+  categories: [],
+  isMac,
+  views: {},
+  route: null,
+  _report: null,
+  _dicts: new Map(),
+
+  /** Отчёт из submission/ (кэш; fresh — перечитать). */
+  getReport(fresh = false) {
+    if (!app._report || fresh) app._report = get("/api/report").catch((e) => { app._report = null; throw e; });
+    return app._report;
+  },
+
+  /** Значения справочника для подсказок при исправлении (справочник допустимых значений). */
+  async suggestions(category, attribute) {
+    const cat = app.categories.find((c) => c.name === category);
+    const dict = cat?.attributes.find((a) => a.key === attribute)?.dictionary;
+    if (!dict) return [];
+    if (!app._dicts.has(dict)) app._dicts.set(dict, get("/api/dictionary/" + encodeURIComponent(dict)).then((d) => d.values).catch(() => []));
+    return app._dicts.get(dict);
+  },
+
+  setQueueCount(n) {
+    const el = $("#queue-count");
+    el.textContent = n > 0 ? String(n) : "";
+    el.hidden = !(n > 0);
+    el.setAttribute("aria-label", n > 0 ? n + " на проверку" : "");
+  },
+
+  async refreshQueueCount() {
+    try {
+      const q = await get("/api/review/queue?limit=5000");
+      app.setQueueCount(q.stats.remaining);
+    } catch {
+      /* счётчик не критичен */
+    }
+  },
+
+  async go(route, params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    if (app.route === route && !qs) return;
+    const hash = "#/" + route + (qs ? "?" + qs : "");
+    if (location.hash !== hash) {
+      location.hash = hash;
+      await new Promise((r) => setTimeout(r, 0));
+    } else await show(route, params);
+  },
 };
-const ctx = { feedback: (fb) => api("/api/feedback", fb) };
-let lastResult = null;
-let samples = [];
 
-document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
-  document.querySelectorAll(".tab, .tabpane").forEach((x) => x.classList.remove("is-active"));
-  t.classList.add("is-active");
-  $("#tab-" + t.dataset.tab).classList.add("is-active");
-  if (t.dataset.tab === "review") loadReview();
-  if (t.dataset.tab === "metrics") loadMetrics();
-}));
+function parseHash() {
+  const [path, qs] = location.hash.replace(/^#\/?/, "").split("?");
+  const route = ["card", "review", "quality"].includes(path) ? path : "card";
+  return { route, params: Object.fromEntries(new URLSearchParams(qs || "")) };
+}
 
-function readCard() {
-  const seller = {};
-  for (const line of $("#seller").value.split("\n")) {
-    const i = line.indexOf(":");
-    if (i > 0) seller[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+async function show(route, params) {
+  hideTip();
+  app.route = route;
+  for (const v of $$(".view")) v.hidden = v.dataset.view !== route;
+  for (const a of $$(".nav__link")) {
+    if (a.dataset.route === route) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
   }
-  return { id: $("#title").dataset.id || "manual", title: $("#title").value, description: $("#description").value,
-           seller_attrs: seller, category: $("#category").value || null };
+  document.title = { card: "Карточка", review: "Очередь проверки", quality: "Качество" }[route] + " · attrx";
+  await app.views[route].show(params);
 }
 
-function show(resp) {
-  lastResult = resp.result;
-  $("#ui-warning").hidden = !resp.ui_warning;
-  $("#ui-warning").textContent = resp.ui_warning || "";
-  render($("#ui-root"), resp.ui, resp.result, ctx);
+function paintLlmStatus() {
+  const hl = app.health;
+  const btn = $("#llm-status");
+  const on = Boolean(hl?.llm_enabled);
+  btn.dataset.state = on ? "on" : "off";
+  $(".llm-status__text", btn).textContent = on ? "LLM: " + (hl.llm_model || "подключена") : "LLM выключена";
+  btn.dataset.tip = on ? `Модель ${hl.llm_model} на ${hl.llm_host}. Вызывается только для непокрытых характеристик.` : "Работают продавец, правила и ML. Как подключить LLM, написано в справке.";
 }
 
-$("#card-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const intent = $("#intent").value.trim() || null;
-  show(await api("/api/extract", { card: readCard(), use_llm: $("#use-llm").checked, intent }));
-});
-
-$("#intent-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  document.querySelector('[data-tab="card"]').click();
-  if (!lastResult) return $("#card-form").requestSubmit();
-  show(await api("/api/ui", { result: lastResult, intent: $("#intent").value }));
-});
-
-$("#sample").addEventListener("change", () => {
-  const s = samples.find((x) => x.id === $("#sample").value);
-  if (!s) return;
-  $("#title").value = s.title; $("#title").dataset.id = s.id;
-  $("#description").value = s.description || "";
-  $("#seller").value = Object.entries(s.seller_attrs || {}).map(([k, v]) => k + ": " + v).join("\n");
-  $("#category").value = s.category || "";
-  $("#card-form").requestSubmit();
-});
-
-async function loadReview() {
-  const root = $("#review-root");
-  const items = await api("/api/review");
-  root.replaceChildren(...(items.length ? items.map((it) => h("div", { class: "c", style: "margin-top:12px" },
-    h("h3", {}, "Карточка " + it.card_id + " · " + it.category), it.attributes.map((a) => reviewRow(it.card_id, a, ctx))))
-    : [h("p", { class: "muted" }, "Пусто. Запустите attrx extract — сюда попадут значения с низкой уверенностью.")]));
+function paintThemeButton() {
+  const v = getTheme();
+  const btn = $("#theme");
+  btn.setAttribute("aria-label", "Тема: " + themeLabel(v) + ". Нажмите, чтобы сменить");
+  btn.dataset.tip = "Тема: " + themeLabel(v);
+  put(btn, icon({ system: "circle-half", light: "sun", dark: "moon" }[v], 18));
 }
 
-function sweepChart(rows) {
-  const W = 600, H = 220, P = 30, NS = "http://www.w3.org/2000/svg";
-  const x = (t) => P + t * (W - 2 * P), y = (v) => H - P - v * (H - 2 * P);
-  const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("class", "sweep");
-  [["precision", "#e30613"], ["coverage", "#1e1e1e"], ["f1", "#00c3b5"]].forEach(([k, color], i) => {
-    const p = document.createElementNS(NS, "path");
-    p.setAttribute("d", rows.map((r, j) => (j ? "L" : "M") + x(r.threshold) + "," + y(r[k])).join(" "));
-    p.setAttribute("fill", "none"); p.setAttribute("stroke", color); p.setAttribute("stroke-width", "3");
-    const t = document.createElementNS(NS, "text");
-    t.setAttribute("x", P + 10 + i * 110); t.setAttribute("y", 16); t.setAttribute("fill", color); t.setAttribute("font-size", "14");
-    t.textContent = "— " + k;
-    svg.append(p, t);
+async function boot() {
+  initTooltips();
+  setTheme(getTheme());
+  paintThemeButton();
+  onThemeChange(paintThemeButton);
+  $("#theme").addEventListener("click", () => {
+    const v = nextTheme();
+    toast("Тема: " + themeLabel(v), { timeout: 1600 });
   });
-  return svg;
+  put($(".cmdk__keys"), h("kbd", { class: "kbd" }, isMac ? "⌘" : "Ctrl"), h("kbd", { class: "kbd" }, "K"));
+
+  try {
+    app.health = await get("/api/health");
+    app.threshold = app.health.confidence_threshold ?? 0.7;
+  } catch (e) {
+    document.body.classList.add("is-offline");
+    put($("#main"), h("div", { class: "empty empty--wide", role: "alert" }, icon("warning-circle", 28, "empty__icon"),
+      h("h1", { class: "empty__title" }, "Сервер не отвечает"),
+      h("p", { class: "empty__text" }, "Интерфейс не смог связаться с API: " + e.message + ". Запустите attrx serve и обновите страницу.")));
+    return;
+  }
+  app.categories = await get("/api/categories").catch(() => []);
+  paintLlmStatus();
+
+  app.palette = initPalette(app);
+  app.help = initHelp(app);
+  app.views.card = app.workbench = mountWorkbench($("#view-card"), app);
+  app.views.review = mountReview($("#view-review"), app);
+  app.views.quality = mountQuality($("#view-quality"), app);
+
+  $("#open-palette").addEventListener("click", () => app.palette.open());
+  $("#open-help").addEventListener("click", () => app.help.open());
+  $("#llm-status").addEventListener("click", () => app.help.open("help-llm"));
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && keyOf(e) === "k") {
+      e.preventDefault();
+      app.palette.isOpen() ? app.palette.close() : app.palette.open();
+      return;
+    }
+    if (app.palette.isOpen() || app.help.isOpen() || e.defaultPrevented) return;
+    if (!isTyping(e) && e.key === "?" ) {
+      e.preventDefault();
+      app.help.open();
+      return;
+    }
+    if (!isTyping(e) && (e.key === "/" || e.code === "Slash") && !e.shiftKey) {
+      e.preventDefault();
+      app.palette.open();
+      return;
+    }
+    const v = app.views[app.route];
+    if (v?.onKey && v.onKey(e)) e.preventDefault();
+  });
+
+  window.addEventListener("hashchange", () => {
+    const { route, params } = parseHash();
+    show(route, params);
+  });
+  const { route, params } = parseHash();
+  await show(route, params);
+  if (route !== "review") app.refreshQueueCount();
 }
 
-async function loadMetrics() {
-  const root = $("#metrics-root");
-  let m;
-  try { m = await api("/api/metrics"); } catch { return root.replaceChildren(h("div", { class: "panel" }, "Метрик нет. Запустите: attrx demo или attrx eval --gold ...")); }
-  const kpi = (v, l) => h("div", { class: "c kpi" }, h("b", {}, (v * 100).toFixed(1) + "%"), h("span", {}, l));
-  root.replaceChildren(
-    h("div", { class: "metrics-grid" }, kpi(m.micro.precision, "Precision (micro)"), kpi(m.micro.recall, "Recall (micro)"),
-      kpi(m.micro.f1, "F1 (micro)"), kpi(m.traffic_weighted_f1, "Traffic-weighted F1"), kpi(m.coverage, "Coverage"), kpi(m.review_rate, "Доля на проверку")),
-    h("div", { class: "grid2 is-active", style: "grid-template-columns:1fr 1fr" },
-      h("div", { class: "c" }, h("h3", {}, "По атрибутам"), h("table", { class: "t" },
-        h("tr", {}, h("th", {}, "Атрибут"), h("th", {}, "Precision"), h("th", {}, "Recall"), h("th", {}, "F1")),
-        Object.entries(m.per_attribute).map(([k, v]) => h("tr", {}, h("td", {}, k), h("td", {}, v.precision.toFixed(3)), h("td", {}, v.recall.toFixed(3)), h("td", {}, v.f1.toFixed(3)))))),
-      h("div", { class: "c" }, h("h3", {}, "Порог уверенности: точность и покрытие"), sweepChart(m.threshold_sweep),
-        h("p", { class: "muted" }, "Выбираем CONFIDENCE_THRESHOLD под целевую точность бизнеса; всё ниже порога уходит модератору."))),
-    h("div", { class: "c", style: "margin-top:16px" }, h("h3", {}, "По категориям"), Object.entries(m.per_category).map(([cat, attrs]) =>
-      h("p", {}, h("b", {}, cat), " — ", Object.entries(attrs).map(([a, v]) => a + ": F1 " + v.f1.toFixed(2)).join(" · ")))));
-  let rep = {};
-  try { rep = await api("/api/report"); } catch { return; }
-  const f3 = (x) => x.toFixed(3);
-  const table = (title, cols, rows) => h("div", { class: "c", style: "margin-top:16px" }, h("h3", {}, title),
-    h("table", { class: "t" }, h("tr", {}, cols.map((c) => h("th", {}, c))), rows));
-  if (rep.compare) root.append(table("Сравнение подходов (attrx report)", ["Режим", "Precision", "Recall", "F1", "Coverage", "Карточек/с", "LLM-вызовов"],
-    rep.compare.map((r) => h("tr", {}, h("td", {}, h("b", {}, r.mode)), h("td", {}, f3(r.precision)), h("td", {}, f3(r.recall)),
-      h("td", {}, f3(r.f1)), h("td", {}, f3(r.coverage)), h("td", {}, String(r.cards_per_sec)), h("td", {}, String(r.llm_calls))))));
-  if (rep.segments) root.append(table("Качество по сегментам карточек", ["Сегмент", "Карточек", "Precision", "Recall", "F1", "Coverage"],
-    Object.entries(rep.segments).map(([k, v]) => h("tr", {}, h("td", {}, k), h("td", {}, String(v.n_cards)), h("td", {}, f3(v.precision)),
-      h("td", {}, f3(v.recall)), h("td", {}, f3(v.f1)), h("td", {}, f3(v.coverage))))));
-}
-
-(async () => {
-  const hl = await api("/api/health");
-  $("#health").textContent = hl.llm_enabled ? "LLM: " + hl.llm_model + " @ " + hl.llm_host : "LLM выключена · только правила";
-  samples = await api("/api/samples");
-  for (const s of samples) $("#sample").append(h("option", { value: s.id }, s.id + " · " + s.title.slice(0, 50)));
-})();
+boot();

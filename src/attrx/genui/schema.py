@@ -9,9 +9,22 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-ComponentType = Literal["summary", "alert", "attribute_table", "confidence_chart", "evidence", "review_queue", "metrics"]
+ComponentType = Literal["summary", "alert", "attribute_table", "confidence_chart", "evidence", "review_queue",
+                        "conflicts", "metrics"]
 Filter = Literal["all", "accepted", "review", "missing"]
 Level = Literal["info", "success", "warning", "danger"]
+
+# Что делает каждый компонент — общий источник для промпта LLM и документации (docs/GENUI.md).
+COMPONENTS: dict[str, str] = {
+    "summary": "сводка: сколько значений принято, на проверке и не найдено в тексте",
+    "alert": "короткое сообщение (level: info|success|warning|danger), текст — в text",
+    "attribute_table": "таблица характеристик с уверенностью, статусом, источниками и цитатой (filter, attributes)",
+    "confidence_chart": "уверенность по характеристикам относительно порога автопринятия (filter, attributes)",
+    "evidence": "цитаты из текста карточки, на которых основано каждое значение (attributes)",
+    "review_queue": "значения на проверке с кнопками «Принять / Исправить / Отклонить» (filter)",
+    "conflicts": "спорные значения: альтернативы от разных источников и отброшенные LLM-значения (attributes)",
+    "metrics": "качество на эталоне: точность, полнота, F1, покрытие",
+}
 
 
 class Component(BaseModel):
